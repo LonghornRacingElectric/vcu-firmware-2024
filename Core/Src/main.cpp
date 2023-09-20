@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "VcuModel.h"
+#include "library.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -108,8 +109,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    // temporary library tests
     vcuModel.setParameters(&vcuParameters);
     vcuModel.evaluate(&vcuInput, &vcuOutput, 0.001f);
+    if(hello() != 42) {
+        Error_Handler();
+    }
 
     HAL_GPIO_WritePin(GPIOB, LD1_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(GPIOB, LD3_Pin, GPIO_PIN_RESET);
