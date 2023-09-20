@@ -19,9 +19,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
 #Uncomment for hardware floating point
-#add_compile_definitions(ARM_MATH_CM4;ARM_MATH_MATRIX_CHECK;ARM_MATH_ROUNDING)
-#add_compile_options(-mfloat-abi=hard -mfpu=fpv4-sp-d16)
-#add_link_options(-mfloat-abi=hard -mfpu=fpv4-sp-d16)
+add_compile_definitions(ARM_MATH_CM4;ARM_MATH_MATRIX_CHECK;ARM_MATH_ROUNDING)
+add_compile_options(-mfloat-abi=hard -mfpu=fpv4-sp-d16)
+add_link_options(-mfloat-abi=hard -mfpu=fpv4-sp-d16)
 
 #Uncomment for software floating point
 #add_compile_options(-mfloat-abi=soft)
@@ -49,11 +49,11 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Core/Inc Drivers/STM32H7xx_HAL_Driver/Inc Drivers/STM32H7xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32H7xx/Include Drivers/CMSIS/Include)
+include_directories(Core/Inc Libs/VcuCore/src Drivers/STM32H7xx_HAL_Driver/Inc Drivers/STM32H7xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32H7xx/Include Drivers/CMSIS/Include)
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32H7A3xxQ)
 
-file(GLOB_RECURSE SOURCES "Core/*.*" "Drivers/*.*")
+file(GLOB_RECURSE SOURCES "Core/*.*" "Drivers/*.*" "Libs/VcuCore/src/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32H7A3ZITXQ_FLASH.ld)
 

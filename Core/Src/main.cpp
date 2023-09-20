@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "VcuModel.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,7 +95,10 @@ int main(void)
   MX_USB_OTG_HS_USB_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-
+  VcuModel vcuModel;
+  VcuParameters vcuParameters;
+  VcuInput vcuInput;
+  VcuOutput vcuOutput;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -105,6 +108,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    vcuModel.setParameters(&vcuParameters);
+    vcuModel.evaluate(&vcuInput, &vcuOutput, 0.001f);
+
     HAL_GPIO_WritePin(GPIOB, LD1_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(GPIOB, LD3_Pin, GPIO_PIN_RESET);
     for(volatile int i = 0; i < 1000000; i++);

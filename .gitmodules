@@ -1,0 +1,3 @@
+[submodule "Libs/VcuCore"]
+	path = Libs/VcuCore
+	url = https://github.com/LonghornRacingElectric/vcu-core-2024.git
