@@ -24,7 +24,6 @@
 #include "VcuModel.h"
 #include "library.h"
 #include <cstdio>
-#include <string>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,6 +41,7 @@
 #define BSE2_CHANNEL 10
 
 #define ADC_BUF_SIZE 4
+#define SPI_BUF_SIZE 64
 
 /* USER CODE END PD */
 
@@ -56,6 +56,8 @@ DMA_HandleTypeDef hdma_adc1;
 
 FDCAN_HandleTypeDef hfdcan1;
 
+SPI_HandleTypeDef hspi1;
+
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
@@ -67,6 +69,13 @@ uint32_t TxMailbox;
 
 uint16_t adcData[ADC_BUF_SIZE] = {0};
 
+char tx_buf[SPI_BUF_SIZE] = "It's so sad Steve Jobs died of ligma.";
+uint8_t tx_finished_flag = 0;
+char rx_buf[SPI_BUF_SIZE] = {""};
+uint8_t rx_finished_flag = 0;
+
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -77,6 +86,7 @@ static void MX_USB_OTG_HS_USB_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
@@ -93,16 +103,27 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
       /* Notification Error */
       Error_Handler();
     }
-    if(RxHeader.Identifier == 0x11 && RxHeader.DataLength == FDCAN_DLC_BYTES_12){
-      if(RxData[0] == 'F'){
-        HAL_GPIO_TogglePin(GPIOB, LD3_Pin);
-      }
-      else if(RxData[0] == 'n') {
-        HAL_GPIO_TogglePin(GPIOE, LD2_Pin);
-      }
+    if(RxHeader.Identifier == 0x11 && RxHeader.DataLength == FDCAN_DLC_BYTES_12 && RxData[0] == 'I'){
+      HAL_GPIO_TogglePin(GPIOB, LD3_Pin);
     }
 
   }
+}
+
+// This is called when SPI transmit is done
+void HAL_SPI_TxCpltCallback (SPI_HandleTypeDef * hspi)
+{
+  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+  tx_finished_flag = 1;
+  rx_finished_flag = 0;
+}
+
+// This is called when SPI receive is done
+void HAL_SPI_RxCpltCallback (SPI_HandleTypeDef * hspi)
+{
+  HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+  rx_finished_flag = 1;
+  tx_finished_flag = 0;
 }
 
 /* USER CODE END PFP */
@@ -152,6 +173,7 @@ int main(void)
   MX_FDCAN1_Init();
   MX_ADC1_Init();
   MX_USART3_UART_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   FDCAN_FilterTypeDef sFilterConfig;
   if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adcData, ADC_BUF_SIZE) != HAL_OK){
@@ -199,6 +221,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+//    if(!tx_finished_flag){
+//      HAL_SPI_Transmit_IT(&hspi1, (uint8_t *)tx_buf, SPI_BUF_SIZE);
+//    }
+//    if(!rx_finished_flag) {
+//      HAL_SPI_Receive_IT(&hspi1, (uint8_t *) rx_buf, SPI_BUF_SIZE);
+//    }
+    HAL_SPI_TransmitReceive_IT(&hspi1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, SPI_BUF_SIZE);
     bool userButton = HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin);
     vcuInput.driveSwitch = userButton;
     sprintf((char*)TxData, userButton ? "Drive" : "NoDrive");
@@ -214,18 +243,19 @@ int main(void)
       HAL_GPIO_WritePin(GPIOB, LD1_Pin, GPIO_PIN_RESET);
     }
 
-    if(vcuInput.apps2 < 1.00){
-      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-    }
-    else{
-      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-    }
+//    if(vcuInput.apps2 < 1.00){
+//      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+//    }
+//    else{
+//      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+//    }
     vcuModel.evaluate(&vcuInput, &vcuOutput, 0.001f);
 
-    sprintf((char*)TxData, vcuOutput.faultApps ? "FApps" : "noFApps");
-    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, TxData)!= HAL_OK)
-    {
-      Error_Handler();
+    if(rx_buf[0] == 'I') {
+      sprintf((char *) TxData, "%s", rx_buf);
+      if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, TxData) != HAL_OK) {
+        Error_Handler();
+      }
     }
 
 //    HAL_GPIO_WritePin(GPIOB, LD1_Pin, userButton ? GPIO_PIN_SET : GPIO_PIN_RESET);
@@ -447,6 +477,54 @@ static void MX_FDCAN1_Init(void)
 }
 
 /**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
+
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 0x0;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  hspi1.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
+  hspi1.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
+  hspi1.Init.TxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
+  hspi1.Init.RxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
+  hspi1.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
+  hspi1.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
+  hspi1.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
+  hspi1.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE;
+  hspi1.Init.IOSwap = SPI_IO_SWAP_DISABLE;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
+
+}
+
+/**
   * @brief USART3 Initialization Function
   * @param None
   * @retval None
@@ -556,7 +634,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(USB_FS_PWR_EN_GPIO_Port, USB_FS_PWR_EN_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
@@ -574,8 +652,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(USB_FS_PWR_EN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD1_Pin LD3_Pin */
-  GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin;
+  /*Configure GPIO pins : LD1_Pin LD3_Pin PB6 */
+  GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|GPIO_PIN_6;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -639,7 +717,7 @@ void Error_Handler(void)
     /* User can add his own implementation to report the HAL error return state */
     __disable_irq();
     while (1) {
-      HAL_GPIO_TogglePin(GPIOB, LD3_Pin);
+      HAL_GPIO_WritePin(GPIOB, LD3_Pin, GPIO_PIN_SET);
       HAL_Delay(500);
     }
   /* USER CODE END Error_Handler_Debug */
