@@ -31,16 +31,36 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "commsvars.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+#define NUM_STATES 14
+typedef enum {
+  VCU_INPUT,
+  VCU_CORE_REQ_TORQUE,
+  VCU_CORE_NO_REQ_TORQUE,
+  VCU_INPUT_FAULT_HANDLER,
+  VCU_CORE_FAULT_HANDLER,
+  BSPD_INPUT,
+  CAN_OUTPUT_BACKCAR,
+  CAN_OUTPUT_FAULT_HANDLER,
+  RTD_BUZZER,
+  CAN_OUTPUT_DASH,
+  CELL_OUTPUT,
+  SDCARD_OUTPUT,
+
+} State;
 
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
+typedef struct {
+  State currentState;
+  State nextStates[NUM_STATES]; // Array of state functions
+} FSM;
 
 /* USER CODE END EC */
 
@@ -52,7 +72,10 @@ extern "C" {
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
+void FSM_Init(FSM[], int);
+
 /* USER CODE BEGIN EFP */
+
 
 /* USER CODE END EFP */
 
