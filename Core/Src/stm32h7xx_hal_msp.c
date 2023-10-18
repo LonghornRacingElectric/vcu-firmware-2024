@@ -103,7 +103,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     PeriphClkInitStruct.PLL2.PLL2R = 2;
     PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_3;
     PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
-    PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
+    PeriphClkInitStruct.PLL2.PLL2FRACN = 0.0;
     PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL2;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
     {
@@ -118,12 +118,13 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     __HAL_RCC_GPIOF_CLK_ENABLE();
     /**ADC1 GPIO Configuration
     PC0     ------> ADC1_INP10
+    PC1     ------> ADC1_INP11
     PA3     ------> ADC1_INP15
     PA6     ------> ADC1_INP3
     PC4     ------> ADC1_INP4
     PF11     ------> ADC1_INP2
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_4;
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
@@ -182,12 +183,13 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
 
     /**ADC1 GPIO Configuration
     PC0     ------> ADC1_INP10
+    PC1     ------> ADC1_INP11
     PA3     ------> ADC1_INP15
     PA6     ------> ADC1_INP3
     PC4     ------> ADC1_INP4
     PF11     ------> ADC1_INP2
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_0|GPIO_PIN_4);
+    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4);
 
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_3|GPIO_PIN_6);
 

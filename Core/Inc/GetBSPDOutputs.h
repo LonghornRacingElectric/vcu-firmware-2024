@@ -6,7 +6,6 @@
 #define VCU_FIRMWARE_2024_GET_BSPD_OUTPUTS_H
 
 #include "firmware_faults.h"
-#include "commsvars.h"
 #include "VcuModel.h"
 #include "library.h"
 

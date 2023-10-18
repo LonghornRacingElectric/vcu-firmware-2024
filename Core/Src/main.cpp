@@ -50,6 +50,14 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
+
+FDCAN_HandleTypeDef hfdcan1;
+
+SPI_HandleTypeDef hspi1;
+
+UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 
@@ -113,10 +121,8 @@ int main(void)
   MX_USART3_UART_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  FSM fsm[NUM_STATES];
-  FSM_Init(fsm, NUM_STATES);
 
-  uint32_t last_time_recorded = 0;
+  volatile uint32_t last_time_recorded = 0;
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
@@ -124,30 +130,48 @@ int main(void)
 
   BSPD bspd = {0, 0, 0, 0, 0};
 
+  if(HAL_FDCAN_Start(&hfdcan1)!= HAL_OK)
+  {
+    Critical_Error_Handler(VCU_DATA_FAULT);
+  }
+  //Sets up interrupt for when we receive CAN data
+  if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
+  {
+    /* Notification Error */
+    Critical_Error_Handler(VCU_DATA_FAULT);
+  }
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
-    global_shutdown = Get_VCU_Inputs(&vcuInput);
+    uint32_t vcu_input_error = Get_VCU_Inputs(&vcuInput, &vcuParameters, &hadc1, &hfdcan1, &hspi1, &huart3);
+    if(vcu_input_error){
+      HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+    }
     if(global_shutdown){
       vcuInput.inverterReady = false;
       //GPIO write shutdown signal
     }
+    else{
+      vcuInput.inverterReady = true;
+    }
 
-    int cellular_rx_error = Get_CELL_Inputs(&vcuParameters);
+    // int cellular_rx_error = Get_CELL_Inputs(&vcuParameters);
 
     uint32_t delta_time = HAL_GetTick() - last_time_recorded; // in ms
     vcuModel.evaluate(&vcuInput, &vcuOutput,  (float)delta_time / (float)1000.0);
     last_time_recorded = HAL_GetTick();
 
-    global_shutdown = Set_Core_Faults(&vcuOutput);
+    continue;
+
+    uint32_t fault_error = Set_Core_Faults(&vcuOutput);
     //GPIO write shutdown signal
 
     int bspd_rx_error = Get_BSPD_Outputs(&bspd);
 
-    global_shutdown = Send_CAN_Output(&vcuOutput, &bspd);
+    uint32_t vcu_output_error = Send_CAN_Output(&vcuOutput, &bspd);
     //GPIO write shutdown signal
 
     int dash_tx_error = Send_DASH_Output(&vcuInput, &vcuOutput, &bspd);
@@ -157,6 +181,7 @@ int main(void)
     clear_all_faults();
     HAL_Delay(100);
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
 
   }
@@ -194,13 +219,13 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 18;
+  RCC_OscInitStruct.PLL.PLLN = 25;
   RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 3;
+  RCC_OscInitStruct.PLL.PLLQ = 2;
   RCC_OscInitStruct.PLL.PLLR = 2;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
-  RCC_OscInitStruct.PLL.PLLFRACN = 6144;
+  RCC_OscInitStruct.PLL.PLLFRACN = 0;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -219,7 +244,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV1;
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -253,7 +278,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.NbrOfConversion = 4;
+  hadc1.Init.NbrOfConversion = 5;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -314,6 +339,15 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_11;
+  sConfig.Rank = ADC_REGULAR_RANK_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
@@ -355,7 +389,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.RxFifo0ElmtsNbr = 1;
   hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_32;
   hfdcan1.Init.RxFifo1ElmtsNbr = 0;
-  hfdcan1.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
+  hfdcan1.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_16;
   hfdcan1.Init.RxBuffersNbr = 0;
   hfdcan1.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
   hfdcan1.Init.TxEventsNbr = 0;
@@ -595,9 +629,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void FSM_Init(FSM fsm[], int fsm_size){
-
-}
 
 /* USER CODE END 4 */
 

@@ -33,9 +33,7 @@ typedef struct {
 #define CARDIAGNOSTICS_DATA_FAULT 0x00000400
 
 //Read faults where data is corrupted, not received, or unable to be requested
-#define APPS_DATA_FAULT 0x00010000
-#define BSE_DATA_FAULT 0x00020000
-#define STEERPOT_DATA_FAULT 0x00040000
+#define ADC_DATA_FAULT 0x00010000
 #define IMU_DATA_FAULT 0x00080000
 #define WHEELSPEED_DATA_FAULT 0x00100000 //activates if 2+ wheelspeeds are unable to be read
 #define CELLULAR_DATA_FAULT 0x01000000
@@ -44,6 +42,7 @@ typedef struct {
 #define HVC_DATA_FAULT 0x08000000
 #define PDU_DATA_FAULT 0x10000000
 #define GENERIC_CAN_DATA_FAULT 0x20000000
+#define VCU_DATA_FAULT 0x40000000
 
 #define set_fault(fault) vcu_fault_vector |= fault
 #define clear_fault(fault) vcu_fault_vector &= ~fault

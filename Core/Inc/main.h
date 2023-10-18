@@ -31,7 +31,6 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "commsvars.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -71,8 +70,6 @@ typedef struct {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
-
-void FSM_Init(FSM[], int);
 
 /* USER CODE BEGIN EFP */
 
