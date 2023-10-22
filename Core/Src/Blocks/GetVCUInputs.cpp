@@ -99,8 +99,9 @@ uint32_t Get_VCU_Inputs(VcuInput* input,
   // Next with UART
   // Start DMA with UART now
   sprintf((char*)TxUARTCmds, "Give me the data");
+
   HAL_UART_Transmit_IT(huart1, (uint8_t*)TxUARTCmds, UART_BUF_SIZE);
-  HAL_UART_Receive_DMA(huart1, (uint8_t*)RxUARTCmds, UART_BUF_SIZE);
+  HAL_UART_Receive_IT(huart1, (uint8_t*)RxUARTCmds, UART_BUF_SIZE);
 
   return 0;
   // Set data from HVC, INV, PDU, WHS from CAN

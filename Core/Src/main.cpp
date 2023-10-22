@@ -162,8 +162,8 @@ int main(void)
     // int cellular_rx_error = Get_CELL_Inputs(&vcuParameters);
 
     uint32_t delta_time = HAL_GetTick() - last_time_recorded; // in ms
-    vcuModel.evaluate(&vcuInput, &vcuOutput,  (float)delta_time / (float)1000.0);
     last_time_recorded = HAL_GetTick();
+    vcuModel.evaluate(&vcuInput, &vcuOutput,  (float)delta_time / 1000.0f);
 
     continue;
 
@@ -173,7 +173,9 @@ int main(void)
     int bspd_rx_error = Get_BSPD_Outputs(&bspd);
 
     uint32_t vcu_output_error = Send_CAN_Output(&vcuOutput, &bspd);
-    //GPIO write shutdown signal
+    if(global_shutdown){
+      //GPIO write
+    }
 
     int dash_tx_error = Send_DASH_Output(&vcuInput, &vcuOutput, &bspd);
 
