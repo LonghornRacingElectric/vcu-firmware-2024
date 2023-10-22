@@ -18,6 +18,9 @@
 #define BSE2_CHANNEL 3
 #define STEER_CHANNEL 4
 
+#define UART_BUF_SIZE 32
+#define SPI_BUF_SIZE 16
+
 
 uint32_t Get_VCU_Inputs(VcuInput* , VcuParameters*, ADC_HandleTypeDef* , FDCAN_HandleTypeDef* , SPI_HandleTypeDef* , UART_HandleTypeDef* );
 void init_TX(uint32_t);

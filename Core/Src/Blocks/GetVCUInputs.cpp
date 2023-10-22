@@ -8,6 +8,7 @@
  * - Onboard IMU: accel1, gyro1
  * UART: gps (UART_TX, UART_RX)
  * - GPS: lat, long, speed, heading
+ * - NOTE: could be replaced with cell module.
  * CAN: inverter, hvc, pdu, whs1, whs2, whs3, whs4 (CAN_TX, CAN_RX)
  * - Inverter: inverter temp, inverter ready, motor temp
  * - HVC: battery temp, battery soc, accel2, gyro2 (IMU2)
@@ -21,6 +22,8 @@
 
 #include "GetVCUInputs.h"
 #include <algorithm>
+#include <cstdio>
+
 using namespace std;
 
 
@@ -53,6 +56,12 @@ uint8_t IMU3Data[CAN_DATA_SIZE] = {0};
 float IMUACCELSCALAR = 0;
 float IMUGYROSCALAR = 0;
 
+char TxUARTCmds[UART_BUF_SIZE] = {0};
+char RxUARTCmds[UART_BUF_SIZE] = {0};
+
+uint8_t TxSPI[SPI_BUF_SIZE] = {0};
+uint8_t RxSPI[SPI_BUF_SIZE] = {0};
+
 
 uint32_t Get_VCU_Inputs(VcuInput* input,
                         VcuParameters* params,
@@ -72,6 +81,9 @@ uint32_t Get_VCU_Inputs(VcuInput* input,
   if (HAL_FDCAN_AddMessageToTxFifoQ(hfdcan1, &TxHeader, TxData) != HAL_OK) {
     return Critical_Error_Handler(VCU_DATA_FAULT);
   }
+
+  //Request data from IMU
+  HAL_SPI_Transmit_IT(hspi1, (uint8_t*)TxSPI, SPI_BUF_SIZE);
   HAL_Delay(1);
 
   input->apps1 = adcData[APPS1_CHANNEL] * params->apps1VoltageMax / 65536.0;
@@ -85,6 +97,11 @@ uint32_t Get_VCU_Inputs(VcuInput* input,
   }
 
   // Next with UART
+  // Start DMA with UART now
+  sprintf((char*)TxUARTCmds, "Give me the data");
+  HAL_UART_Transmit_IT(huart1, (uint8_t*)TxUARTCmds, UART_BUF_SIZE);
+  HAL_UART_Receive_DMA(huart1, (uint8_t*)RxUARTCmds, UART_BUF_SIZE);
+
   return 0;
   // Set data from HVC, INV, PDU, WHS from CAN
   if(update_HVC(input) != 0){
@@ -105,7 +122,9 @@ uint32_t Get_VCU_Inputs(VcuInput* input,
     set_fault(IMU_DATA_FAULT);
   }
 
-  // Next with SPI
+  // Next with SPI (synchronous)
+  HAL_SPI_Receive_IT(hspi1, (uint8_t*)RxSPI, SPI_BUF_SIZE);
+
 
 
 
