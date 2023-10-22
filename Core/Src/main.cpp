@@ -23,6 +23,14 @@
 /* USER CODE BEGIN Includes */
 #include "VcuModel.h"
 #include "library.h"
+#include "firmware_faults.h"
+#include "GetVCUInputs.h"
+#include "GetCELLInputs.h"
+#include "GetBSPDOutputs.h"
+#include "SetCoreFaults.h"
+#include "SendCANOutput.h"
+#include "SendDASHOutput.h"
+#include "SendOutResults.h"
 #include <cstdio>
 /* USER CODE END Includes */
 
@@ -33,15 +41,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define APPS_OP_V 3.3
-#define BSE_OP_V 3.3
-#define APPS1_CHANNEL 2
-#define APPS2_CHANNEL 3
-#define BSE1_CHANNEL 4
-#define BSE2_CHANNEL 10
-
-#define ADC_BUF_SIZE 4
-#define SPI_BUF_SIZE 64
 
 /* USER CODE END PD */
 
@@ -59,21 +58,9 @@ FDCAN_HandleTypeDef hfdcan1;
 SPI_HandleTypeDef hspi1;
 
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart3_rx;
 
 /* USER CODE BEGIN PV */
-FDCAN_TxHeaderTypeDef TxHeader;
-FDCAN_RxHeaderTypeDef RxHeader;
-uint8_t TxData[32];
-uint8_t RxData[32];
-uint32_t TxMailbox;
-
-uint16_t adcData[ADC_BUF_SIZE] = {0};
-
-char tx_buf[SPI_BUF_SIZE] = "It's so sad Steve Jobs died of ligma.";
-uint8_t tx_finished_flag = 0;
-char rx_buf[SPI_BUF_SIZE] = {""};
-uint8_t rx_finished_flag = 0;
-
 
 
 /* USER CODE END PV */
@@ -88,43 +75,7 @@ static void MX_ADC1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
-void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
-{
-  if((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
-  {
-    /* Retreive Rx messages from RX FIFO0 */
-    if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
-    {
-      /* Reception Error */
-      Error_Handler();
-    }
-    if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
-    {
-      /* Notification Error */
-      Error_Handler();
-    }
-    if(RxHeader.Identifier == 0x11 && RxHeader.DataLength == FDCAN_DLC_BYTES_12 && RxData[0] == 'I'){
-      HAL_GPIO_TogglePin(GPIOB, LD3_Pin);
-    }
 
-  }
-}
-
-// This is called when SPI transmit is done
-void HAL_SPI_TxCpltCallback (SPI_HandleTypeDef * hspi)
-{
-  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-  tx_finished_flag = 1;
-  rx_finished_flag = 0;
-}
-
-// This is called when SPI receive is done
-void HAL_SPI_RxCpltCallback (SPI_HandleTypeDef * hspi)
-{
-  HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-  rx_finished_flag = 1;
-  tx_finished_flag = 0;
-}
 
 /* USER CODE END PFP */
 
@@ -152,11 +103,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-    vcuParameters.prndlBrakeToStartThreshold = 50.0f;
-    vcuParameters.prndlBuzzerDuration = 1.0f;
-    vcuParameters.prndlSwitchDebounceDuration = 0.050f;
 
-    vcuModel.setParameters(&vcuParameters);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -175,93 +122,71 @@ int main(void)
   MX_USART3_UART_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  FDCAN_FilterTypeDef sFilterConfig;
-  if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *) adcData, ADC_BUF_SIZE) != HAL_OK){
-    Error_Handler();
-  }; //Start the ADC in DMA mode
 
-  sFilterConfig.IdType = FDCAN_STANDARD_ID;
-  sFilterConfig.FilterIndex = 0;
-  sFilterConfig.FilterType = FDCAN_FILTER_MASK;
-  sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-  sFilterConfig.FilterID1 = 0x11;
-  sFilterConfig.FilterID2 = 0x11;
-  sFilterConfig.RxBufferIndex = 0;
+  volatile uint32_t last_time_recorded = 0;
+  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(SysTick_IRQn);
 
-  if (HAL_FDCAN_ConfigFilter(&hfdcan1, &sFilterConfig) != HAL_OK)
-  {
-    /* Filter configuration Error */
-    Error_Handler();
-  }
+  BSPD bspd = {0, 0, 0, 0, 0};
 
   if(HAL_FDCAN_Start(&hfdcan1)!= HAL_OK)
   {
-    Error_Handler();
+    Critical_Error_Handler(VCU_DATA_FAULT);
   }
+  //Sets up interrupt for when we receive CAN data
   if (HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
   {
     /* Notification Error */
-    Error_Handler();
+    Critical_Error_Handler(VCU_DATA_FAULT);
   }
-  TxHeader.Identifier = 0x11;
-  TxHeader.IdType = FDCAN_STANDARD_ID;
-  TxHeader.TxFrameType = FDCAN_DATA_FRAME;
-  TxHeader.DataLength = FDCAN_DLC_BYTES_12;
-  TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
-  TxHeader.BitRateSwitch = FDCAN_BRS_OFF;
-  TxHeader.FDFormat = FDCAN_CLASSIC_CAN;
-  TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
-  TxHeader.MessageMarker = 0;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
+    uint32_t vcu_input_error = Get_VCU_Inputs(&vcuInput, &vcuParameters, &hadc1, &hfdcan1, &hspi1, &huart3);
+    if(vcu_input_error){
+      HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+    }
+    if(global_shutdown){
+      vcuInput.inverterReady = false;
+      //GPIO write shutdown signal
+    }
+    else{
+      vcuInput.inverterReady = true;
+    }
 
+    // int cellular_rx_error = Get_CELL_Inputs(&vcuParameters);
+
+    uint32_t delta_time = HAL_GetTick() - last_time_recorded; // in ms
+    last_time_recorded = HAL_GetTick();
+    vcuModel.evaluate(&vcuInput, &vcuOutput,  (float)delta_time / 1000.0f);
+
+    continue;
+
+    uint32_t fault_error = Set_Core_Faults(&vcuOutput);
+    //GPIO write shutdown signal
+
+    int bspd_rx_error = Get_BSPD_Outputs(&bspd);
+
+    uint32_t vcu_output_error = Send_CAN_Output(&vcuOutput, &bspd);
+    if(global_shutdown){
+      //GPIO write
+    }
+
+    int dash_tx_error = Send_DASH_Output(&vcuInput, &vcuOutput, &bspd);
+
+    int tx_error = Send_Out_Results(&vcuInput, &vcuParameters, &vcuOutput, &bspd, last_time_recorded);
+
+    clear_all_faults();
+    HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//    if(!tx_finished_flag){
-//      HAL_SPI_Transmit_IT(&hspi1, (uint8_t *)tx_buf, SPI_BUF_SIZE);
-//    }
-//    if(!rx_finished_flag) {
-//      HAL_SPI_Receive_IT(&hspi1, (uint8_t *) rx_buf, SPI_BUF_SIZE);
-//    }
-    HAL_SPI_TransmitReceive_IT(&hspi1, (uint8_t *)tx_buf, (uint8_t *)rx_buf, SPI_BUF_SIZE);
-    bool userButton = HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin);
-    vcuInput.driveSwitch = userButton;
-    sprintf((char*)TxData, userButton ? "Drive" : "NoDrive");
 
-    vcuInput.apps1 = (float) (adcData[0] * APPS_OP_V/65535.0f);
-    vcuInput.apps2 = (float) (adcData[1] * APPS_OP_V/65535.0f);
-    vcuInput.bse1 = (float) (adcData[2] * BSE_OP_V/65535.0f);
-    vcuInput.bse2 = (float) (adcData[3] * BSE_OP_V/65535.0f);
-    if(vcuInput.apps1 > 2.00){
-      HAL_GPIO_WritePin(GPIOB, LD1_Pin, GPIO_PIN_SET);
-    }
-    else{
-      HAL_GPIO_WritePin(GPIOB, LD1_Pin, GPIO_PIN_RESET);
-    }
-
-//    if(vcuInput.apps2 < 1.00){
-//      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-//    }
-//    else{
-//      HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-//    }
-    vcuModel.evaluate(&vcuInput, &vcuOutput, 0.001f);
-
-    if(rx_buf[0] == 'I') {
-      sprintf((char *) TxData, "%s", rx_buf);
-      if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &TxHeader, TxData) != HAL_OK) {
-        Error_Handler();
-      }
-    }
-
-//    HAL_GPIO_WritePin(GPIOB, LD1_Pin, userButton ? GPIO_PIN_SET : GPIO_PIN_RESET);
-//    HAL_GPIO_WritePin(GPIOB, LD3_Pin, vcuOutput.prndlState ? GPIO_PIN_SET : GPIO_PIN_RESET);
-
-    HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
@@ -297,13 +222,13 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 18;
+  RCC_OscInitStruct.PLL.PLLN = 25;
   RCC_OscInitStruct.PLL.PLLP = 2;
-  RCC_OscInitStruct.PLL.PLLQ = 3;
+  RCC_OscInitStruct.PLL.PLLQ = 2;
   RCC_OscInitStruct.PLL.PLLR = 2;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
-  RCC_OscInitStruct.PLL.PLLFRACN = 6144;
+  RCC_OscInitStruct.PLL.PLLFRACN = 0;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -322,7 +247,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV1;
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -356,7 +281,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
-  hadc1.Init.NbrOfConversion = 4;
+  hadc1.Init.NbrOfConversion = 5;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
@@ -417,6 +342,15 @@ static void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_11;
+  sConfig.Rank = ADC_REGULAR_RANK_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
@@ -458,7 +392,7 @@ static void MX_FDCAN1_Init(void)
   hfdcan1.Init.RxFifo0ElmtsNbr = 1;
   hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_32;
   hfdcan1.Init.RxFifo1ElmtsNbr = 0;
-  hfdcan1.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
+  hfdcan1.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_16;
   hfdcan1.Init.RxBuffersNbr = 0;
   hfdcan1.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
   hfdcan1.Init.TxEventsNbr = 0;
@@ -603,6 +537,9 @@ static void MX_DMA_Init(void)
   __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
+  /* DMA1_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
   /* DMA1_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
@@ -698,12 +635,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
-//  HAL_GPIO_WritePin(GPIOB, LD1_Pin, GPIO_PIN_RESET);
-//}
-//void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc){
-//  HAL_GPIO_WritePin(GPIOB, LD1_Pin, GPIO_PIN_SET);
-//}
 
 /* USER CODE END 4 */
 
