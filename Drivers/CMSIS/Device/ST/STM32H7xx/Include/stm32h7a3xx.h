@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file    stm32h7a3xxq.h
+  * @file    stm32h7a3xx.h
   * @author  MCD Application Team
-  * @brief   CMSIS STM32H7A3xxQ Device Peripheral Access Layer Header File.
+  * @brief   CMSIS STM32H7A3xx Device Peripheral Access Layer Header File.
   *
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
@@ -26,12 +26,12 @@
   * @{
   */
 
-/** @addtogroup stm32h7a3xxq
+/** @addtogroup stm32h7a3xx
   * @{
   */
 
-#ifndef STM32H7A3xxQ_H
-#define STM32H7A3xxQ_H
+#ifndef STM32H7A3xx_H
+#define STM32H7A3xx_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -202,7 +202,6 @@ typedef enum
   * @{
   */
 
-#define SMPS       /*!< Switched mode power supply feature */
 
 
 
@@ -12336,26 +12335,15 @@ typedef struct
 #define PWR_CR3_USB33DEN_Pos           (24U)
 #define PWR_CR3_USB33DEN_Msk           (0x1UL << PWR_CR3_USB33DEN_Pos)         /*!< 0x01000000 */
 #define PWR_CR3_USB33DEN               PWR_CR3_USB33DEN_Msk                    /*!< VDD33_USB voltage level detector enable */
-#define PWR_CR3_SMPSEXTRDY_Pos         (16U)
-#define PWR_CR3_SMPSEXTRDY_Msk         (0x1UL << PWR_CR3_SMPSEXTRDY_Pos)       /*!< 0x00010000 */
-#define PWR_CR3_SMPSEXTRDY             PWR_CR3_SMPSEXTRDY_Msk                  /*!< SMPS External supply ready */
 #define PWR_CR3_VBRS_Pos               (9U)
 #define PWR_CR3_VBRS_Msk               (0x1UL << PWR_CR3_VBRS_Pos)             /*!< 0x00000200 */
 #define PWR_CR3_VBRS                   PWR_CR3_VBRS_Msk                        /*!< VBAT charging resistor selection */
 #define PWR_CR3_VBE_Pos                (8U)
 #define PWR_CR3_VBE_Msk                (0x1UL << PWR_CR3_VBE_Pos)              /*!< 0x00000100 */
 #define PWR_CR3_VBE                    PWR_CR3_VBE_Msk                         /*!< VBAT charging enable */
-#define PWR_CR3_SMPSLEVEL_Pos          (4U)
-#define PWR_CR3_SMPSLEVEL_Msk          (0x3UL << PWR_CR3_SMPSLEVEL_Pos)        /*!< 0x00000030 */
-#define PWR_CR3_SMPSLEVEL              PWR_CR3_SMPSLEVEL_Msk                   /*!< SMPS output Voltage */
-#define PWR_CR3_SMPSLEVEL_0            (0x1UL << PWR_CR3_SMPSLEVEL_Pos)        /*!< 0x00000010 */
-#define PWR_CR3_SMPSLEVEL_1            (0x2UL << PWR_CR3_SMPSLEVEL_Pos)        /*!< 0x00000020 */
-#define PWR_CR3_SMPSEXTHP_Pos          (3U)
-#define PWR_CR3_SMPSEXTHP_Msk          (0x1UL << PWR_CR3_SMPSEXTHP_Pos)        /*!< 0x00000008 */
-#define PWR_CR3_SMPSEXTHP              PWR_CR3_SMPSEXTHP_Msk                   /*!< SMPS forced ON and in High Power MR mode */
-#define PWR_CR3_SMPSEN_Pos             (2U)
-#define PWR_CR3_SMPSEN_Msk             (0x1UL << PWR_CR3_SMPSEN_Pos)           /*!< 0x00000004 */
-#define PWR_CR3_SMPSEN                 PWR_CR3_SMPSEN_Msk                      /*!< SMPS Enable */
+#define PWR_CR3_SCUEN_Pos              (2U)
+#define PWR_CR3_SCUEN_Msk              (0x1UL << PWR_CR3_SCUEN_Pos)            /*!< 0x00000004 */
+#define PWR_CR3_SCUEN                  PWR_CR3_SCUEN_Msk                       /*!< Supply configuration update enable */
 #define PWR_CR3_LDOEN_Pos              (1U)
 #define PWR_CR3_LDOEN_Msk              (0x1UL << PWR_CR3_LDOEN_Pos)            /*!< 0x00000002 */
 #define PWR_CR3_LDOEN                  PWR_CR3_LDOEN_Msk                       /*!< Low Drop Output regulator enable */
@@ -22569,5 +22557,5 @@ typedef struct
 }
 #endif /* __cplusplus */
 
-#endif /* STM32H7A3xxQ_H */
+#endif /* STM32H7A3xx_H */
 

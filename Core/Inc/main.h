@@ -31,35 +31,16 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-#define NUM_STATES 14
-typedef enum {
-  VCU_INPUT,
-  VCU_CORE_REQ_TORQUE,
-  VCU_CORE_NO_REQ_TORQUE,
-  VCU_INPUT_FAULT_HANDLER,
-  VCU_CORE_FAULT_HANDLER,
-  BSPD_INPUT,
-  CAN_OUTPUT_BACKCAR,
-  CAN_OUTPUT_FAULT_HANDLER,
-  RTD_BUZZER,
-  CAN_OUTPUT_DASH,
-  CELL_OUTPUT,
-  SDCARD_OUTPUT,
-
-} State;
 
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-typedef struct {
-  State currentState;
-  State nextStates[NUM_STATES]; // Array of state functions
-} FSM;
 
 /* USER CODE END EC */
 
@@ -73,42 +54,103 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
-
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define B1_Pin GPIO_PIN_13
-#define B1_GPIO_Port GPIOC
-#define OSC32_IN_Pin GPIO_PIN_14
-#define OSC32_IN_GPIO_Port GPIOC
-#define OSC32_OUT_Pin GPIO_PIN_15
-#define OSC32_OUT_GPIO_Port GPIOC
-#define USB_FS_PWR_EN_Pin GPIO_PIN_10
-#define USB_FS_PWR_EN_GPIO_Port GPIOF
-#define PH0_MCU_Pin GPIO_PIN_0
-#define PH0_MCU_GPIO_Port GPIOH
-#define PH1_MCU_Pin GPIO_PIN_1
-#define PH1_MCU_GPIO_Port GPIOH
-#define LD1_Pin GPIO_PIN_0
-#define LD1_GPIO_Port GPIOB
-#define LD3_Pin GPIO_PIN_14
-#define LD3_GPIO_Port GPIOB
-#define STLINK_RX_Pin GPIO_PIN_8
-#define STLINK_RX_GPIO_Port GPIOD
-#define STLINK_TX_Pin GPIO_PIN_9
-#define STLINK_TX_GPIO_Port GPIOD
-#define USB_FS_OVCR_Pin GPIO_PIN_7
-#define USB_FS_OVCR_GPIO_Port GPIOG
-#define USB_FS_VBUS_Pin GPIO_PIN_9
-#define USB_FS_VBUS_GPIO_Port GPIOA
-#define USB_FS_ID_Pin GPIO_PIN_10
-#define USB_FS_ID_GPIO_Port GPIOA
-#define USB_FS_N_Pin GPIO_PIN_11
-#define USB_FS_N_GPIO_Port GPIOA
-#define USB_FS_P_Pin GPIO_PIN_12
-#define USB_FS_P_GPIO_Port GPIOA
-#define LD2_Pin GPIO_PIN_1
-#define LD2_GPIO_Port GPIOE
+#define BSPD_BrakePressed_Pin GPIO_PIN_13
+#define BSPD_BrakePressed_GPIO_Port GPIOC
+#define BSPD_MotorOn_Pin GPIO_PIN_14
+#define BSPD_MotorOn_GPIO_Port GPIOC
+#define BSPD_Shutdown_Pin GPIO_PIN_15
+#define BSPD_Shutdown_GPIO_Port GPIOC
+#define RCC_HSE_IN_Pin GPIO_PIN_0
+#define RCC_HSE_IN_GPIO_Port GPIOH
+#define RCC_HSE_OUT_Pin GPIO_PIN_1
+#define RCC_HSE_OUT_GPIO_Port GPIOH
+#define IN_Button_Pin GPIO_PIN_0
+#define IN_Button_GPIO_Port GPIOC
+#define SPI_MOSI_Pin GPIO_PIN_1
+#define SPI_MOSI_GPIO_Port GPIOC
+#define SPI_MISO_Pin GPIO_PIN_2
+#define SPI_MISO_GPIO_Port GPIOC
+#define BSPD_BrakeFailure_Pin GPIO_PIN_3
+#define BSPD_BrakeFailure_GPIO_Port GPIOC
+#define OUT_LED_R_Pin GPIO_PIN_0
+#define OUT_LED_R_GPIO_Port GPIOA
+#define OUT_LED_G_Pin GPIO_PIN_1
+#define OUT_LED_G_GPIO_Port GPIOA
+#define OUT_LED_B_Pin GPIO_PIN_2
+#define OUT_LED_B_GPIO_Port GPIOA
+#define ADC_Steer_Pin GPIO_PIN_3
+#define ADC_Steer_GPIO_Port GPIOA
+#define ADC_Sus1_Pin GPIO_PIN_4
+#define ADC_Sus1_GPIO_Port GPIOA
+#define OUT_ReadyToDrive_Pin GPIO_PIN_5
+#define OUT_ReadyToDrive_GPIO_Port GPIOA
+#define ADC_Sus2_Pin GPIO_PIN_6
+#define ADC_Sus2_GPIO_Port GPIOA
+#define ADC_APPS1_Pin GPIO_PIN_7
+#define ADC_APPS1_GPIO_Port GPIOA
+#define ADC_APPS2_Pin GPIO_PIN_4
+#define ADC_APPS2_GPIO_Port GPIOC
+#define ADC_BSE2_Pin GPIO_PIN_5
+#define ADC_BSE2_GPIO_Port GPIOC
+#define ADC_BSE1_Pin GPIO_PIN_0
+#define ADC_BSE1_GPIO_Port GPIOB
+#define IN_DriveSwitch_Pin GPIO_PIN_1
+#define IN_DriveSwitch_GPIO_Port GPIOB
+#define BSPD_MotorFailure_Pin GPIO_PIN_2
+#define BSPD_MotorFailure_GPIO_Port GPIOB
+#define SPI_SCK_Pin GPIO_PIN_10
+#define SPI_SCK_GPIO_Port GPIOB
+#define SPI_CS_IMU_Pin GPIO_PIN_12
+#define SPI_CS_IMU_GPIO_Port GPIOB
+#define NVM_D0_Pin GPIO_PIN_13
+#define NVM_D0_GPIO_Port GPIOB
+#define USB_UART_TX_Pin GPIO_PIN_14
+#define USB_UART_TX_GPIO_Port GPIOB
+#define USB_UART_RX_Pin GPIO_PIN_15
+#define USB_UART_RX_GPIO_Port GPIOB
+#define CAN_Term_Pin GPIO_PIN_6
+#define CAN_Term_GPIO_Port GPIOC
+#define OUT_IMD_LED_Pin GPIO_PIN_7
+#define OUT_IMD_LED_GPIO_Port GPIOC
+#define NVM_D1_Pin GPIO_PIN_9
+#define NVM_D1_GPIO_Port GPIOC
+#define CELL_UART_RX_Pin GPIO_PIN_8
+#define CELL_UART_RX_GPIO_Port GPIOA
+#define GPS_UART_TX_Pin GPIO_PIN_9
+#define GPS_UART_TX_GPIO_Port GPIOA
+#define GPS_UART_RX_Pin GPIO_PIN_10
+#define GPS_UART_RX_GPIO_Port GPIOA
+#define SPI_CS_EEPROM_Pin GPIO_PIN_11
+#define SPI_CS_EEPROM_GPIO_Port GPIOA
+#define OUT_AMS_LED_Pin GPIO_PIN_12
+#define OUT_AMS_LED_GPIO_Port GPIOA
+#define JTMS_Pin GPIO_PIN_13
+#define JTMS_GPIO_Port GPIOA
+#define JTCK_Pin GPIO_PIN_14
+#define JTCK_GPIO_Port GPIOA
+#define JTDI_Pin GPIO_PIN_15
+#define JTDI_GPIO_Port GPIOA
+#define NVM_D2_Pin GPIO_PIN_10
+#define NVM_D2_GPIO_Port GPIOC
+#define NVM_D3_Pin GPIO_PIN_11
+#define NVM_D3_GPIO_Port GPIOC
+#define NVM_CLK_Pin GPIO_PIN_12
+#define NVM_CLK_GPIO_Port GPIOC
+#define NVM_CMD_Pin GPIO_PIN_2
+#define NVM_CMD_GPIO_Port GPIOD
+#define JTDO_Pin GPIO_PIN_3
+#define JTDO_GPIO_Port GPIOB
+#define CELL_UART_TX_Pin GPIO_PIN_4
+#define CELL_UART_TX_GPIO_Port GPIOB
+#define CAN_RX_Pin GPIO_PIN_5
+#define CAN_RX_GPIO_Port GPIOB
+#define CAN_TX_Pin GPIO_PIN_6
+#define CAN_TX_GPIO_Port GPIOB
+#define NVM_DETECT_Pin GPIO_PIN_9
+#define NVM_DETECT_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
