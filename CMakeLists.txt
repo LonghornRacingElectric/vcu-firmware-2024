@@ -53,7 +53,7 @@ include_directories(Libs/VcuCore/src Libs/LonghornLibrary Core/Inc Drivers/STM32
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32H7A3xx)
 
-file(GLOB_RECURSE SOURCES "Core/*.*" "Drivers/*.*"  "Libs/VcuCore/src/*.*" "Libs/LonghornLibrary/*.*")
+file(GLOB_RECURSE SOURCES "Core/*.*" "Drivers/*.*" "Libs/VcuCore/src/*.*" "Libs/LonghornLibrary/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32H7A3RGTX_FLASH.ld)
 
