@@ -19,12 +19,46 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "fdcan.h"
+#include "faults.h"
+#include "can.h"
 
 /* USER CODE BEGIN 0 */
+FDCAN_HandleTypeDef hfdcan2;
+FDCAN_TxHeaderTypeDef TxHeader;
+FDCAN_RxHeaderTypeDef RxHeader;
+
+// TODO: transfer over to longhorn library, put in can_send
+unsigned int fdcan_send(uint32_t id, uint32_t dlc, uint8_t* data, uint32_t fault){
+    TxHeader.Identifier = id;
+    TxHeader.IdType = FDCAN_STANDARD_ID;
+    TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+    TxHeader.DataLength = dlc;
+    TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+    TxHeader.BitRateSwitch = FDCAN_BRS_OFF;
+    TxHeader.FDFormat = FDCAN_CLASSIC_CAN;
+    TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+    TxHeader.MessageMarker = 0;
+
+    if(HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &TxHeader, data) != HAL_OK){
+        set_fault(&vcu_fault_vector, fault);
+        return hfdcan2.ErrorCode;
+    }
+}
+// TODO: transfer over to longhorn library, put in can_processRxFifo
+unsigned int fdcan_processRxFifo(uint32_t fault) {
+    uint8_t RxData[8];
+    can_clearMailboxes();
+    while (HAL_FDCAN_GetRxMessage(&hfdcan2, FDCAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK) {
+        can_processRxFifo(RxData, RxHeader.Identifier, RxHeader.DataLength, fault);
+    }
+    // If error code is something other than the fifo being cleared, set fault
+    if(hfdcan2.ErrorCode != HAL_FDCAN_ERROR_NONE || hfdcan2.ErrorCode != HAL_FDCAN_ERROR_FIFO_EMPTY){
+        set_fault(&vcu_fault_vector, fault);
+        return hfdcan2.ErrorCode;
+    }
+}
 
 /* USER CODE END 0 */
-
-FDCAN_HandleTypeDef hfdcan2;
 
 /* FDCAN2 init function */
 void MX_FDCAN2_Init(void)
