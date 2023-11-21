@@ -27,6 +27,7 @@
 #include "gpio.h"
 #include "inverter.h"
 #include "faults.h"
+#include "can.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -102,7 +103,7 @@ int main(void)
   MX_UART7_Init();
   MX_SDMMC1_SD_Init();
   /* USER CODE BEGIN 2 */
-  if(HAL_FDCAN_Start(&hfdcan2) != HAL_OK){
+  if(can_init(&hfdcan2) != HAL_OK){
       Error_Handler();
   }
 
