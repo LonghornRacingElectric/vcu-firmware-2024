@@ -37,73 +37,71 @@ void inverter_init() {
 
 void inverter_getStatus(InverterStatus* status) {
 
-    fdcan_processRxFifo(FAULT_VCU_INV);
-
     if(inverterTempMailbox.isRecent) {
-        auto temp = can_read_packet(inverterTempMailbox.data, 0, 1) +
-                        can_read_packet(inverterTempMailbox.data, 2, 3) +
-                        can_read_packet(inverterTempMailbox.data, 4, 5);
+        auto temp = can_readBytes(inverterTempMailbox.data, 0, 1) +
+                    can_readBytes(inverterTempMailbox.data, 2, 3) +
+                    can_readBytes(inverterTempMailbox.data, 4, 5);
         status->inverterTemp = (float) temp / 30.0f;
         inverterTempMailbox.isRecent = false;
         status->isRecent = true;
     }
 
     if(motorTempMailbox.isRecent) {
-        status->motorTemp = (float) can_read_packet(motorTempMailbox.data, 4, 5) / 10.0f;
+        status->motorTemp = (float) can_readBytes(motorTempMailbox.data, 4, 5) / 10.0f;
         motorTempMailbox.isRecent = false;
         status->isRecent = true;
     }
 
     if(motorPosMailbox.isRecent) {
-        status->motorAngle = (float) can_read_packet(motorPosMailbox.data, 0, 1) / 10.0f;
-        status->rpm = (float) can_read_packet(motorPosMailbox.data, 2, 3); //Out of all of these, idk why this isnt shifted
-        status->inverterFrequency = (float) can_read_packet(motorPosMailbox.data, 4, 5) / 10.0f;
-        status->resolverAngle = (float) can_read_packet(motorPosMailbox.data, 6, 7) / 10.0f;
+        status->motorAngle = (float) can_readBytes(motorPosMailbox.data, 0, 1) / 10.0f;
+        status->rpm = (float) can_readBytes(motorPosMailbox.data, 2, 3); //Out of all of these, idk why this isnt shifted
+        status->inverterFrequency = (float) can_readBytes(motorPosMailbox.data, 4, 5) / 10.0f;
+        status->resolverAngle = (float) can_readBytes(motorPosMailbox.data, 6, 7) / 10.0f;
         motorPosMailbox.isRecent = false;
         status->isRecent = true;
     }
 
     if(voltageMailbox.isRecent) {
-        status->voltage = (float) can_read_packet(voltageMailbox.data, 0, 1) / 10.0f;
-        status->outputVoltage = (float) can_read_packet(voltageMailbox.data, 2, 3) / 10.0f;
-        status->ABVoltage = (float) can_read_packet(voltageMailbox.data, 4, 5) / 10.0f;
-        status->BCVoltage = (float) can_read_packet(voltageMailbox.data, 6, 7) / 10.0f;
+        status->voltage = (float) can_readBytes(voltageMailbox.data, 0, 1) / 10.0f;
+        status->outputVoltage = (float) can_readBytes(voltageMailbox.data, 2, 3) / 10.0f;
+        status->ABVoltage = (float) can_readBytes(voltageMailbox.data, 4, 5) / 10.0f;
+        status->BCVoltage = (float) can_readBytes(voltageMailbox.data, 6, 7) / 10.0f;
         voltageMailbox.isRecent = false;
         status->isRecent = true;
     }
 
     if(currentMailbox.isRecent) {
-        status->phaseACurrent = (float) can_read_packet(currentMailbox.data, 0, 1) / 10.0f;
-        status->phaseBCurrent = (float) can_read_packet(currentMailbox.data, 2, 3) / 10.0f;
-        status->phaseCCurrent = (float) can_read_packet(currentMailbox.data, 4, 5) / 10.0f;
-        status->current = (float) can_read_packet(currentMailbox.data, 6, 7) / 10.0f;
+        status->phaseACurrent = (float) can_readBytes(currentMailbox.data, 0, 1) / 10.0f;
+        status->phaseBCurrent = (float) can_readBytes(currentMailbox.data, 2, 3) / 10.0f;
+        status->phaseCCurrent = (float) can_readBytes(currentMailbox.data, 4, 5) / 10.0f;
+        status->current = (float) can_readBytes(currentMailbox.data, 6, 7) / 10.0f;
         currentMailbox.isRecent = false;
         status->isRecent = true;
     }
 
     if(inverterStateMailbox.isRecent) {
-        status->stateVector = can_read_packet(inverterStateMailbox.data, 0, 7);
+        status->stateVector = can_readBytes(inverterStateMailbox.data, 0, 7);
         inverterStateMailbox.isRecent = false;
         status->isRecent = true;
     }
 
     if(inverterFaultMailbox.isRecent) {
-        status->faultVector = can_read_packet(inverterFaultMailbox.data, 0, 1);
+        status->faultVector = can_readBytes(inverterFaultMailbox.data, 0, 1);
         inverterFaultMailbox.isRecent = false;
         status->isRecent = true;
     }
 
     if(torqueInfoMailbox.isRecent) {
-        status->torqueActual = (float) can_read_packet(torqueInfoMailbox.data, 0, 1) / 10.0f;
-        status->torqueCommand = (float) can_read_packet(torqueInfoMailbox.data, 2, 3) / 10.0f;
+        status->torqueActual = (float) can_readBytes(torqueInfoMailbox.data, 0, 1) / 10.0f;
+        status->torqueCommand = (float) can_readBytes(torqueInfoMailbox.data, 2, 3) / 10.0f;
         torqueInfoMailbox.isRecent = false;
         status->isRecent = true;
     }
 
     if(paramsResponseMailbox.isRecent) {
-        auto data = (uint16_t) can_read_packet(paramsResponseMailbox.data, 4, 5);
+        auto data = (uint16_t) can_readBytes(paramsResponseMailbox.data, 4, 5);
         if(paramsResponseMailbox.data[2] == 0){
-            set_fault(&vcu_fault_vector, FAULT_VCU_INVPARAMS);
+            fault_set(&vcu_fault_vector, FAULT_VCU_INVPARAMS);
         }
         paramsResponseMailbox.isRecent = false;
     }
@@ -114,11 +112,11 @@ unsigned int inverter_sendTorqueCommand(float torque, float rpm, bool enable_inv
     static uint8_t torque_command[8];
     auto tc = (int16_t) (torque * 10.0f);
     auto sc = (int16_t) rpm;
-    can_write_packet(torque_command, 0, 1, tc);
-    can_write_packet(torque_command, 2, 3, sc);
+    can_writeBytes(torque_command, 0, 1, tc);
+    can_writeBytes(torque_command, 2, 3, sc);
     torque_command[5] = (uint8_t) enable_inverter; // Enable
 
-    return fdcan_send(VCU_INV_COMMAND, FDCAN_DATA_BYTES_8, torque_command, FAULT_VCU_INV);
+    return can_send(VCU_INV_COMMAND, FDCAN_DATA_BYTES_8, torque_command);
 }
 
 unsigned int inverter_resetFaults() {
@@ -129,9 +127,9 @@ unsigned int inverter_resetFaults() {
 unsigned int inverter_paramsIO(uint16_t param_addr, uint16_t param_value, bool write){
     // send a can message telling the inverter to set params
     static uint8_t set_params[8];
-    can_write_packet(set_params, 0, 1, param_addr); //param addr
-    can_write_packet(set_params, 4, 5, param_value);  //param value
+    can_writeBytes(set_params, 0, 1, param_addr); //param addr
+    can_writeBytes(set_params, 4, 5, param_value);  //param value
     set_params[2] = (uint8_t) write; //sets to write mode
 
-    return fdcan_send(VCU_INV_PARAMS_REQUEST, FDCAN_DATA_BYTES_8, set_params, FAULT_VCU_INVPARAMS);
+    return can_send(VCU_INV_PARAMS_REQUEST, FDCAN_DATA_BYTES_8, set_params);
 }
