@@ -19,6 +19,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "fdcan.h"
+#include "faults.h"
+#include "can.h"
 
 /* USER CODE BEGIN 0 */
 

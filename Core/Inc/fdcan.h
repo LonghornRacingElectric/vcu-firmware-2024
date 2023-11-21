@@ -40,8 +40,6 @@ extern FDCAN_HandleTypeDef hfdcan2;
 
 void MX_FDCAN2_Init(void);
 
-/* USER CODE BEGIN Prototypes */
-
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
