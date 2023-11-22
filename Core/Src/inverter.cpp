@@ -101,7 +101,7 @@ void inverter_getStatus(InverterStatus* status) {
     if(paramsResponseMailbox.isRecent) {
         auto data = (uint16_t) can_readBytes(paramsResponseMailbox.data, 4, 5);
         if(paramsResponseMailbox.data[2] == 0){
-            fault_set(&vcu_fault_vector, FAULT_VCU_INVPARAMS);
+            FAULT_SET(&vcu_fault_vector, FAULT_VCU_INVPARAMS);
         }
         paramsResponseMailbox.isRecent = false;
     }
@@ -116,7 +116,7 @@ unsigned int inverter_sendTorqueCommand(float torque, float rpm, bool enable_inv
     can_writeBytes(torque_command, 2, 3, sc);
     torque_command[5] = (uint8_t) enable_inverter; // Enable
 
-    return can_send(VCU_INV_COMMAND, FDCAN_DATA_BYTES_8, torque_command);
+    return can_send(VCU_INV_COMMAND, 8, torque_command);
 }
 
 unsigned int inverter_resetFaults() {
@@ -131,5 +131,5 @@ unsigned int inverter_paramsIO(uint16_t param_addr, uint16_t param_value, bool w
     can_writeBytes(set_params, 4, 5, param_value);  //param value
     set_params[2] = (uint8_t) write; //sets to write mode
 
-    return can_send(VCU_INV_PARAMS_REQUEST, FDCAN_DATA_BYTES_8, set_params);
+    return can_send(VCU_INV_PARAMS_REQUEST, 8, set_params);
 }
