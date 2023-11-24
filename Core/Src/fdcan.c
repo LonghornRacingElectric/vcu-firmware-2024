@@ -19,8 +19,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "fdcan.h"
-#include "faults.h"
-#include "can.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -64,7 +62,7 @@ void MX_FDCAN2_Init(void)
   hfdcan2.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
   hfdcan2.Init.TxEventsNbr = 0;
   hfdcan2.Init.TxBuffersNbr = 0;
-  hfdcan2.Init.TxFifoQueueElmtsNbr = 0;
+  hfdcan2.Init.TxFifoQueueElmtsNbr = 16;
   hfdcan2.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
   hfdcan2.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
   if (HAL_FDCAN_Init(&hfdcan2) != HAL_OK)

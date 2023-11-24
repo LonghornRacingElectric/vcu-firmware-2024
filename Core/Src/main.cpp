@@ -25,12 +25,12 @@
 #include "sdmmc.h"
 #include "spi.h"
 #include "gpio.h"
-#include "inverter.h"
-#include "faults.h"
-#include "can.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "inverter.h"
+#include "faults.h"
+#include "can.h"
 
 /* USER CODE END Includes */
 
@@ -103,9 +103,12 @@ int main(void)
   MX_UART7_Init();
   MX_SDMMC1_SD_Init();
   /* USER CODE BEGIN 2 */
-  if(can_init(&hfdcan2) != HAL_OK){
-      Error_Handler();
-  }
+  // add an init analog function that sets up the ADCs
+    vcu_fault_vector = 0;
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_ADC);
+    if(can_init(&hfdcan2) != 0){
+        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
+    }
 
   inverter_init();
   /* USER CODE END 2 */
@@ -117,6 +120,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+      FAULT_CLEARALL(&vcu_fault_vector);
 
   }
   /* USER CODE END 3 */
