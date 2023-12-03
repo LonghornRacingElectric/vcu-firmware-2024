@@ -24,6 +24,7 @@
 #include "usart.h"
 #include "sdmmc.h"
 #include "spi.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -102,6 +103,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_UART7_Init();
   MX_SDMMC1_SD_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   // add an init analog function that sets up the ADCs
     vcu_fault_vector = 0;
