@@ -60,14 +60,6 @@ uint32_t pdu_coolingRequest_send(bool radiator_turn_on, uint16_t radiator_fan_rp
     return can_send(VCU_PDU_COOLING, 6, data);
 }
 
-uint32_t pdu_calcRadiatorFanRPM(float torque_command, float motor_temp, float inverter_temp){
-    return 8300;
-}
-
-float pdu_calcWaterPumpVFR(float torque_command, float motor_temp, float inverter_temp){
-    return 6.00;
-}
-
 uint32_t pdu_calcRemainingLVBattTime(float lv_soc, float lv_capacity, float lv_current){
     auto time = lv_soc * lv_capacity / std::min(lv_current, 0.5f); // in hours
     return (uint32_t) (time * 60); // in minutes

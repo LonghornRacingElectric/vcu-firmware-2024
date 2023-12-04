@@ -75,30 +75,12 @@ uint32_t pdu_coolingRequest_send(bool radiator_turn_on, uint16_t radiator_fan_rp
 void pdu_getStatus(PDUStatus& status);
 
 /**
- * Calculate the radiator fan RPM based on torque command, motor temp, and inverter temp
- * @param torque_command torque command in Nm
- * @param motor_temp motor temperature in degrees C
- * @param inverter_temp inverter temperature in degrees C
- * @return most effective radiator fan RPM
- */
-uint32_t pdu_calcRadiatorFanRPM(float torque_command, float motor_temp, float inverter_temp);
-
-/**
- * Calculate the water pump volumetric flow rate based on torque command, motor temp, and inverter temp
- * @param torque_command
- * @param motor_temp
- * @param inverter_temp
- * @return
- */
-float pdu_calcWaterPumpVFR(float torque_command, float motor_temp, float inverter_temp);
-
-/**
  * Calculate the remaining time of the LV battery based on the state of charge, capacity, and current
  * Note: this is not the most accurate way to calculate remaining time, but it is the easiest
  * @param lv_soc
  * @param lv_capacity
  * @param lv_current
- * @return
+ * @return remaining time in minutes
  */
 uint32_t pdu_calcRemainingLVBattTime(float lv_soc, float lv_capacity, float lv_current);
 
