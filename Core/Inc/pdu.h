@@ -3,8 +3,14 @@
 
 #include <cstdint>
 
+enum BuzzerType {
+    SILENT = 0,
+    DRIVE_BUZZ = 1,
+    SONG_BUZZ = 2,
+    FUNNY_BUZZ = 3
+};
+
 struct PDUStatus {
-    // Please help me fill this out I have no damn clue
     enum TSALStatus {
         OFF = 0,
         GREEN = 1,
@@ -12,11 +18,16 @@ struct PDUStatus {
     } tsal_status;
 
     float volumetric_flow_rate;
-    float water_temp;
+    float water_temp_inverter;
+    float water_temp_motor;
+    float water_temp_radiator;
+
     bool cooling_pump_on;
+
     float radiator_fan_rpm_1;
     float radiator_fan_rpm_2;
     float radiator_fan_rpm_3;
+
     bool radiator_fans_on;
 
     enum MasterSwitchStatus {
