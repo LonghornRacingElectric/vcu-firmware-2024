@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "bdma2.h"
 #include "dma.h"
 #include "fdcan.h"
 #include "usart.h"
@@ -30,8 +31,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "inverter.h"
+#include "analog.h"
 #include "faults.h"
-#include "can.h"
+#include "angel_can.h"
 
 /* USER CODE END Includes */
 
@@ -53,6 +55,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+AnalogVoltages analogVoltages;
 
 /* USER CODE END PV */
 
@@ -96,21 +99,25 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_ADC1_Init();
+  MX_BDMA2_Init();
   MX_FDCAN2_Init();
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   MX_UART7_Init();
-  MX_SDMMC1_SD_Init();
+  MX_ADC1_Init();
   MX_TIM2_Init();
+  MX_SDMMC1_SD_Init();
   /* USER CODE BEGIN 2 */
   // add an init analog function that sets up the ADCs
-    vcu_fault_vector = 0;
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_ADC);
-    if(can_init(&hfdcan2) != 0){
-        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
-    }
+  vcu_fault_vector = 0;
+  if(analog_start(&hadc1) != 0){
+      FAULT_SET(&vcu_fault_vector, FAULT_VCU_ADC);
+      analog_stop(&hadc1);
+  }
+  if(can_init(&hfdcan2) != 0){
+      FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
+  }
 
   inverter_init();
   /* USER CODE END 2 */
@@ -122,7 +129,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-      FAULT_CLEARALL(&vcu_fault_vector);
+    analog_get_recent(analogVoltages);
+    FAULT_CLEARALL(&vcu_fault_vector);
 
   }
   /* USER CODE END 3 */
