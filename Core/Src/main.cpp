@@ -29,9 +29,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "inverter.h"
-#include "faults.h"
-#include "angel_can.h"
+//#include "inverter.h"
+//#include "faults.h"
+//#include "angel_can.h"
 #include "clock.h"
 
 /* USER CODE END Includes */
