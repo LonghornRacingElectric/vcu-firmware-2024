@@ -32,6 +32,7 @@
 #include "inverter.h"
 #include "faults.h"
 #include "angel_can.h"
+#include "clock.h"
 
 /* USER CODE END Includes */
 
@@ -83,7 +84,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+    clock_init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -106,13 +107,13 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   // add an init analog function that sets up the ADCs
-    vcu_fault_vector = 0;
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_ADC);
-    if(can_init(&hfdcan2) != 0){
-        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
-    }
+//    vcu_fault_vector = 0;
+//    FAULT_SET(&vcu_fault_vector, FAULT_VCU_ADC);
+//    if(can_init(&hfdcan2) != 0){
+//        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
+//    }
 
-  inverter_init();
+//  inverter_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -122,7 +123,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-      FAULT_CLEARALL(&vcu_fault_vector);
+//      FAULT_CLEARALL(&vcu_fault_vector);
+
+    float deltaTime = clock_getDeltaTime();
+    led_rainbow(deltaTime);
+    HAL_Delay(1);
 
   }
   /* USER CODE END 3 */
@@ -142,7 +147,7 @@ void SystemClock_Config(void)
 
   /** Supply configuration update enable
   */
-  HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
+  HAL_PWREx_ConfigSupply(PWR_EXTERNAL_SOURCE_SUPPLY);
 
   /** Configure the main internal regulator output voltage
   */
@@ -202,8 +207,18 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
+  float x = 0;
+  bool on = false;
   while (1)
   {
+      float deltaTime = clock_getDeltaTime();
+      x += deltaTime;
+      if(x > 1.0f) {
+          x = 0.0f;
+          on = !on;
+          led_set((on) ? 1.0f : 0.0f, 0.0f, 0.0f);
+      }
+
   }
   /* USER CODE END Error_Handler_Debug */
 }
