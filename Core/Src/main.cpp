@@ -31,7 +31,7 @@
 /* USER CODE BEGIN Includes */
 #include "inverter.h"
 #include "faults.h"
-#include "can.h"
+#include "angel_can.h"
 
 /* USER CODE END Includes */
 

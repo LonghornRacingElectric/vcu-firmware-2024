@@ -1,6 +1,6 @@
 #include "inverter.h"
 #include "fdcan.h"
-#include "can.h"
+#include "angel_can.h"
 #include "faults.h"
 using namespace std;
 
@@ -22,16 +22,16 @@ void inverter_init() {
     // TODO implement
 
     // example:
-    can_addMailbox(INV_VOLTAGE, 0x7FF, &voltageMailbox);
-    can_addMailbox(INV_CURRENT, 0x7FF,&currentMailbox);
-    can_addMailbox(INV_TEMP3_DATA, 0x7FF,&motorTempMailbox);
-    can_addMailbox(INV_TEMP1_DATA, 0x7FF,&inverterTempMailbox);
-    can_addMailbox(INV_MOTOR_POSITIONS, 0x7FF,&motorPosMailbox);
-    can_addMailbox(INV_STATE_CODES, 0x7FF,&inverterStateMailbox);
-    can_addMailbox(INV_FAULT_CODES, 0x7FF,&inverterFaultMailbox);
-    can_addMailbox(INV_TORQUE_TIMER, 0x7FF,&torqueInfoMailbox);
+    can_addMailbox(INV_VOLTAGE, &voltageMailbox);
+    can_addMailbox(INV_CURRENT, &currentMailbox);
+    can_addMailbox(INV_TEMP3_DATA, &motorTempMailbox);
+    can_addMailbox(INV_TEMP1_DATA, &inverterTempMailbox);
+    can_addMailbox(INV_MOTOR_POSITIONS, &motorPosMailbox);
+    can_addMailbox(INV_STATE_CODES, &inverterStateMailbox);
+    can_addMailbox(INV_FAULT_CODES, &inverterFaultMailbox);
+    can_addMailbox(INV_TORQUE_TIMER, &torqueInfoMailbox);
     // can_addMailbox(INV_HIGH_SPEED_MSG, 0x7FF,&highSpeedMailbox);
-    can_addMailbox(INV_VCU_PARAMS_RESPONSE, 0x7FF,&paramsResponseMailbox);
+    can_addMailbox(INV_VCU_PARAMS_RESPONSE, &paramsResponseMailbox);
 
 }
 
