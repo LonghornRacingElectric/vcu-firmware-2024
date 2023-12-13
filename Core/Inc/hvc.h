@@ -6,7 +6,6 @@
 
 typedef struct HvcStatus {
     bool isRecent;
-    bool ok;
 
     float packVoltage;
     float packCurrent;
@@ -39,7 +38,7 @@ void hvc_init();
  * @param battUniqueSegRpm the desired RPM of the cooling fan cooling the unique segment of the battery
  * @return status of the CAN send, HAL_OK if successful
  */
-static uint32_t hvc_setCoolingOutput(uint16_t battFanRpm, uint16_t battUniqueSegRpm);
+static uint32_t hvc_sendCoolingOutput(uint16_t battFanRpm, uint16_t battUniqueSegRpm);
 
 /**
  * Checks CAN mailboxes and updates status accordingly. Sends CAN messages when it's time.

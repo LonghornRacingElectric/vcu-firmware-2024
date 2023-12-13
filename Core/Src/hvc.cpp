@@ -19,7 +19,7 @@ void hvc_init() {
     can_addMailbox(HVC_VCU_CONTACTOR_STATUS, &hvc_contactor_status_mailbox);
 }
 
-uint32_t hvc_setCoolingOutput(uint16_t battFanRpm, uint16_t battUniqueSegRpm) {
+uint32_t hvc_sendCoolingOutput(uint16_t battFanRpm, uint16_t battUniqueSegRpm) {
     uint8_t data[4];
     can_writeBytes(data, 0, 1, battFanRpm);
     can_writeBytes(data, 2, 3, battUniqueSegRpm);
@@ -33,28 +33,27 @@ void hvc_periodic(HvcStatus* status, VcuOutput* vcuOutput, float deltaTime) {
     if(t > 0.25f) {
         t = 0;
         // TODO vcuOutput->battFanRpm (need to update VCU core)
-        hvc_setCoolingOutput(1000, 1000);
+        hvc_sendCoolingOutput(1000, 1000);
     }
 
     if(hvc_ams_imd_mailbox.isRecent){
-        status->ok = true;
+        hvc_ams_imd_mailbox.isRecent = false;
         status->imd = (bool) can_readBytes(hvc_ams_imd_mailbox.data, 0, 0);
         status->ams = (bool) can_readBytes(hvc_ams_imd_mailbox.data, 1, 1);
-        hvc_ams_imd_mailbox.isRecent = false;
         status->isRecent = true;
     }
     if(hvc_pack_status_mailbox.isRecent) {
-        status->ok = true;
+        hvc_pack_status_mailbox.isRecent = false;
         status->packVoltage = (float) can_readBytes(hvc_pack_status_mailbox.data, 0, 1) / 10.0f;
         status->packCurrent = (float) can_readBytes(hvc_pack_status_mailbox.data, 2, 3) / 10.0f;
         status->stateOfCharge = (float) can_readBytes(hvc_pack_status_mailbox.data, 4, 5) / 10.0f;
-        hvc_pack_status_mailbox.isRecent = false;
         status->isRecent = true;
     }
     if(hvc_contactor_status_mailbox.isRecent) {
-        status->ok = true;
-        status->contactorStatus = (HvcStatus::ContactorStatus) hvc_contactor_status_mailbox.data[0];
         hvc_contactor_status_mailbox.isRecent = false;
+        status->contactorStatus = (HvcStatus::ContactorStatus) hvc_contactor_status_mailbox.data[0];
         status->isRecent = true;
     }
+
+    // TODO still check voltage and temp mailboxes
 }
