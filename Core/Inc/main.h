@@ -63,8 +63,6 @@ void Error_Handler(void);
 #define BSPD_MotorOn_GPIO_Port GPIOC
 #define BSPD_Shutdown_Pin GPIO_PIN_15
 #define BSPD_Shutdown_GPIO_Port GPIOC
-#define RCC_HSE_IN_Pin GPIO_PIN_0
-#define RCC_HSE_IN_GPIO_Port GPIOH
 #define RCC_HSE_OUT_Pin GPIO_PIN_1
 #define RCC_HSE_OUT_GPIO_Port GPIOH
 #define IN_Button_Pin GPIO_PIN_0
