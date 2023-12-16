@@ -159,7 +159,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
   /** Initializes the peripherals clock
   */
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-    PeriphClkInitStruct.PLL3.PLL3M = 4;
+    PeriphClkInitStruct.PLL3.PLL3M = 1;
     PeriphClkInitStruct.PLL3.PLL3N = 8;
     PeriphClkInitStruct.PLL3.PLL3P = 2;
     PeriphClkInitStruct.PLL3.PLL3Q = 2;

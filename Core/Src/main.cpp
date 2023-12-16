@@ -22,7 +22,6 @@
 #include "dma.h"
 #include "fdcan.h"
 #include "usart.h"
-#include "sdmmc.h"
 #include "spi.h"
 #include "tim.h"
 #include "gpio.h"
@@ -106,7 +105,6 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
   MX_UART7_Init();
-//  MX_SDMMC1_SD_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
     clock_init();
@@ -162,12 +160,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_DIV1;
-  RCC_OscInitStruct.HSICalibrationValue = 64;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 1;
   RCC_OscInitStruct.PLL.PLLN = 35;
   RCC_OscInitStruct.PLL.PLLP = 2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
@@ -210,7 +207,7 @@ void PeriphCommonClock_Config(void)
   /** Initializes the peripherals clock
   */
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI2|RCC_PERIPHCLK_FDCAN;
-  PeriphClkInitStruct.PLL2.PLL2M = 40;
+  PeriphClkInitStruct.PLL2.PLL2M = 10;
   PeriphClkInitStruct.PLL2.PLL2N = 288;
   PeriphClkInitStruct.PLL2.PLL2P = 125;
   PeriphClkInitStruct.PLL2.PLL2Q = 128;
