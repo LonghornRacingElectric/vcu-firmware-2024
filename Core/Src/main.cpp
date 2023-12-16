@@ -105,7 +105,6 @@ int main(void)
   MX_FDCAN2_Init();
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
-  MX_USART1_UART_Init();
   MX_UART7_Init();
 //  MX_SDMMC1_SD_Init();
   MX_TIM2_Init();
@@ -152,7 +151,7 @@ void SystemClock_Config(void)
 
   /** Supply configuration update enable
   */
-  HAL_PWREx_ConfigSupply(PWR_EXTERNAL_SOURCE_SUPPLY);
+  HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
 
   /** Configure the main internal regulator output voltage
   */

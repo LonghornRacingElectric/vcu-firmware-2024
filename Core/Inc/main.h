@@ -63,8 +63,6 @@ void Error_Handler(void);
 #define BSPD_MotorOn_GPIO_Port GPIOC
 #define BSPD_Shutdown_Pin GPIO_PIN_15
 #define BSPD_Shutdown_GPIO_Port GPIOC
-#define RCC_HSE_OUT_Pin GPIO_PIN_1
-#define RCC_HSE_OUT_GPIO_Port GPIOH
 #define IN_Button_Pin GPIO_PIN_0
 #define IN_Button_GPIO_Port GPIOC
 #define SPI_MOSI_Pin GPIO_PIN_1
@@ -105,10 +103,6 @@ void Error_Handler(void);
 #define SPI_CS_IMU_GPIO_Port GPIOB
 #define NVM_D0_Pin GPIO_PIN_13
 #define NVM_D0_GPIO_Port GPIOB
-#define USB_UART_TX_Pin GPIO_PIN_14
-#define USB_UART_TX_GPIO_Port GPIOB
-#define USB_UART_RX_Pin GPIO_PIN_15
-#define USB_UART_RX_GPIO_Port GPIOB
 #define CAN_Term_Pin GPIO_PIN_6
 #define CAN_Term_GPIO_Port GPIOC
 #define OUT_IMD_LED_Pin GPIO_PIN_7
@@ -129,8 +123,6 @@ void Error_Handler(void);
 #define JTMS_GPIO_Port GPIOA
 #define JTCK_Pin GPIO_PIN_14
 #define JTCK_GPIO_Port GPIOA
-#define JTDI_Pin GPIO_PIN_15
-#define JTDI_GPIO_Port GPIOA
 #define NVM_D2_Pin GPIO_PIN_10
 #define NVM_D2_GPIO_Port GPIOC
 #define NVM_D3_Pin GPIO_PIN_11
@@ -139,8 +131,6 @@ void Error_Handler(void);
 #define NVM_CLK_GPIO_Port GPIOC
 #define NVM_CMD_Pin GPIO_PIN_2
 #define NVM_CMD_GPIO_Port GPIOD
-#define JTDO_Pin GPIO_PIN_3
-#define JTDO_GPIO_Port GPIOB
 #define CELL_UART_TX_Pin GPIO_PIN_4
 #define CELL_UART_TX_GPIO_Port GPIOB
 #define CAN_RX_Pin GPIO_PIN_5
