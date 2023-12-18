@@ -71,12 +71,12 @@ void Error_Handler(void);
 #define SPI_MISO_GPIO_Port GPIOC
 #define BSPD_BrakeFailure_Pin GPIO_PIN_3
 #define BSPD_BrakeFailure_GPIO_Port GPIOC
-#define OUT_LEDR_Pin GPIO_PIN_0
-#define OUT_LEDR_GPIO_Port GPIOA
-#define OUT_LEDG_Pin GPIO_PIN_1
-#define OUT_LEDG_GPIO_Port GPIOA
-#define OUT_LEDB_Pin GPIO_PIN_2
+#define OUT_LEDB_Pin GPIO_PIN_0
 #define OUT_LEDB_GPIO_Port GPIOA
+#define OUT_LEDR_Pin GPIO_PIN_1
+#define OUT_LEDR_GPIO_Port GPIOA
+#define OUT_LEDG_Pin GPIO_PIN_2
+#define OUT_LEDG_GPIO_Port GPIOA
 #define ADC_Steer_Pin GPIO_PIN_3
 #define ADC_Steer_GPIO_Port GPIOA
 #define ADC_Sus1_Pin GPIO_PIN_4
