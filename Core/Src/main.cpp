@@ -109,9 +109,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
     clock_init();
     led_init();
-  // add an init analog function that sets up the ADCs
-//    vcu_fault_vector = 0;
-//    FAULT_SET(&vcu_fault_vector, FAULT_VCU_ADC);
 //    if(can_init(&hfdcan2) != 0){
 //        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
 //    }
@@ -126,8 +123,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//      FAULT_CLEARALL(&vcu_fault_vector);
-
     float deltaTime = clock_getDeltaTime();
     led_rainbow(deltaTime);
 
