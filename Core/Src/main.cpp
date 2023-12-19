@@ -31,7 +31,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "inverter.h"
-#include "analog.h"
 #include "faults.h"
 #include "angel_can.h"
 
@@ -107,13 +106,13 @@ int main(void)
   MX_UART7_Init();
   MX_ADC1_Init();
   MX_TIM2_Init();
-  MX_SDMMC1_SD_Init();
+//  MX_SDMMC1_SD_Init();
   /* USER CODE BEGIN 2 */
   // add an init analog function that sets up the ADCs
   vcu_fault_vector = 0;
-  if(analog_start(&hadc1) != 0){
+  if(adc_start(&hadc1) != 0){
       FAULT_SET(&vcu_fault_vector, FAULT_VCU_ADC);
-      analog_stop(&hadc1);
+      adc_stop(&hadc1);
   }
   if(can_init(&hfdcan2) != 0){
       FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
@@ -129,7 +128,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    analog_get_recent(analogVoltages);
+    adc_get(&analogVoltages);
     FAULT_CLEARALL(&vcu_fault_vector);
 
   }
