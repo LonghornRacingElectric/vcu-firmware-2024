@@ -22,7 +22,6 @@
 #include "dma.h"
 #include "fdcan.h"
 #include "usart.h"
-#include "spi.h"
 #include "tim.h"
 #include "gpio.h"
 
@@ -32,6 +31,7 @@
 //#include "faults.h"
 //#include "angel_can.h"
 #include "clock.h"
+#include "bbspi.h"
 
 /* USER CODE END Includes */
 
@@ -58,7 +58,6 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void PeriphCommonClock_Config(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -90,9 +89,6 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-/* Configure the peripherals common clocks */
-  PeriphCommonClock_Config();
-
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -103,29 +99,76 @@ int main(void)
   MX_ADC1_Init();
   MX_FDCAN2_Init();
   MX_LPUART1_UART_Init();
-  MX_SPI2_Init();
   MX_UART7_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-    clock_init();
-    led_init();
+  clock_init();
+  led_init();
+  bbspi_init();
+
 //    if(can_init(&hfdcan2) != 0){
 //        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
 //    }
 
 //  inverter_init();
+
+  uint8_t buffer[6];
+
+  HAL_Delay(100);
+
+  bbspi_selectImu();
+
+  buffer[0] = 0x0f | 0x80; // WHO_AM_I
+  bbspi_send(buffer, 1);
+  bbspi_receive(buffer, 1);
+  if(buffer[0] == 0x6B) {
+    led_set(0, 0.3f, 0);
+    HAL_Delay(300);
+    led_off();
+    HAL_Delay(300);
+  } else {
+    Error_Handler();
+  }
+
+  bbspi_selectImu();
+  buffer[0] = 0x10; // CTRL1_XL
+//  buffer[1] = 0b01010100; // 208 Hz, +/-16g
+  buffer[1] = 0b00100100; // slow, +/-16g
+  bbspi_send(buffer, 2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    float deltaTime = clock_getDeltaTime();
-    led_rainbow(deltaTime);
+//    float deltaTime = clock_getDeltaTime();
+//    led_rainbow(deltaTime);
 
+    bbspi_selectImu();
+    buffer[0] = 0x1e | 0x80; // STATUS_REG
+    bbspi_send(buffer, 1);
+    bbspi_receive(buffer, 1);
+    if((buffer[0] & 0x01) == 0) {
+      continue;
+    }
+
+    bbspi_selectImu();
+    buffer[0] = 0x29 | 0x80; // OUTX_H_A ... OUTZ_L_A
+    bbspi_send(buffer, 1);
+    bbspi_receive(buffer, 6);
+    int16_t accelX = (buffer[0] << 8) | (buffer[1]);
+    int16_t accelY = (buffer[2] << 8) | (buffer[3]);
+    int16_t accelZ = (buffer[4] << 8) | (buffer[5]);
+    float f = 1.0f / 2048.0f / 3.0f;
+    float r = abs(accelX) * f;
+    float b = abs(accelY) * f;
+    float g = abs(accelZ) * f * 0;
+    if(r < 0.05f) r = 0;
+    if(g < 0.05f) g = 0;
+    if(b < 0.05f) b = 0;
+    led_set(r, g, b*2.0f);
   }
   /* USER CODE END 3 */
 }
@@ -191,33 +234,6 @@ void SystemClock_Config(void)
   }
 }
 
-/**
-  * @brief Peripherals Common Clock Configuration
-  * @retval None
-  */
-void PeriphCommonClock_Config(void)
-{
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-
-  /** Initializes the peripherals clock
-  */
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI2|RCC_PERIPHCLK_FDCAN;
-  PeriphClkInitStruct.PLL2.PLL2M = 10;
-  PeriphClkInitStruct.PLL2.PLL2N = 288;
-  PeriphClkInitStruct.PLL2.PLL2P = 125;
-  PeriphClkInitStruct.PLL2.PLL2Q = 128;
-  PeriphClkInitStruct.PLL2.PLL2R = 2;
-  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_0;
-  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
-  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
-  PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL2;
-  PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL2;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
@@ -231,18 +247,11 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-  float x = 0;
-  bool on = false;
-  while (1)
-  {
-      float deltaTime = clock_getDeltaTime();
-      x += deltaTime;
-      if(x > 1.0f) {
-          x = 0.0f;
-          on = !on;
-          led_set((on) ? 1.0f : 0.0f, 0.0f, 0.0f);
-      }
-
+  while (1) {
+    led_set(0.2f, 0.0f, 0.0f);
+    for(volatile int i = 0; i < 3000000; i++);
+    led_off();
+    for(volatile int i = 0; i < 3000000; i++);
   }
   /* USER CODE END Error_Handler_Debug */
 }

@@ -65,10 +65,10 @@ void Error_Handler(void);
 #define BSPD_Shutdown_GPIO_Port GPIOC
 #define IN_Button_Pin GPIO_PIN_0
 #define IN_Button_GPIO_Port GPIOC
-#define SPI_MOSI_Pin GPIO_PIN_1
-#define SPI_MOSI_GPIO_Port GPIOC
-#define SPI_MISO_Pin GPIO_PIN_2
-#define SPI_MISO_GPIO_Port GPIOC
+#define BBSPI_SDI_Pin GPIO_PIN_1
+#define BBSPI_SDI_GPIO_Port GPIOC
+#define BBSPI_SDO_Pin GPIO_PIN_2
+#define BBSPI_SDO_GPIO_Port GPIOC
 #define BSPD_BrakeFailure_Pin GPIO_PIN_3
 #define BSPD_BrakeFailure_GPIO_Port GPIOC
 #define OUT_LEDB_Pin GPIO_PIN_0
@@ -97,8 +97,8 @@ void Error_Handler(void);
 #define IN_DriveSwitch_GPIO_Port GPIOB
 #define BSPD_MotorFailure_Pin GPIO_PIN_2
 #define BSPD_MotorFailure_GPIO_Port GPIOB
-#define SPI_SCK_Pin GPIO_PIN_10
-#define SPI_SCK_GPIO_Port GPIOB
+#define BBSPI_CLK_Pin GPIO_PIN_10
+#define BBSPI_CLK_GPIO_Port GPIOB
 #define SPI_CS_IMU_Pin GPIO_PIN_12
 #define SPI_CS_IMU_GPIO_Port GPIOB
 #define CAN_Term_Pin GPIO_PIN_6
