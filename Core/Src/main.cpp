@@ -112,29 +112,50 @@ int main(void)
 
 //  inverter_init();
 
-  uint8_t buffer[6];
+  uint8_t buffer[3];
 
+  led_off();
   HAL_Delay(100);
 
-  bbspi_selectImu();
-
-  buffer[0] = 0x0f | 0x80; // WHO_AM_I
-  bbspi_send(buffer, 1);
+  buffer[0] = 0b011; // read instruction
+  buffer[1] = 0x00; // address 0
+  bbspi_selectEeprom();
+  bbspi_send(buffer, 2);
   bbspi_receive(buffer, 1);
-  if(buffer[0] == 0x6B) {
-    led_set(0, 0.3f, 0);
-    HAL_Delay(300);
+  bbspi_deselect();
+
+  uint8_t x = buffer[0];
+  if(x == 255) {
+    led_set(0.3f, 0, 0);
+    HAL_Delay(500);
     led_off();
-    HAL_Delay(300);
-  } else {
-    Error_Handler();
+    HAL_Delay(500);
+    x = 0;
+  }
+  for(uint8_t i = 0; i < x; i++) {
+    led_set(0, 0.3f, 0);
+    HAL_Delay(200);
+    led_off();
+    HAL_Delay(200);
   }
 
-  bbspi_selectImu();
-  buffer[0] = 0x10; // CTRL1_XL
-//  buffer[1] = 0b01010100; // 208 Hz, +/-16g
-  buffer[1] = 0b00100100; // slow, +/-16g
-  bbspi_send(buffer, 2);
+  buffer[0] = 0b110; // write enable instruction
+  bbspi_selectEeprom();
+  bbspi_send(buffer, 1);
+  bbspi_deselect();
+
+  buffer[0] = 0b010; // write instruction
+  buffer[1] = 0x00; // address 0
+  buffer[2] = (x % 5) + 1;
+  bbspi_selectEeprom();
+  bbspi_send(buffer, 3);
+  bbspi_deselect();
+
+  buffer[0] = 0b100; // write disable instruction
+  bbspi_selectEeprom();
+  bbspi_send(buffer, 1);
+  bbspi_deselect();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -143,32 +164,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//    float deltaTime = clock_getDeltaTime();
+    float deltaTime = clock_getDeltaTime();
 //    led_rainbow(deltaTime);
-
-    bbspi_selectImu();
-    buffer[0] = 0x1e | 0x80; // STATUS_REG
-    bbspi_send(buffer, 1);
-    bbspi_receive(buffer, 1);
-    if((buffer[0] & 0x01) == 0) {
-      continue;
-    }
-
-    bbspi_selectImu();
-    buffer[0] = 0x29 | 0x80; // OUTX_H_A ... OUTZ_L_A
-    bbspi_send(buffer, 1);
-    bbspi_receive(buffer, 6);
-    int16_t accelX = (buffer[0] << 8) | (buffer[1]);
-    int16_t accelY = (buffer[2] << 8) | (buffer[3]);
-    int16_t accelZ = (buffer[4] << 8) | (buffer[5]);
-    float f = 1.0f / 2048.0f / 3.0f;
-    float r = abs(accelX) * f;
-    float b = abs(accelY) * f;
-    float g = abs(accelZ) * f * 0;
-    if(r < 0.05f) r = 0;
-    if(g < 0.05f) g = 0;
-    if(b < 0.05f) b = 0;
-    led_set(r, g, b*2.0f);
   }
   /* USER CODE END 3 */
 }
