@@ -133,7 +133,7 @@ int main(void)
     x = 0;
   }
   for(uint8_t i = 0; i < x; i++) {
-    led_set(0, 0.3f, 0);
+    led_set(0, 0, 1);
     HAL_Delay(200);
     led_off();
     HAL_Delay(200);
