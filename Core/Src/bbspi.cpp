@@ -26,7 +26,8 @@ static bool bbspi_getPinSdi() {
 }
 
 static void bbspi_delay() {
-  for(volatile int i = 0; i < 10; i++);
+  // no-op, the overhead from doing this in software is enough delay
+  // for reference, this implementation runs at around 750 kHz (peripherals support up to 10 MHz)
 }
 
 void bbspi_init() {
@@ -57,7 +58,6 @@ void bbspi_send(uint8_t* data, uint32_t length) {
   for(; length; length--, data++) {
     for(uint8_t m = 0x80; m; m >>= 1) {
       bool bit = (bool) (*data & m);
-
       bbspi_setPinSdo(bit);
       bbspi_setPinClk(false);
       bbspi_delay();

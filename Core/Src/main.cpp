@@ -64,7 +64,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint8_t buffer[1024];
 /* USER CODE END 0 */
 
 /**
@@ -112,50 +112,7 @@ int main(void)
 
 //  inverter_init();
 
-  uint8_t buffer[3];
-
-  led_off();
   HAL_Delay(100);
-
-  buffer[0] = 0b011; // read instruction
-  buffer[1] = 0x00; // address 0
-  bbspi_selectEeprom();
-  bbspi_send(buffer, 2);
-  bbspi_receive(buffer, 1);
-  bbspi_deselect();
-
-  uint8_t x = buffer[0];
-  if(x == 255) {
-    led_set(0.3f, 0, 0);
-    HAL_Delay(500);
-    led_off();
-    HAL_Delay(500);
-    x = 0;
-  }
-  for(uint8_t i = 0; i < x; i++) {
-    led_set(0, 0, 1);
-    HAL_Delay(200);
-    led_off();
-    HAL_Delay(200);
-  }
-
-  buffer[0] = 0b110; // write enable instruction
-  bbspi_selectEeprom();
-  bbspi_send(buffer, 1);
-  bbspi_deselect();
-
-  buffer[0] = 0b010; // write instruction
-  buffer[1] = 0x00; // address 0
-  buffer[2] = (x % 5) + 1;
-  bbspi_selectEeprom();
-  bbspi_send(buffer, 3);
-  bbspi_deselect();
-
-  buffer[0] = 0b100; // write disable instruction
-  bbspi_selectEeprom();
-  bbspi_send(buffer, 1);
-  bbspi_deselect();
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -165,7 +122,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
-//    led_rainbow(deltaTime);
+    led_rainbow(deltaTime);
   }
   /* USER CODE END 3 */
 }
