@@ -65,7 +65,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint8_t buffer[1024];
+static uint8_t data[512];
 /* USER CODE END 0 */
 
 /**
@@ -114,8 +114,14 @@ int main(void)
 
 //  inverter_init();
 
-  HAL_Delay(100);
-  sdspi_start();
+  // (all addresses are windows + 0x8000)
+  // actual stuff begins at 0x8000 = 32768
+  // volume information at 0xAA00 = 43520
+  // document.txt file at 0xAE00 = 44544
+  sdspi_readBlock(0xAE00, data);
+  if(data[0] != 'h') {
+    Error_Handler();
+  }
 
   /* USER CODE END 2 */
 

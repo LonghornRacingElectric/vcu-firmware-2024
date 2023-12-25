@@ -8,15 +8,8 @@
 #include <cstdint>
 
 void sdspi_init();
-
-void sdspi_deselect();
-void sdspi_select();
+void sdspi_readBlock(uint32_t address, uint8_t data[512]);
 
 bool sdspi_isCardPresent();
-
-void sdspi_start();
-
-void sdspi_send(uint8_t* data, uint32_t length);
-void sdspi_receive(uint8_t* data, uint32_t length);
 
 #endif //VCU_FIRMWARE_2024_SDSPI_H
