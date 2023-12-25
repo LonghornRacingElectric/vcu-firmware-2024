@@ -32,6 +32,7 @@
 //#include "angel_can.h"
 #include "clock.h"
 #include "bbspi.h"
+#include "sdspi.h"
 
 /* USER CODE END Includes */
 
@@ -105,6 +106,7 @@ int main(void)
   clock_init();
   led_init();
   bbspi_init();
+  sdspi_init();
 
 //    if(can_init(&hfdcan2) != 0){
 //        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
@@ -113,6 +115,8 @@ int main(void)
 //  inverter_init();
 
   HAL_Delay(100);
+  sdspi_start();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -122,7 +126,11 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
-    led_rainbow(deltaTime);
+    if(sdspi_isCardPresent()) {
+      led_rainbow(deltaTime);
+    } else {
+      led_off();
+    }
   }
   /* USER CODE END 3 */
 }
