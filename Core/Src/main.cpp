@@ -22,6 +22,7 @@
 #include "dma.h"
 #include "fdcan.h"
 #include "usart.h"
+#include "sdmmc.h"
 #include "tim.h"
 #include "gpio.h"
 
@@ -31,8 +32,6 @@
 //#include "faults.h"
 //#include "angel_can.h"
 #include "clock.h"
-#include "bbspi.h"
-#include "sdspi.h"
 
 /* USER CODE END Includes */
 
@@ -91,7 +90,8 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  clock_init();
+  HAL_Delay(100);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -102,11 +102,9 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_UART7_Init();
   MX_TIM2_Init();
+  MX_SDMMC1_SD_Init();
   /* USER CODE BEGIN 2 */
-  clock_init();
   led_init();
-  bbspi_init();
-  sdspi_init();
 
 //    if(can_init(&hfdcan2) != 0){
 //        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
@@ -118,10 +116,7 @@ int main(void)
   // actual stuff begins at 0x8000 = 32768
   // volume information at 0xAA00 = 43520
   // document.txt file at 0xAE00 = 44544
-  sdspi_readBlock(0xAE00, data);
-  if(data[0] != 'h') {
-    Error_Handler();
-  }
+//  sdspi_readBlock(0xAE00, data);
 
   /* USER CODE END 2 */
 
@@ -132,11 +127,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
-    if(sdspi_isCardPresent()) {
-      led_rainbow(deltaTime);
-    } else {
-      led_off();
-    }
+    led_rainbow(deltaTime);
   }
   /* USER CODE END 3 */
 }

@@ -101,8 +101,6 @@ void Error_Handler(void);
 #define BBSPI_CLK_GPIO_Port GPIOB
 #define SPI_CS_IMU_Pin GPIO_PIN_12
 #define SPI_CS_IMU_GPIO_Port GPIOB
-#define SD_SDI_Pin GPIO_PIN_13
-#define SD_SDI_GPIO_Port GPIOB
 #define CAN_Term_Pin GPIO_PIN_6
 #define CAN_Term_GPIO_Port GPIOC
 #define OUT_IMD_LED_Pin GPIO_PIN_7
@@ -121,12 +119,6 @@ void Error_Handler(void);
 #define JTMS_GPIO_Port GPIOA
 #define JTCK_Pin GPIO_PIN_14
 #define JTCK_GPIO_Port GPIOA
-#define SD_CS_Pin GPIO_PIN_11
-#define SD_CS_GPIO_Port GPIOC
-#define SD_SCK_Pin GPIO_PIN_12
-#define SD_SCK_GPIO_Port GPIOC
-#define SD_SDO_Pin GPIO_PIN_2
-#define SD_SDO_GPIO_Port GPIOD
 #define CELL_UART_TX_Pin GPIO_PIN_4
 #define CELL_UART_TX_GPIO_Port GPIOB
 #define CAN_RX_Pin GPIO_PIN_5
