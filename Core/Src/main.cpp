@@ -92,7 +92,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  clock_init();
+
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -107,6 +107,7 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
   led_init();
+  clock_init();
 
 //    if(can_init(&hfdcan2) != 0){
 //        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
@@ -114,34 +115,7 @@ int main(void)
 
 //  inverter_init();
 
-  // (all addresses are windows + 0x8000)
-  // actual stuff begins at 0x8000 = 32768
-  // volume information at 0xAA00 = 43520
-  // document.txt file at 0xAE00 = 44544
 
-  FATFS fs;
-  FRESULT res;
-  FIL file;
-
-  res = f_mount(&fs, "", 0);
-  if(res != FR_OK) {
-    Error_Handler();
-  }
-
-  res = f_open(&file, "document.txt", FA_CREATE_ALWAYS | FA_WRITE);
-  if(res != FR_OK) {
-    Error_Handler();
-  }
-
-  int numWritten = f_printf(&file, "VCU was here!\n");
-  if(numWritten <= 0) {
-    Error_Handler();
-  }
-
-  res = f_close(&file);
-  if(res != FR_OK) {
-    Error_Handler();
-  }
 
   /* USER CODE END 2 */
 
@@ -152,10 +126,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
-    if(BSP_SD_IsDetected())
-      led_rainbow(deltaTime);
-    else
-      led_off();
+    led_rainbow(deltaTime);
   }
   /* USER CODE END 3 */
 }
