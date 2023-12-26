@@ -17,9 +17,11 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <cstring>
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
+#include "fatfs.h"
 #include "fdcan.h"
 #include "usart.h"
 #include "sdmmc.h"
@@ -64,7 +66,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static uint8_t data[512];
+
 /* USER CODE END 0 */
 
 /**
@@ -91,7 +93,6 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
   clock_init();
-  HAL_Delay(100);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -103,6 +104,7 @@ int main(void)
   MX_UART7_Init();
   MX_TIM2_Init();
   MX_SDMMC1_SD_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
   led_init();
 
@@ -116,7 +118,30 @@ int main(void)
   // actual stuff begins at 0x8000 = 32768
   // volume information at 0xAA00 = 43520
   // document.txt file at 0xAE00 = 44544
-//  sdspi_readBlock(0xAE00, data);
+
+  FATFS fs;
+  FRESULT res;
+  FIL file;
+
+  res = f_mount(&fs, "", 0);
+  if(res != FR_OK) {
+    Error_Handler();
+  }
+
+  res = f_open(&file, "document.txt", FA_CREATE_ALWAYS | FA_WRITE);
+  if(res != FR_OK) {
+    Error_Handler();
+  }
+
+  int numWritten = f_printf(&file, "VCU was here!\n");
+  if(numWritten <= 0) {
+    Error_Handler();
+  }
+
+  res = f_close(&file);
+  if(res != FR_OK) {
+    Error_Handler();
+  }
 
   /* USER CODE END 2 */
 
@@ -127,7 +152,10 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
-    led_rainbow(deltaTime);
+    if(BSP_SD_IsDetected())
+      led_rainbow(deltaTime);
+    else
+      led_off();
   }
   /* USER CODE END 3 */
 }
