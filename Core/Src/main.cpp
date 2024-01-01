@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "bdma2.h"
 #include "dma.h"
 #include "fdcan.h"
 #include "usart.h"
@@ -96,14 +97,15 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_ADC1_Init();
+  MX_BDMA2_Init();
   MX_FDCAN2_Init();
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
   MX_USART1_UART_Init();
   MX_UART7_Init();
-  MX_SDMMC1_SD_Init();
+  MX_ADC1_Init();
   MX_TIM2_Init();
+  MX_SDMMC1_SD_Init();
   /* USER CODE BEGIN 2 */
   // add an init analog function that sets up the ADCs
     vcu_fault_vector = 0;
