@@ -17,7 +17,6 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include <cstring>
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
@@ -30,9 +29,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-//#include "inverter.h"
+#include "inverter.h"
 //#include "faults.h"
-//#include "angel_can.h"
+#include "angel_can.h"
 #include "clock.h"
 
 /* USER CODE END Includes */
@@ -109,13 +108,13 @@ int main(void)
   led_init();
   clock_init();
 
-//    if(can_init(&hfdcan2) != 0){
-//        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
-//    }
+  if(can_init(&hfdcan2) != HAL_OK){
+    Error_Handler();
+  }
 
 //  inverter_init();
 
-
+  HAL_GPIO_WritePin(CAN_Term_GPIO_Port, CAN_Term_Pin, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
 
@@ -127,6 +126,11 @@ int main(void)
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
     led_rainbow(deltaTime);
+
+    uint32_t err = inverter_sendTorqueCommand(23.0f, 0.0f, true);
+    if(err != HAL_OK && err != HAL_FDCAN_ERROR_FIFO_FULL) {
+      Error_Handler();
+    }
   }
   /* USER CODE END 3 */
 }
