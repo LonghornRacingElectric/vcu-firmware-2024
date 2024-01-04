@@ -108,6 +108,8 @@ int main(void)
   led_init();
   clock_init();
 
+  HAL_Delay(100);
+
   if(can_init(&hfdcan2) != HAL_OK){
     Error_Handler();
   }
