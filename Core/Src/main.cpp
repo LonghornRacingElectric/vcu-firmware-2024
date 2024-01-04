@@ -127,7 +127,7 @@ int main(void)
     float deltaTime = clock_getDeltaTime();
     led_rainbow(deltaTime);
 
-    uint32_t err = inverter_sendTorqueCommand(23.0f, 0.0f, true);
+    auto err = inverter_sendTorqueCommand(23.0f, 0.0f, true);
     if(err != HAL_OK && err != HAL_FDCAN_ERROR_FIFO_FULL) {
       Error_Handler();
     }
