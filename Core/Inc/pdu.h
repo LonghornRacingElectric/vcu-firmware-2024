@@ -30,11 +30,11 @@ struct PDUStatus {
  */
 void pdu_init();
 
-static uint32_t pdu_sendBrakeLight(float brightnessLeft, float brightnessRight);
+static void pdu_updateBrakeLight(float brightnessLeft, float brightnessRight);
 
-static uint32_t pdu_sendBuzzer(BuzzerType buzzerType);
+static void pdu_updateBuzzer(BuzzerType buzzerType);
 
-static uint32_t pdu_sendCoolingOutput(uint16_t radiatorFanRpm, float pumpPercentage);
+static void pdu_sendCoolingOutput(uint16_t radiatorFanRpm, float pumpPercentage);
 
 void pdu_periodic(PDUStatus* status, VcuOutput* vcuOutput, float deltaTime);
 

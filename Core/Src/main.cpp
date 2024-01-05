@@ -114,7 +114,7 @@ int main(void)
     Error_Handler();
   }
 
-//  inverter_init();
+  inverter_init();
 
   HAL_GPIO_WritePin(CAN_Term_GPIO_Port, CAN_Term_Pin, GPIO_PIN_SET);
 
@@ -129,10 +129,8 @@ int main(void)
     float deltaTime = clock_getDeltaTime();
     led_rainbow(deltaTime);
 
-    auto err = inverter_sendTorqueCommand(23.0f, 0.0f, true);
-    if(err != HAL_OK && err != HAL_FDCAN_ERROR_FIFO_FULL) {
-      Error_Handler();
-    }
+    inverter_updateTorqueCommand(23.0f, 0.0f, true);
+    can_periodic(deltaTime);
   }
   /* USER CODE END 3 */
 }

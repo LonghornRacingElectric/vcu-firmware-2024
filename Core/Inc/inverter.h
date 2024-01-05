@@ -47,7 +47,7 @@ void inverter_getStatus(InverterStatus* status);
 /**
  * Send a torque command over CAN.
  */
-unsigned int inverter_sendTorqueCommand(float torque, float rpm, bool enable_inverter);
+void inverter_updateTorqueCommand(float torque, float rpm, bool enable_inverter);
 
 /**
  * Reset faults over CAN.
