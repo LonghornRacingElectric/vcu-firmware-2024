@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file    adc.h
+  * @file    bdma2.h
   * @brief   This file contains all the function prototypes for
-  *          the adc.c file
+  *          the bdma2.c file
   ******************************************************************************
   * @attention
   *
@@ -18,8 +18,8 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __ADC_H__
-#define __ADC_H__
+#ifndef __BDMA2_H__
+#define __BDMA2_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,57 +28,19 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* USER CODE BEGIN Includes */
-#include <stdbool.h>
-/* USER CODE END Includes */
+/* DMA memory to memory transfer handles -------------------------------------*/
 
-extern ADC_HandleTypeDef hadc1;
+/* USER CODE BEGIN Includes */
+
+/* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
 
-#define NUM_SENSORS 7
-#define APPS1 0
-#define APPS2 1
-#define BSE1 2
-#define BSE2 3
-#define STEER 4
-#define SUS1 5
-#define SUS2 6
-
-typedef struct AnalogVoltages {
-  float apps1, apps2;
-  float bse1, bse2;
-  float steer;
-  float sus1, sus2;
-} AnalogVoltages;
-
-volatile static uint16_t adcValues[NUM_SENSORS];
-
 /* USER CODE END Private defines */
 
-void MX_ADC1_Init(void);
+void MX_BDMA2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-/**
- * Calibrate the offset for the analog sensors.
- * @param hadc1
- * @return error code
- */
-int adc_calibrate(ADC_HandleTypeDef* hadc1);
-
-/**
- * Initialize the ADC and DMA for analog sensors.
- * @param hadc1
- * @return error code
- */
-int adc_start(ADC_HandleTypeDef* hadc1);
-
-/**
- * Update the values in the struct with the latest voltages.
- * @param analogVoltages
- */
-void adc_get(AnalogVoltages* analogVoltages);
-
 
 /* USER CODE END Prototypes */
 
@@ -86,5 +48,5 @@ void adc_get(AnalogVoltages* analogVoltages);
 }
 #endif
 
-#endif /* __ADC_H__ */
+#endif /* __BDMA2_H__ */
 

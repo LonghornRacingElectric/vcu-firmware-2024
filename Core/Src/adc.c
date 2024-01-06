@@ -21,7 +21,7 @@
 #include "adc.h"
 
 /* USER CODE BEGIN 0 */
-
+#define CONVERT(RAW_ADC_VALUE) (((float) RAW_ADC_VALUE) * 3.3f / 65535.0f)
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -45,20 +45,24 @@ void MX_ADC1_Init(void)
   /** Common config
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV32;
   hadc1.Init.Resolution = ADC_RESOLUTION_16B;
   hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.NbrOfConversion = 7;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DR;
+  hadc1.Init.ConversionDataManagement = ADC_CONVERSIONDATA_DMA_CIRCULAR;
   hadc1.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   hadc1.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
-  hadc1.Init.OversamplingMode = DISABLE;
+  hadc1.Init.OversamplingMode = ENABLE;
+  hadc1.Init.Oversampling.Ratio = 16;
+  hadc1.Init.Oversampling.RightBitShift = ADC_RIGHTBITSHIFT_4;
+  hadc1.Init.Oversampling.TriggeredMode = ADC_TRIGGEREDMODE_SINGLE_TRIGGER;
+  hadc1.Init.Oversampling.OversamplingStopReset = ADC_REGOVERSAMPLING_CONTINUED_MODE;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -140,7 +144,9 @@ void MX_ADC1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN ADC1_Init 2 */
-
+  if(adc_start(&hadc1) != HAL_OK) {
+    Error_Handler();
+  }
   /* USER CODE END ADC1_Init 2 */
 
 }
@@ -263,5 +269,26 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 }
 
 /* USER CODE BEGIN 1 */
+int adc_calibrate(ADC_HandleTypeDef* hadc){
+    return HAL_ADCEx_Calibration_Start(hadc, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
+}
+
+int adc_start(ADC_HandleTypeDef* hadc){
+    int error = adc_calibrate(hadc);
+    if(error != 0) return error;
+    return HAL_ADCEx_MultiModeStart_DMA(hadc, (uint32_t*) adcValues, NUM_SENSORS);
+}
+
+void adc_get(AnalogVoltages* analogVoltages) {
+    analogVoltages->apps1 = CONVERT(adcValues[APPS1]);
+    analogVoltages->apps2 = CONVERT(adcValues[APPS2]);
+    analogVoltages->bse1 = CONVERT(adcValues[BSE1]);
+    analogVoltages->bse2 = CONVERT(adcValues[BSE2]);
+    analogVoltages->steer = CONVERT(adcValues[STEER]);
+    analogVoltages->sus1 = CONVERT(adcValues[SUS1]);
+    analogVoltages->sus2 = CONVERT(adcValues[SUS2]);
+}
+
+
 
 /* USER CODE END 1 */

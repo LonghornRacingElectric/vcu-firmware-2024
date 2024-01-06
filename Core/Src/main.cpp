@@ -111,16 +111,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   led_init();
   clock_init();
-
-  HAL_Delay(100);
-
-  if(can_init(&hfdcan2) != HAL_OK){
-    Error_Handler();
-  }
-
   inverter_init();
-
-  HAL_GPIO_WritePin(CAN_Term_GPIO_Port, CAN_Term_Pin, GPIO_PIN_SET);
+  can_init(&hfdcan2);
 
   /* USER CODE END 2 */
 
@@ -131,10 +123,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
-    led_rainbow(deltaTime);;
-
-//    inverter_updateTorqueCommand(23.0f, 0.0f, true);
-//    can_periodic(deltaTime);
+    led_rainbow(deltaTime);
   }
   /* USER CODE END 3 */
 }
@@ -242,9 +231,9 @@ void Error_Handler(void)
   __disable_irq();
   while (1) {
     led_set(0.2f, 0.0f, 0.0f);
-    for(volatile int i = 0; i < 3000000; i++);
+    for (volatile int i = 0; i < 3000000; i++);
     led_off();
-    for(volatile int i = 0; i < 3000000; i++);
+    for (volatile int i = 0; i < 3000000; i++);
   }
   /* USER CODE END Error_Handler_Debug */
 }
