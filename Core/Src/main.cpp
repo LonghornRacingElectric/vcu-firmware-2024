@@ -142,19 +142,20 @@ int main(void)
     led_rainbow(deltaTime);
 
     adc_periodic(&analogVoltages);
-    cellular_periodic();
     hvc_periodic(&hvcStatus, &vcuCoreOutput);
     pdu_periodic(&pduStatus, &vcuCoreOutput);
     imu_periodic();
-    dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
-    // wheelspeeds
-    // external IMUs
-    inverter_periodic(&inverterStatus, &vcuCoreOutput);
+    // TODO wheelspeeds
+    // TODO external IMUs
     gps_periodic(&gpsData);
-    indicators_periodic(&hvcStatus, &vcuCoreOutput);
-    // non-volatile memory
-    // telemetry outputs
 
+    // TODO vcu core
+
+    inverter_periodic(&inverterStatus, &vcuCoreOutput);
+    indicators_periodic(&hvcStatus, &vcuCoreOutput);
+    dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
+    // TODO non-volatile memory
+    cellular_periodic(); // telemetry outputs, parameter inputs
     can_periodic(deltaTime);
   }
   /* USER CODE END 3 */
