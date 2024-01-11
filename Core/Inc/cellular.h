@@ -15,13 +15,6 @@ typedef struct TelemetryPacket {
     uint32_t someErrors;
 } TelemetryPacket;
 
-typedef struct GpsData {
-    float gpsLat;
-    float gpsLong;
-    float gpsSpeed;
-    float gpsHeading;
-} GpsData;
-
 
 // private helper methods
 static void cellular_sendAT(std::string command);
@@ -30,7 +23,6 @@ static void cellular_sendAT(std::string command);
 
 // public methods
 void cellular_sendTelemetry(TelemetryPacket* telemetry);
-void cellular_getGps(GpsData* gpsData);
 bool cellular_areParametersUpdated();
 void cellular_updateParameters(VcuParameters* vcuParameters);
 void cellular_periodic();

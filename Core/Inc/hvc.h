@@ -24,7 +24,8 @@ typedef struct HvcStatus {
         FULLY_CLOSED = 3,
         DISCHARGE = 4,
     } contactorStatus;
-    // ...
+
+    // TODO cell voltages and temps
 } HvcStatus;
 
 /**
@@ -33,17 +34,16 @@ typedef struct HvcStatus {
 void hvc_init();
 
 /**
- * Send CAN packet to set cooling fan status and speed if needed.
+ * Update CAN packet to set cooling fan status and speed if needed.
  * @param battFanRpm the desired RPM of the cooling fan cooling the battery segments
  * @param battUniqueSegRpm the desired RPM of the cooling fan cooling the unique segment of the battery
- * @return status of the CAN send, HAL_OK if successful
  */
-static uint32_t hvc_sendCoolingOutput(uint16_t battFanRpm, uint16_t battUniqueSegRpm);
+static void hvc_updateCooling(uint16_t battFanRpm, uint16_t battUniqueSegRpm);
 
 /**
- * Checks CAN mailboxes and updates status accordingly. Sends CAN messages when it's time.
+ * Checks CAN mailboxes and updates status accordingly. Also updates cooling output CAN packet.
  */
-void hvc_periodic(HvcStatus* status, VcuOutput* vcuOutput, float deltaTime);
+void hvc_periodic(HvcStatus* status, VcuOutput* vcuOutput);
 
 
 #endif //VCU_FIRMWARE_2024_HVC_H

@@ -1,9 +1,8 @@
 #include "indicators.h"
 
-void indicators_setLights(bool ams, bool imd) {
-    // TODO implement
-}
-
-void indicators_setReadyToDriveBuzzer(bool on) {
-    // TODO implement
+void indicators_periodic(HvcStatus *hvcStatus, VcuOutput *vcuCoreOutput) {
+  // TODO implement using below variables
+  hvcStatus->ams;
+  hvcStatus->imd;
+  vcuCoreOutput->r2dBuzzer;
 }

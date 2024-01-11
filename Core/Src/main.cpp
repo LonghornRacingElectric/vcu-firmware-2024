@@ -33,6 +33,13 @@
 //#include "faults.h"
 #include "angel_can.h"
 #include "clock.h"
+#include "cellular.h"
+#include "imu.h"
+#include "pdu.h"
+#include "hvc.h"
+#include "dash.h"
+#include "indicators.h"
+#include "gps.h"
 
 /* USER CODE END Includes */
 
@@ -66,7 +73,13 @@ void PeriphCommonClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+VcuParameters vcuCoreParameters;
+VcuOutput vcuCoreOutput;
+HvcStatus hvcStatus;
+PduStatus pduStatus;
+InverterStatus inverterStatus;
+AnalogVoltages analogVoltages;
+GpsData gpsData;
 /* USER CODE END 0 */
 
 /**
@@ -111,8 +124,12 @@ int main(void)
   /* USER CODE BEGIN 2 */
   led_init();
   clock_init();
-  inverter_init();
   can_init(&hfdcan2);
+
+  inverter_init();
+  dash_init();
+  hvc_init();
+  pdu_init();
 
   /* USER CODE END 2 */
 
@@ -124,6 +141,22 @@ int main(void)
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
     led_rainbow(deltaTime);
+
+    adc_periodic(&analogVoltages);
+    cellular_periodic();
+    hvc_periodic(&hvcStatus, &vcuCoreOutput);
+    pdu_periodic(&pduStatus, &vcuCoreOutput);
+    imu_periodic();
+    dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
+    // wheelspeeds
+    // external IMUs
+    inverter_periodic(&inverterStatus, &vcuCoreOutput);
+    gps_periodic(&gpsData);
+    indicators_periodic(&hvcStatus, &vcuCoreOutput);
+    // non-volatile memory
+    // telemetry outputs
+
+    can_periodic(deltaTime);
   }
   /* USER CODE END 3 */
 }
