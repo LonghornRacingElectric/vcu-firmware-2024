@@ -4,10 +4,6 @@ void cellular_sendTelemetry(TelemetryPacket* telemetry) {
     // TODO implement
 }
 
-void cellular_getGps(GpsData* gpsData) {
-    // TODO implement
-}
-
 bool cellular_areParametersUpdated() {
     // TODO implement
     return false;

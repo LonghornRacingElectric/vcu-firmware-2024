@@ -34,7 +34,6 @@
 #include "angel_can.h"
 #include "clock.h"
 #include "cellular.h"
-#include "imu.h"
 #include "pdu.h"
 #include "hvc.h"
 #include "dash.h"
