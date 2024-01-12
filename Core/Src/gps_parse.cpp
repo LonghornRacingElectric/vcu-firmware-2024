@@ -52,9 +52,7 @@ using namespace std;
     @return True if successfully parsed, false if fails check or parsing
 */
 /**************************************************************************/
-bool Adafruit_GPS::parse() {
-    char nmea[128] = {0};
-    strcpy(nmea, curr_line);
+bool Adafruit_GPS::parse(char* nmea) {
     if (!check(nmea))
         return false;
     // passed the check, so there's a valid source in thisSource and a valid

@@ -24,15 +24,13 @@ typedef enum {
     NMEA_HAS_SENTENCE_P = 40 ///< has a recognized parseable sentence ID
 } nmea_check_t;
 
-static bool received;
 class Adafruit_GPS {
 private:
     UART_HandleTypeDef& hlpuart;
 
     bool paused;
-    volatile uint8_t line_ofs;
-    char curr_line[128]{};
-    char last_line[128]{};
+
+    bool received;
 
     const char* sources[7] = {"II", "WI", "GP", "PG",
                               "GN", "P",  "ZZZ"}; ///< valid source ids
@@ -72,7 +70,10 @@ public:
     int32_t longitude_fixed;
 
     bool has_fix;
+    bool is_ready;
     uint16_t milliseconds;
+
+    char last_line[128]{};
 
     std::string firmware_version;
 
@@ -89,8 +90,8 @@ public:
     int send_command(const char *cmd);
     bool newNMEAreceived() const;
     bool pause(bool p);
-    std::string lastNMEA();
-    bool parse();
+    char* lastNMEA();
+    bool parse(char* nmea);
     void read_command();
 };
 
