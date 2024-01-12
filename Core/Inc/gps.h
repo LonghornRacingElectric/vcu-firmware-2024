@@ -24,9 +24,16 @@ typedef enum {
     NMEA_HAS_SENTENCE_P = 40 ///< has a recognized parseable sentence ID
 } nmea_check_t;
 
+typedef enum {
+    UNKNOWN = 0,
+    PROBLEM = 1,
+    INTERNAL = 2,
+    EXTERNAL = 3
+} AntennaStatus;
+
 class Adafruit_GPS {
 private:
-    UART_HandleTypeDef& hlpuart;
+    UART_HandleTypeDef& uart_handler;
 
     bool paused;
 
@@ -57,11 +64,12 @@ public:
 
     uint8_t hour, minute, seconds, year, month, day;
     float latitude, longitude, geoidheight, altitude;
-    float magvariation, HDOP, VDOP, PDOP;
+    float HDOP, VDOP, PDOP;
     float speed, angle;
     uint8_t satellites;
-    char latitude_dir, longitude_dir, magnetic_dir;
-    uint8_t fixquality, fixquality_3d, antenna;
+    char latitude_dir, longitude_dir;
+    uint8_t fixquality, fixquality_3d;
+    AntennaStatus antenna;
 
     float latitudeDegrees;
     float longitudeDegrees;
@@ -92,7 +100,7 @@ public:
     bool pause(bool p);
     char* lastNMEA();
     bool parse(char* nmea);
-    void read_command();
+    char read_command();
 };
 
 #endif //VCU_FIRMWARE_2024_GPS_H

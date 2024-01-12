@@ -1,32 +1,15 @@
 #include "gps.h"
 #include <cstring>
 
-uint8_t curr_line[128] = {0};
-char rx_buff[1] = {0};
-volatile uint8_t line_ofs = 0;
-bool eof = false;
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-    if(huart->Instance == LPUART1) {
-        curr_line[line_ofs++] = rx_buff[0];
-        if(curr_line[line_ofs - 1] == '\n' || curr_line[line_ofs - 1] == '\r') {
-            eof = true;
-        }
-        if(line_ofs >= 128) {
-            eof = true;
-            line_ofs = 0;
-        }
-        HAL_UART_Receive_DMA(huart, (uint8_t *) rx_buff, 1);
-    }
-}
-
-Adafruit_GPS::Adafruit_GPS(UART_HandleTypeDef &hlpuart) : hlpuart(hlpuart) {
-    this->hlpuart = hlpuart;
+Adafruit_GPS::Adafruit_GPS(UART_HandleTypeDef &hlpuart) : uart_handler(hlpuart) {
+    this->uart_handler = hlpuart;
 
     paused = false;
-    line_ofs = 0;
-    hour = minute = seconds = year = month = day = fixquality = fixquality_3d = satellites = antenna = 0;
-    latitude = longitude = geoidheight = altitude = magvariation = HDOP = VDOP = PDOP = speed = angle = 0.0;
-    latitude_dir = longitude_dir = magnetic_dir = 0;
+    received = false;
+    hour = minute = seconds = year = month = day = fixquality = fixquality_3d = satellites = 0;
+    latitude = longitude = geoidheight = altitude = HDOP = VDOP = PDOP = speed = angle = 0.0;
+    latitude_dir = longitude_dir = 0;
+    antenna = UNKNOWN;
 
     has_fix = false;
     is_ready = false;
@@ -35,7 +18,7 @@ Adafruit_GPS::Adafruit_GPS(UART_HandleTypeDef &hlpuart) : hlpuart(hlpuart) {
     latitudeDegrees = longitudeDegrees = 0.0;
     latitude_fixed = longitude_fixed = 0;
 
-    HAL_UART_Receive_DMA(&hlpuart, (uint8_t *) rx_buff, 1);
+    HAL_UART_Receive_DMA(&hlpuart, (uint8_t *) gps_rx_buff, 1);
 
     // Baud rate is hard-coded to 115200 bps
     // Note: we may have to connect an arduino to the GPS module to change the baud rate
@@ -66,17 +49,18 @@ int Adafruit_GPS::send_command(const char *cmd) {
     if((cmd_str.substr(0, 5) != "$PMTK") && (cmd_str.substr(0, 4) != "$PGC")) {
         return 1;
     }
-    return HAL_UART_Transmit(&hlpuart, (uint8_t *) cmd, strlen(cmd), HAL_MAX_DELAY);
+    return HAL_UART_Transmit(&uart_handler, (uint8_t *) cmd, strlen(cmd), HAL_MAX_DELAY);
 }
 
-void Adafruit_GPS::read_command(){
-    if(!eof){
-        return;
+char Adafruit_GPS::read_command(){
+    if(!gps_eof || paused){
+        return 0;
     }
-    strncpy(last_line, (char *) curr_line, 128);
-    eof = false;
+    strncpy(last_line, (char *) gps_curr_line, 128);
+    gps_eof = false;
     received = true;
-    line_ofs = 0;
+    gps_line_ofs = 0;
+    return last_line[0];
 }
 
 bool Adafruit_GPS::newNMEAreceived() const {
@@ -85,6 +69,11 @@ bool Adafruit_GPS::newNMEAreceived() const {
 
 bool Adafruit_GPS::pause(bool p) {
     paused = p;
+    if(paused){
+        HAL_UART_DMAPause(&uart_handler);
+    } else {
+        HAL_UART_Receive_DMA(&uart_handler, (uint8_t *) gps_rx_buff, 1);
+    }
     return paused;
 }
 

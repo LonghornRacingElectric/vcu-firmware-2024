@@ -382,5 +382,30 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
+uint8_t gps_curr_line[128] = {0};
+uint8_t gps_rx_buff[1] = {0};
+volatile uint8_t gps_line_ofs = 0;
+bool gps_eof = false;
+
+uint8_t cell_curr_line[128] = {0};
+uint8_t cell_rx_buff[1] = {0};
+volatile uint8_t cell_line_ofs = 0;
+bool cell_eof = false;
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    if(huart->Instance == LPUART1) {
+        gps_curr_line[gps_line_ofs++] = gps_rx_buff[0];
+        if(gps_curr_line[gps_line_ofs - 1] == '\n' || gps_curr_line[gps_line_ofs - 1] == '\r') {
+            gps_eof = true;
+        }
+        if(gps_line_ofs >= 128) {
+            gps_eof = true;
+            gps_line_ofs = 0;
+        }
+        HAL_UART_Receive_DMA(huart, (uint8_t *) gps_rx_buff, 1);
+    }
+    else if(huart->Instance == UART7) {
+        // TODO: for cell implementation
+    }
+}
 
 /* USER CODE END 1 */

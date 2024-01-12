@@ -29,6 +29,17 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
+#include <stdbool.h>
+extern uint8_t gps_rx_buff[1];
+extern bool gps_eof;
+extern uint8_t gps_curr_line[128];
+extern volatile uint8_t gps_line_ofs;
+
+extern uint8_t cell_curr_line[128];
+extern uint8_t cell_rx_buff[1];
+extern volatile uint8_t cell_line_ofs;
+extern bool cell_eof;
+
 
 /* USER CODE END Includes */
 

@@ -32,6 +32,7 @@
 /* USER CODE BEGIN Includes */
 #include "inverter.h"
 #include "faults.h"
+#include "gps.h"
 #include "angel_can.h"
 
 /* USER CODE END Includes */
@@ -115,6 +116,7 @@ int main(void)
     }
 
   inverter_init();
+    Adafruit_GPS gps = Adafruit_GPS(hlpuart1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -124,6 +126,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /* Example code for reading the GPS data. This is how the arduino does it */
+    gps.read_command();
+    if(gps.newNMEAreceived()){
+        if(!gps.parse(gps.lastNMEA())){
+            continue;
+        }
+        if(gps.has_fix){
+            // do something with the data
+        }
+    }
       FAULT_CLEARALL(&vcu_fault_vector);
 
   }

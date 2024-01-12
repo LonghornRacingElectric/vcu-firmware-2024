@@ -463,11 +463,11 @@ bool Adafruit_GPS::parseFix(char *p) {
 bool Adafruit_GPS::parseAntenna(char *p) {
     if (!isEmpty(p)) {
         if (p[0] == '3') {
-            antenna = 3;
+            antenna = static_cast<AntennaStatus>(3);
         } else if (p[0] == '2') {
-            antenna = 2;
+            antenna = static_cast<AntennaStatus>(2);
         } else if (p[0] == '1') {
-            antenna = 1;
+            antenna = static_cast<AntennaStatus>(1);
         } else
             return false;
         return true;
