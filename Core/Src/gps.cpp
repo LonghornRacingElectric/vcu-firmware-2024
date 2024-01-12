@@ -6,7 +6,7 @@ char rx_buff[1] = {0};
 volatile uint8_t line_ofs = 0;
 bool eof = false;
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-    if(huart->Instance == USART3) {
+    if(huart->Instance == LPUART1) {
         curr_line[line_ofs++] = rx_buff[0];
         if(curr_line[line_ofs - 1] == '\n' || curr_line[line_ofs - 1] == '\r') {
             eof = true;
