@@ -139,7 +139,7 @@ int main(void)
   allImus_init();
   gps_init();
   indicators_init();
-//  cellular_init();
+  cellular_init();
 
   /* USER CODE END 2 */
 

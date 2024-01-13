@@ -15,9 +15,7 @@ static void indicators_playNote(float frequency, float beats) {
   HAL_Delay((uint32_t)(total * 0.1f));
 }
 
-void indicators_init() {
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-
+static void indicators_deepInTheHeartOfTexas() {
   indicators_playNote(NOTE_C4, 1);
   indicators_playNote(NOTE_F4, 2);
   indicators_playNote(NOTE_F4, 2);
@@ -55,6 +53,12 @@ void indicators_init() {
   indicators_playNote(NOTE_D5, 1);
   indicators_playNote(NOTE_A4, 1);
   indicators_playNote(NOTE_F4, 6);
+}
+
+void indicators_init() {
+  TIM2->CCR1 = 0;
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+//  indicators_deepInTheHeartOfTexas()
 }
 
 void indicators_periodic(HvcStatus *hvcStatus, VcuOutput *vcuCoreOutput) {
