@@ -10,7 +10,7 @@ enum BuzzerType {
     BUZZER_DEEP_IN_THE_HEART_OF_TEXAS = 2,
 };
 
-struct PduStatus {
+typedef struct PduStatus {
     float volumetricFlowRate;
     float waterTempInverter;
     float waterTempMotor;
@@ -23,7 +23,7 @@ struct PduStatus {
     float lvCurrent;
 
     bool isRecent = false;
-};
+} PduStatus;
 
 /**
  * Initialize the PDU's CAN mailboxes and wire signals

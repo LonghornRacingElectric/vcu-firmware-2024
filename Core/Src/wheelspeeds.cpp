@@ -5,6 +5,6 @@ void wheelspeeds_init() {
 
 }
 
-void wheelspeeds_get(WheelDisplacements* wheelDisplacements) {
+void wheelspeeds_periodic(WheelDisplacements* wheelDisplacements) {
 
 }

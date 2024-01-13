@@ -30,7 +30,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "inverter.h"
-//#include "faults.h"
 #include "angel_can.h"
 #include "clock.h"
 #include "cellular.h"
@@ -39,6 +38,8 @@
 #include "dash.h"
 #include "indicators.h"
 #include "gps.h"
+#include "all_imus.h"
+#include "wheelspeeds.h"
 
 /* USER CODE END Includes */
 
@@ -78,7 +79,10 @@ HvcStatus hvcStatus;
 PduStatus pduStatus;
 InverterStatus inverterStatus;
 AnalogVoltages analogVoltages;
+WheelDisplacements wheelDisplacements;
+ImuData imuData;
 GpsData gpsData;
+
 /* USER CODE END 0 */
 
 /**
@@ -129,6 +133,8 @@ int main(void)
   dash_init();
   hvc_init();
   pdu_init();
+  wheelspeeds_init();
+  allImus_init();
 
   /* USER CODE END 2 */
 
@@ -144,9 +150,8 @@ int main(void)
     adc_periodic(&analogVoltages);
     hvc_periodic(&hvcStatus, &vcuCoreOutput);
     pdu_periodic(&pduStatus, &vcuCoreOutput);
-    imu_periodic();
-    // TODO wheelspeeds
-    // TODO external IMUs
+    wheelspeeds_periodic(&wheelDisplacements);
+    allImus_periodic(&imuData);
     gps_periodic(&gpsData);
 
     // TODO vcu core
@@ -155,7 +160,7 @@ int main(void)
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
     dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
     // TODO non-volatile memory
-    cellular_periodic(); // telemetry outputs, parameter inputs
+    cellular_periodic(); // TODO send telemetry outputs, receive parameter inputs
     can_periodic(deltaTime);
   }
   /* USER CODE END 3 */
