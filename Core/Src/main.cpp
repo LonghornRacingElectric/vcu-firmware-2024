@@ -29,9 +29,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "clock.h"
+#include "led.h"
 #include "inverter.h"
 #include "angel_can.h"
-#include "clock.h"
 #include "cellular.h"
 #include "pdu.h"
 #include "hvc.h"
@@ -135,6 +136,8 @@ int main(void)
   pdu_init();
   wheelspeeds_init();
   allImus_init();
+  gps_init();
+  cellular_init();
 
   /* USER CODE END 2 */
 
@@ -159,8 +162,10 @@ int main(void)
     inverter_periodic(&inverterStatus, &vcuCoreOutput);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
     dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
-    // TODO non-volatile memory
-    cellular_periodic(); // TODO send telemetry outputs, receive parameter inputs
+    // TODO SD card periodic
+    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+                      &pduStatus, &inverterStatus, &analogVoltages,
+                      &wheelDisplacements, &imuData, &gpsData);
     can_periodic(deltaTime);
   }
   /* USER CODE END 3 */

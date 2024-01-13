@@ -3,28 +3,39 @@
 
 #include <string>
 #include "VcuParameters.h"
-#include "stm32h7xx_hal.h"
+#include "main.h"
+#include "VcuModel.h"
+#include "hvc.h"
+#include "pdu.h"
+#include "inverter.h"
+#include "adc.h"
+#include "wheelspeeds.h"
+#include "all_imus.h"
+#include "gps.h"
 
 
 extern UART_HandleTypeDef huart7;
 
 
-typedef struct TelemetryPacket {
-    float someVoltage;
-    float someTorque;
-    uint32_t someErrors;
-} TelemetryPacket;
-
-
 // private helper methods
-static void cellular_sendAT(std::string command);
-// ... more will probably be needed
+static void cellular_sendAT(const std::string& command);
+
+static void cellular_receiveAT();
+
+static bool cellular_areParametersUpdated();
+
+static void cellular_updateParameters(VcuParameters *vcuCoreParameters);
+
+static void cellular_sendTelemetry();
 
 
 // public methods
-void cellular_sendTelemetry(TelemetryPacket* telemetry);
-bool cellular_areParametersUpdated();
-void cellular_updateParameters(VcuParameters* vcuParameters);
-void cellular_periodic();
+void cellular_init();
+
+void cellular_periodic(VcuParameters *vcuCoreParameters,
+                       VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
+                       PduStatus *pduStatus, InverterStatus *inverterStatus,
+                       AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
+                       ImuData *imuData, GpsData *gpsData);
 
 #endif //VCU_FIRMWARE_2024_CELLULAR_H
