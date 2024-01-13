@@ -125,6 +125,7 @@ int main(void)
   MX_ADC1_Init();
   MX_FATFS_Init();
   MX_SDMMC1_SD_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
   led_init();
   clock_init();
@@ -137,7 +138,8 @@ int main(void)
   wheelspeeds_init();
   allImus_init();
   gps_init();
-  cellular_init();
+  indicators_init();
+//  cellular_init();
 
   /* USER CODE END 2 */
 

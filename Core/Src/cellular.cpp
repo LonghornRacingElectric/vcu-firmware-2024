@@ -3,12 +3,18 @@
 // private helper methods
 static void cellular_sendAT(std::string* command) {
   auto bytes = reinterpret_cast<const uint8_t *>(command->c_str());
-  HAL_UART_Transmit(&huart7, bytes, command->size(), 500);
+  uint32_t error = HAL_UART_Transmit(&huart7, bytes, command->size(), 1000);
+  if(error != HAL_OK) {
+    Error_Handler();
+  }
 }
 
 static std::string* cellular_receive() {
   char buffer[256];
-  HAL_UART_Receive(&huart7, (uint8_t*) buffer, 256, 500);
+  uint32_t error = HAL_UART_Receive(&huart7, (uint8_t*) buffer, 256, 1000);
+  if(error != HAL_OK) {
+    Error_Handler();
+  }
   auto str = new std::string(buffer);
   return str;
 }
@@ -38,11 +44,12 @@ static void cellular_updateParameters(VcuParameters *vcuCoreParameters) {
 
 // public methods
 void cellular_init() {
-  std::string command = "AT+HTTPCLIENT=2,0,\"http://google.com\",\"google.com\",\"/\",1\r";
+  HAL_Delay(2000);
+  std::string command = "AT\r";
   cellular_sendAT(&command);
-  auto response = cellular_receive();
+  volatile auto response = cellular_receive();
   if(*response != "OK\r\n") {
-    Error_Handler();
+    //Error_Handler();
   }
 }
 
