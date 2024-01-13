@@ -11,10 +11,8 @@ static void cellular_sendAT(std::string* command) {
 
 static char buffer[256];
 static std::string* cellular_receive() {
-  uint32_t error = HAL_UART_Receive(&huart7, (uint8_t*) buffer, 256, 1000);
-  if(error != HAL_OK) {
-    Error_Handler();
-  }
+  buffer[0] = 0;
+  HAL_UART_Receive(&huart7, (uint8_t*) buffer, 256, 50);
   auto str = new std::string(buffer);
   return str;
 }
@@ -44,11 +42,23 @@ static void cellular_updateParameters(VcuParameters *vcuCoreParameters) {
 
 // public methods
 void cellular_init() {
-//  volatile auto response1 = cellular_receive();
-  std::string command = "AT\r";
+//  std::string command = "AT\r";
+  std::string command;
+  std::string* response;
+
+  command = "ATE0\r";
   cellular_sendAT(&command);
-  volatile auto response = cellular_receive();
-  if(*response != "OK\r\n") {
+  response = cellular_receive();
+  if(*response != "\r\nOK\r\n") {
+    Error_Handler();
+  }
+
+  HAL_Delay(10);
+
+  command = "AT\r";
+  cellular_sendAT(&command);
+  response = cellular_receive();
+  if(*response != "\r\nOK\r\n") {
     Error_Handler();
   }
 }

@@ -58,7 +58,7 @@ static void indicators_deepInTheHeartOfTexas() {
 void indicators_init() {
   TIM2->CCR1 = 0;
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-//  indicators_deepInTheHeartOfTexas()
+//  indicators_deepInTheHeartOfTexas();
 }
 
 void indicators_periodic(HvcStatus *hvcStatus, VcuOutput *vcuCoreOutput) {

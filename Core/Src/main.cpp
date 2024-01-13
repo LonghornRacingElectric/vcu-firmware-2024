@@ -276,9 +276,9 @@ void Error_Handler(void)
   __disable_irq();
   while (1) {
     led_set(0.2f, 0.0f, 0.0f);
-    for (volatile int i = 0; i < 3000000; i++);
+    for (volatile int i = 0; i < 10000000; i++); // faster for some reason?
     led_off();
-    for (volatile int i = 0; i < 3000000; i++);
+    for (volatile int j = 0; j < 3000000; j++);
   }
   /* USER CODE END Error_Handler_Debug */
 }
