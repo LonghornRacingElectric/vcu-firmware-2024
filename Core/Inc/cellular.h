@@ -17,16 +17,33 @@
 extern UART_HandleTypeDef huart7;
 
 
-// private helper methods
-static void cellular_sendAT(const std::string& command);
+// strings
+static std::string CELL_OK = "\r\nOK\r\n";
 
-static void cellular_receiveAT();
+
+// private helper methods
+static void cellular_send(std::string* command);
+
+static void cellular_receive(std::string& expected);
+
+static void cellular_sendAndExpectOk(std::string* command);
 
 static bool cellular_areParametersUpdated();
 
 static void cellular_updateParameters(VcuParameters *vcuCoreParameters);
 
 static void cellular_sendTelemetry();
+
+static void cellular_disableEcho();
+
+/**
+ * only needs to be done once, then it's stored in the module's NVM
+ */
+static void cellular_setBaudRate();
+
+static void cellular_testConnection();
+
+static void cellular_mqttInit();
 
 
 // public methods
