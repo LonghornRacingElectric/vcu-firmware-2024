@@ -1,13 +1,14 @@
 #ifndef VCU_FIRMWARE_2024_GPS_H
 #define VCU_FIRMWARE_2024_GPS_H
 
-// TODO Adafruit GPS
+#include <stdint.h>
 
 typedef struct GpsData {
-  float gpsLat;
-  float gpsLong;
-  float gpsSpeed;
-  float gpsHeading;
+  float latitude;
+  float longitude;
+  float speed;
+  float heading;
+  uint64_t timeMillis;
 } GpsData;
 
 void gps_init();

@@ -41,6 +41,7 @@
 #include "gps.h"
 #include "all_imus.h"
 #include "wheelspeeds.h"
+#include "nvm.h"
 
 /* USER CODE END Includes */
 
@@ -140,6 +141,7 @@ int main(void)
   gps_init();
   indicators_init();
   cellular_init();
+  nvm_init();
 
   /* USER CODE END 2 */
 
@@ -164,11 +166,14 @@ int main(void)
     inverter_periodic(&inverterStatus, &vcuCoreOutput);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
     dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
-    // TODO SD card periodic
+    can_periodic(deltaTime);
+
+    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+                 &pduStatus, &inverterStatus, &analogVoltages,
+                 &wheelDisplacements, &imuData, &gpsData);
     cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                       &pduStatus, &inverterStatus, &analogVoltages,
                       &wheelDisplacements, &imuData, &gpsData);
-    can_periodic(deltaTime);
   }
   /* USER CODE END 3 */
 }
