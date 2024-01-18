@@ -1,17 +1,18 @@
 #ifndef VCU_FIRMWARE_2024_DASH_H
 #define VCU_FIRMWARE_2024_DASH_H
 
-typedef struct DashInfo {
-    float speed;
-    float hvSoC;
-    float lvSoC;
-    bool ams;
-    bool imd;
-} DashInfo;
+#include "VcuModel.h"
+#include "pdu.h"
+#include "hvc.h"
 
 /**
- * Send a CAN packet (or two) to the dash with everything it needs to know.
+ * Initialize CAN outboxes for dash.
  */
-void dash_update(DashInfo* dashInfo);
+void dash_init();
+
+/**
+ * Update CAN packets that go to the dash.
+ */
+void dash_periodic(PduStatus* pduStatus, HvcStatus* hvcStatus, VcuOutput* vcuCoreOutput);
 
 #endif //VCU_FIRMWARE_2024_DASH_H
