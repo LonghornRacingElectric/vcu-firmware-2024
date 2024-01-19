@@ -1,7 +1,7 @@
 #ifndef VCU_FIRMWARE_2024_WHEELSPEEDS_H
 #define VCU_FIRMWARE_2024_WHEELSPEEDS_H
 
-typedef struct WheelDisplacements {
+typedef struct WheelDisplacements { // radians
     float fl;
     float fr;
     float bl;
