@@ -8,10 +8,10 @@ static CanInbox whs_br_inbox;
 static CanInbox whs_bl_inbox;
 
 void wheelspeeds_init() {
-    can_addInbox(WHS_VCU_DISP_1, &whs_fr_inbox);
-    can_addInbox(WHS_VCU_DISP_2, &whs_fl_inbox);
-    can_addInbox(WHS_VCU_DISP_3, &whs_br_inbox);
-    can_addInbox(WHS_VCU_DISP_4, &whs_bl_inbox);
+    can_addInbox(UNS_VCU_DISP_1, &whs_fr_inbox);
+    can_addInbox(UNS_VCU_DISP_2, &whs_fl_inbox);
+    can_addInbox(UNS_VCU_DISP_3, &whs_br_inbox);
+    can_addInbox(UNS_VCU_DISP_4, &whs_bl_inbox);
 }
 
 void wheelspeeds_get(WheelDisplacements* wheelDisplacements) {
