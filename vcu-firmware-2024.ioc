@@ -130,36 +130,21 @@ LPUART1.SwapParam=UART_ADVFEATURE_SWAP_ENABLE
 Mcu.CPN=STM32H7A3RGT6
 Mcu.Family=STM32H7
 Mcu.IP0=ADC1
-<<<<<<< HEAD
 Mcu.IP1=BDMA2
-Mcu.IP10=SPI2
+Mcu.IP10=SDMMC1
 Mcu.IP11=SYS
 Mcu.IP12=TIM2
-Mcu.IP13=UART7
-Mcu.IP14=USART1
+Mcu.IP13=TIM5
+Mcu.IP14=UART7
 Mcu.IP2=CORTEX_M7
 Mcu.IP3=DEBUG
 Mcu.IP4=DMA
-=======
-Mcu.IP1=CORTEX_M7
-Mcu.IP10=SYS
-Mcu.IP11=TIM2
-Mcu.IP12=TIM5
-Mcu.IP13=UART7
-Mcu.IP2=DEBUG
-Mcu.IP3=DMA
-Mcu.IP4=FATFS
->>>>>>> main
-Mcu.IP5=FDCAN2
-Mcu.IP6=LPUART1
-Mcu.IP7=NVIC
-Mcu.IP8=RCC
-Mcu.IP9=SDMMC1
-<<<<<<< HEAD
+Mcu.IP5=FATFS
+Mcu.IP6=FDCAN2
+Mcu.IP7=LPUART1
+Mcu.IP8=NVIC
+Mcu.IP9=RCC
 Mcu.IPNb=15
-=======
-Mcu.IPNb=14
->>>>>>> main
 Mcu.Name=STM32H7A3R(G-I)Tx
 Mcu.Package=LQFP64
 Mcu.Pin0=PC13
@@ -442,11 +427,7 @@ ProjectManager.ToolChainLocation=
 ProjectManager.UAScriptAfterPath=
 ProjectManager.UAScriptBeforePath=
 ProjectManager.UnderRoot=true
-<<<<<<< HEAD
-ProjectManager.functionlistsort=1-SystemClock_Config-RCC-false-HAL-false,2-MX_GPIO_Init-GPIO-false-HAL-true,3-MX_DMA_Init-DMA-false-HAL-true,4-MX_BDMA2_Init-BDMA2-false-HAL-true,5-MX_FDCAN2_Init-FDCAN2-false-HAL-true,6-MX_LPUART1_UART_Init-LPUART1-false-HAL-true,7-MX_SPI2_Init-SPI2-false-HAL-true,8-MX_USART1_UART_Init-USART1-false-HAL-true,9-MX_UART7_Init-UART7-false-HAL-true,10-MX_ADC1_Init-ADC1-false-HAL-true,11-MX_TIM2_Init-TIM2-false-HAL-true,12-MX_SDMMC1_SD_Init-SDMMC1-false-HAL-true,0-MX_CORTEX_M7_Init-CORTEX_M7-false-HAL-true
-=======
-ProjectManager.functionlistsort=1-SystemClock_Config-RCC-false-HAL-false,2-MX_GPIO_Init-GPIO-false-HAL-true,3-MX_DMA_Init-DMA-false-HAL-true,4-MX_FDCAN2_Init-FDCAN2-false-HAL-true,5-MX_LPUART1_UART_Init-LPUART1-false-HAL-true,6-MX_UART7_Init-UART7-false-HAL-true,7-MX_TIM2_Init-TIM2-false-HAL-true,8-MX_ADC1_Init-ADC1-false-HAL-true,9-MX_FATFS_Init-FATFS-false-HAL-false,10-MX_SDMMC1_SD_Init-SDMMC1-false-HAL-true,11-MX_TIM5_Init-TIM5-false-HAL-true,0-MX_CORTEX_M7_Init-CORTEX_M7-false-HAL-true
->>>>>>> main
+ProjectManager.functionlistsort=1-SystemClock_Config-RCC-false-HAL-false,2-MX_GPIO_Init-GPIO-false-HAL-true,3-MX_DMA_Init-DMA-false-HAL-true,4-MX_BDMA2_Init-BDMA2-false-HAL-true,5-MX_LPUART1_UART_Init-LPUART1-false-HAL-true,6-MX_UART7_Init-UART7-false-HAL-true,7-MX_TIM2_Init-TIM2-false-HAL-true,8-MX_ADC1_Init-ADC1-false-HAL-true,9-MX_FATFS_Init-FATFS-false-HAL-false,10-MX_FDCAN2_Init-FDCAN2-false-HAL-true,11-MX_TIM5_Init-TIM5-false-HAL-true,12-MX_SDMMC1_SD_Init-SDMMC1-false-HAL-true,0-MX_CORTEX_M7_Init-CORTEX_M7-false-HAL-true
 RCC.ADCCLockSelection=RCC_ADCCLKSOURCE_PLL3
 RCC.ADCFreq_Value=32000000
 RCC.AHB12Freq_Value=280000000
