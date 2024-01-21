@@ -57,7 +57,6 @@
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc1;
 extern DMA_HandleTypeDef hdma_lpuart1_rx;
-extern DMA_HandleTypeDef hdma_usart1_rx;
 extern SD_HandleTypeDef hsd1;
 /* USER CODE BEGIN EV */
 

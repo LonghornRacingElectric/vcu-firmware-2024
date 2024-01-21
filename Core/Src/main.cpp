@@ -122,17 +122,14 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_BDMA2_Init();
-  MX_FDCAN2_Init();
   MX_LPUART1_UART_Init();
   MX_UART7_Init();
-  MX_ADC1_Init();
-  MX_TIM2_Init();
-  MX_SDMMC1_SD_Init();
   MX_TIM2_Init();
   MX_ADC1_Init();
   MX_FATFS_Init();
-  MX_SDMMC1_SD_Init();
+  MX_FDCAN2_Init();
   MX_TIM5_Init();
+  MX_SDMMC1_SD_Init();
   /* USER CODE BEGIN 2 */
   led_init();
   clock_init();

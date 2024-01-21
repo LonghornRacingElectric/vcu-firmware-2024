@@ -26,9 +26,7 @@
 
 UART_HandleTypeDef hlpuart1;
 UART_HandleTypeDef huart7;
-UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_lpuart1_rx;
-DMA_HandleTypeDef hdma_usart1_rx;
 
 /* LPUART1 init function */
 
