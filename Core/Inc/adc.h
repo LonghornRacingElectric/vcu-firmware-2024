@@ -64,20 +64,20 @@ void MX_ADC1_Init(void);
  * @param hadc1
  * @return error code
  */
-int adc_calibrate(ADC_HandleTypeDef* hadc1);
+static int adc_calibrate(ADC_HandleTypeDef* hadc1);
 
 /**
  * Initialize the ADC and DMA for analog sensors.
  * @param hadc1
  * @return error code
  */
-int adc_start(ADC_HandleTypeDef* hadc1);
+static int adc_start(ADC_HandleTypeDef* hadc1);
 
 /**
  * Update the values in the struct with the latest voltages.
  * @param analogVoltages
  */
-void adc_get(AnalogVoltages* analogVoltages);
+void adc_periodic(AnalogVoltages* analogVoltages);
 
 
 /* USER CODE END Prototypes */

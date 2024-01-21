@@ -10,7 +10,7 @@ enum BuzzerType {
     BUZZER_DEEP_IN_THE_HEART_OF_TEXAS = 2,
 };
 
-struct PDUStatus {
+typedef struct PduStatus {
     float volumetricFlowRate;
     float waterTempInverter;
     float waterTempMotor;
@@ -23,7 +23,7 @@ struct PDUStatus {
     float lvCurrent;
 
     bool isRecent = false;
-};
+} PduStatus;
 
 /**
  * Initialize the PDU's CAN mailboxes and wire signals
@@ -34,9 +34,9 @@ static void pdu_updateBrakeLight(float brightnessLeft, float brightnessRight);
 
 static void pdu_updateBuzzer(BuzzerType buzzerType);
 
-static void pdu_sendCoolingOutput(uint16_t radiatorFanRpm, float pumpPercentage);
+static void pdu_updateCoolingOutput(uint16_t radiatorFanRpm, float pumpPercentage);
 
-void pdu_periodic(PDUStatus* status, VcuOutput* vcuOutput, float deltaTime);
+void pdu_periodic(PduStatus* status, VcuOutput* vcuOutput);
 
 
 #endif //VCU_FIRMWARE_2024_PDU_H

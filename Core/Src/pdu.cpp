@@ -20,27 +20,32 @@ void pdu_init() {
 }
 
 static void pdu_updateBrakeLight(float brightnessLeft, float brightnessRight) {
+  brakeLightOutbox.dlc = 2;
   brakeLightOutbox.data[0] = (uint8_t) (brightnessLeft * 255.0f);
   brakeLightOutbox.data[1] = (uint8_t) (brightnessRight * 255.0f);
   brakeLightOutbox.isRecent = true;
 }
 
 static void pdu_updateBuzzer(BuzzerType buzzerType) {
+  buzzerOutbox.dlc = 1;
   buzzerOutbox.data[0] = (uint8_t) buzzerType;
   buzzerOutbox.isRecent = true;
 }
 
 static void pdu_updateCoolingOutput(float radiatorFanRpm, float pumpPercentage) {
+  coolingOutbox.dlc = 3;
   can_writeBytes(coolingOutbox.data, 0, 1, (uint16_t) radiatorFanRpm); // max will occur at 8300 rpm, but higher will just be ignored
   coolingOutbox.data[2] = (uint8_t) pumpPercentage;
   coolingOutbox.isRecent = true;
 }
 
-void pdu_periodic(PDUStatus *status, VcuOutput *vcuOutput, float deltaTime) {
+void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
 
   // TODO update vcu core to output brake lights
   // TODO pdu_sendBrakeLight(vcuOutput->brakeLightLeft)
+
   pdu_updateBuzzer(vcuOutput->r2dBuzzer ? BUZZER_BUZZ : BUZZER_SILENT);
+
   // TODO update vcu core to output cooling percentages
   // TODO pdu_sendCoolingOutput(vcuOutput->radiatorFanRpm, vcuOutput->pumpPercentage);
 

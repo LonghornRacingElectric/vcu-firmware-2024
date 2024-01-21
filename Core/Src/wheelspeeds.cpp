@@ -14,7 +14,7 @@ void wheelspeeds_init() {
     can_addInbox(UNS_VCU_DISP_4, &whs_bl_inbox);
 }
 
-void wheelspeeds_get(WheelDisplacements* wheelDisplacements) {
+void wheelspeeds_periodic(WheelDisplacements* wheelDisplacements) {
     if(whs_fr_inbox.isRecent) {
         wheelDisplacements->fr = (float) can_readBytes(whs_fr_inbox.data, 0, 1) / 100.0f;
         whs_fr_inbox.isRecent = false;

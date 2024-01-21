@@ -29,10 +29,19 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "inverter.h"
-//#include "faults.h"
-#include "angel_can.h"
 #include "clock.h"
+#include "led.h"
+#include "inverter.h"
+#include "angel_can.h"
+#include "cellular.h"
+#include "pdu.h"
+#include "hvc.h"
+#include "dash.h"
+#include "indicators.h"
+#include "gps.h"
+#include "all_imus.h"
+#include "wheelspeeds.h"
+#include "nvm.h"
 
 /* USER CODE END Includes */
 
@@ -66,6 +75,15 @@ void PeriphCommonClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+VcuParameters vcuCoreParameters;
+VcuOutput vcuCoreOutput;
+HvcStatus hvcStatus;
+PduStatus pduStatus;
+InverterStatus inverterStatus;
+AnalogVoltages analogVoltages;
+WheelDisplacements wheelDisplacements;
+ImuData imuData;
+GpsData gpsData;
 
 /* USER CODE END 0 */
 
@@ -108,11 +126,22 @@ int main(void)
   MX_ADC1_Init();
   MX_FATFS_Init();
   MX_SDMMC1_SD_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
   led_init();
   clock_init();
-  inverter_init();
   can_init(&hfdcan2);
+
+  inverter_init();
+  dash_init();
+  hvc_init();
+  pdu_init();
+  wheelspeeds_init();
+  allImus_init();
+  gps_init();
+  indicators_init();
+  cellular_init();
+  nvm_init();
 
   /* USER CODE END 2 */
 
@@ -124,6 +153,27 @@ int main(void)
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
     led_rainbow(deltaTime);
+
+    adc_periodic(&analogVoltages);
+    hvc_periodic(&hvcStatus, &vcuCoreOutput);
+    pdu_periodic(&pduStatus, &vcuCoreOutput);
+    wheelspeeds_periodic(&wheelDisplacements);
+    allImus_periodic(&imuData);
+    gps_periodic(&gpsData);
+
+    // TODO vcu core
+
+    inverter_periodic(&inverterStatus, &vcuCoreOutput);
+    indicators_periodic(&hvcStatus, &vcuCoreOutput);
+    dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
+    can_periodic(deltaTime);
+
+    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+                 &pduStatus, &inverterStatus, &analogVoltages,
+                 &wheelDisplacements, &imuData, &gpsData);
+    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+                      &pduStatus, &inverterStatus, &analogVoltages,
+                      &wheelDisplacements, &imuData, &gpsData);
   }
   /* USER CODE END 3 */
 }
@@ -231,9 +281,9 @@ void Error_Handler(void)
   __disable_irq();
   while (1) {
     led_set(0.2f, 0.0f, 0.0f);
-    for (volatile int i = 0; i < 3000000; i++);
+    for (volatile int i = 0; i < 10000000; i++); // faster for some reason?
     led_off();
-    for (volatile int i = 0; i < 3000000; i++);
+    for (volatile int j = 0; j < 3000000; j++);
   }
   /* USER CODE END Error_Handler_Debug */
 }
