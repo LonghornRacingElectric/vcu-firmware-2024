@@ -35,11 +35,6 @@ extern bool gps_eof;
 extern uint8_t gps_curr_line[128];
 extern volatile uint8_t gps_line_ofs;
 
-extern uint8_t cell_curr_line[128];
-extern uint8_t cell_rx_buff[1];
-extern volatile uint8_t cell_line_ofs;
-extern bool cell_eof;
-
 
 /* USER CODE END Includes */
 
@@ -47,15 +42,12 @@ extern UART_HandleTypeDef hlpuart1;
 
 extern UART_HandleTypeDef huart7;
 
-extern UART_HandleTypeDef huart1;
-
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
 void MX_LPUART1_UART_Init(void);
 void MX_UART7_Init(void);
-void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 

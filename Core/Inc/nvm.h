@@ -4,34 +4,45 @@
 #include "VcuParameters.h"
 #include "cellular.h"
 
-void nvm_init();
+typedef struct TelemetryRow {
+  // TODO add all telemetry here
+} TelemetryRow;
 
 /**
  * Load VCU parameters from a file on the SD card.
  * @param vcuParameters Pointer to VCU parameters.
  */
-void nvm_loadParameters(VcuParameters* vcuParameters);
+static void nvm_loadParameters(VcuParameters* vcuParameters);
 
 /**
  * Save VCU parameters to a file on the SD card.
  * @param vcuParameters Pointer to VCU parameters.
  */
-void nvm_saveParameters(VcuParameters* vcuParameters);
+static void nvm_saveParameters(VcuParameters* vcuParameters);
 
 /**
- * Create a new telemetry file with a unique name on the SD card.
+ * Create a new CSV file on the SD card with a unique name based on the time.
  */
-void nvm_beginTelemetry();
+static void nvm_beginTelemetry(uint64_t timestamp);
 
 /**
- * Add a packet of data to the open file.
- * @param telemetry Pointer to telemetry data to be added.
+ * Write a row of data to the telemetry CSV file.
  */
-void nvm_addTelemetry(TelemetryPacket* telemetry);
+static void nvm_writeTelemetry(TelemetryRow* telemetryRow);
 
 /**
- * Save and close the file on the SD card.
+ * Called once on startup. Load VCU parameters from SD card if they exist.
+ * Also open a telemetry CSV file named based on the current timestamp from the GPS real-time clock.
  */
-void nvm_endTelemetry();
+void nvm_init();
+
+/**
+ * Called many times per second. Save the VCU Parameters if they've changed and
+ * write one row of telemetry data to the CSV file.
+ */
+void nvm_periodic(VcuParameters* vcuParameters, VcuOutput *vcuCoreOutput,
+                  HvcStatus *hvcStatus, PduStatus *pduStatus, InverterStatus *inverterStatus,
+                  AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
+                  ImuData *imuData, GpsData *gpsData);
 
 #endif //VCU_FIRMWARE_2024_NVM_H

@@ -21,19 +21,29 @@
 #include "adc.h"
 #include "bdma2.h"
 #include "dma.h"
+#include "fatfs.h"
 #include "fdcan.h"
 #include "usart.h"
 #include "sdmmc.h"
-#include "spi.h"
 #include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "clock.h"
+#include "led.h"
 #include "inverter.h"
 #include "faults.h"
 #include "gps.h"
 #include "angel_can.h"
+#include "cellular.h"
+#include "pdu.h"
+#include "hvc.h"
+#include "dash.h"
+#include "indicators.h"
+#include "all_imus.h"
+#include "wheelspeeds.h"
+#include "nvm.h"
 
 /* USER CODE END Includes */
 
@@ -60,12 +70,22 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void PeriphCommonClock_Config(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+VcuParameters vcuCoreParameters;
+VcuOutput vcuCoreOutput;
+HvcStatus hvcStatus;
+PduStatus pduStatus;
+InverterStatus inverterStatus;
+AnalogVoltages analogVoltages;
+WheelDisplacements wheelDisplacements;
+ImuData imuData;
+GpsData gpsData;
 
 /* USER CODE END 0 */
 
@@ -91,6 +111,9 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+/* Configure the peripherals common clocks */
+  PeriphCommonClock_Config();
+
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -101,43 +124,65 @@ int main(void)
   MX_BDMA2_Init();
   MX_FDCAN2_Init();
   MX_LPUART1_UART_Init();
-  MX_SPI2_Init();
-  MX_USART1_UART_Init();
   MX_UART7_Init();
   MX_ADC1_Init();
   MX_TIM2_Init();
   MX_SDMMC1_SD_Init();
+  MX_TIM2_Init();
+  MX_ADC1_Init();
+  MX_FATFS_Init();
+  MX_SDMMC1_SD_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
-  // add an init analog function that sets up the ADCs
-    vcu_fault_vector = 0;
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_ADC);
-    if(can_init(&hfdcan2) != 0){
-        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CAN);
-    }
+  led_init();
+  clock_init();
+  can_init(&hfdcan2);
 
   inverter_init();
-    Adafruit_GPS gps = Adafruit_GPS(hlpuart1);
+  dash_init();
+  hvc_init();
+  pdu_init();
+  wheelspeeds_init();
+  allImus_init();
+  gps_init();
+  indicators_init();
+  cellular_init();
+  nvm_init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
     /* Example code for reading the GPS data. This is how the arduino does it */
-    gps.read_command();
-    if(gps.newNMEAreceived()){
-        if(!gps.parse(gps.lastNMEA())){
-            continue;
-        }
-        if(gps.has_fix){
-            // do something with the data
-        }
-    }
-      FAULT_CLEARALL(&vcu_fault_vector);
 
+    float deltaTime = clock_getDeltaTime();
+    led_rainbow(deltaTime);
+
+    adc_periodic(&analogVoltages);
+    hvc_periodic(&hvcStatus, &vcuCoreOutput);
+    pdu_periodic(&pduStatus, &vcuCoreOutput);
+    wheelspeeds_periodic(&wheelDisplacements);
+    allImus_periodic(&imuData);
+    gps_periodic(&gpsData);
+
+    // TODO vcu core
+
+    inverter_periodic(&inverterStatus, &vcuCoreOutput);
+    indicators_periodic(&hvcStatus, &vcuCoreOutput);
+    dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
+    can_periodic(deltaTime);
+
+    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+                 &pduStatus, &inverterStatus, &analogVoltages,
+                 &wheelDisplacements, &imuData, &gpsData);
+    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+                      &pduStatus, &inverterStatus, &analogVoltages,
+                      &wheelDisplacements, &imuData, &gpsData);
+    FAULT_CLEARALL(&vcu_fault_vector);
   }
   /* USER CODE END 3 */
 }
@@ -175,7 +220,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLN = 35;
   RCC_OscInitStruct.PLL.PLLP = 2;
   RCC_OscInitStruct.PLL.PLLQ = 2;
-  RCC_OscInitStruct.PLL.PLLR = 2;
+  RCC_OscInitStruct.PLL.PLLR = 35;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
   RCC_OscInitStruct.PLL.PLLFRACN = 0;
@@ -203,6 +248,33 @@ void SystemClock_Config(void)
   }
 }
 
+/**
+  * @brief Peripherals Common Clock Configuration
+  * @retval None
+  */
+void PeriphCommonClock_Config(void)
+{
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  /** Initializes the peripherals clock
+  */
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_LPUART1;
+  PeriphClkInitStruct.PLL2.PLL2M = 10;
+  PeriphClkInitStruct.PLL2.PLL2N = 288;
+  PeriphClkInitStruct.PLL2.PLL2P = 125;
+  PeriphClkInitStruct.PLL2.PLL2Q = 125;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_0;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
+  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
+  PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_PLL2;
+  PeriphClkInitStruct.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PLL2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
@@ -216,8 +288,11 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-  while (1)
-  {
+  while (1) {
+    led_set(0.2f, 0.0f, 0.0f);
+    for (volatile int i = 0; i < 10000000; i++); // faster for some reason?
+    led_off();
+    for (volatile int j = 0; j < 3000000; j++);
   }
   /* USER CODE END Error_Handler_Debug */
 }

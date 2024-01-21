@@ -81,3 +81,49 @@ char* Adafruit_GPS::lastNMEA() {
     received = false;
     return last_line;
 }
+
+Adafruit_GPS gps(hlpuart1);
+
+void gps_init() {
+    HAL_UART_Receive_DMA(&hlpuart1, (uint8_t *) gps_rx_buff, 1);
+
+    // Baud rate is hard-coded to 115200 bps
+    // Note: we may have to connect an arduino to the GPS module to change the baud rate
+    auto status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_BAUD_115200));
+    if(status != HAL_OK) {
+        return;
+    }
+    //sends both GGA and RMC data
+    status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_OUTPUT_RMCGGA));
+    if(status != HAL_OK) {
+        return;
+    }
+    //sets the update rate to 1 Hz
+    status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_UPDATE_1HZ));
+    if(status != HAL_OK) {
+        return;
+    }
+    //requests the antenna status
+    status = static_cast<HAL_StatusTypeDef>(gps.send_command(PGCMD_ANTENNA));
+    if(status != HAL_OK) {
+        return;
+    }
+    gps.is_ready = true;
+}
+
+void gps_periodic(GpsData* gpsData) {
+    gps.read_command();
+    if(gps.newNMEAreceived()){
+        if(!gps.parse(gps.lastNMEA())){
+            return;
+        }
+        if(gps.has_fix){
+            gpsData->latitude = gps.latitudeDegrees;
+            gpsData->longitude = gps.longitudeDegrees;
+            gpsData->speed = gps.speed;
+            gpsData->heading = gps.angle;
+            gpsData->timeMillis = HAL_GetTick() - gps.milliseconds;
+            gps.milliseconds = HAL_GetTick();
+        }
+    }
+}

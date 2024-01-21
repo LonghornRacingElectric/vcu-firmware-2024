@@ -2,9 +2,9 @@
 
 
 void wheelspeeds_init() {
-
+  // TODO implement
 }
 
-void wheelspeeds_get(WheelDisplacements* wheelDisplacements) {
-
+void wheelspeeds_periodic(WheelDisplacements* wheelDisplacements) {
+  // TODO implement
 }

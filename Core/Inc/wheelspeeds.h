@@ -16,6 +16,6 @@ void wheelspeeds_init();
 /**
  * Get latest wheel displacements from CAN.
  */
-void wheelspeeds_get(WheelDisplacements* wheelDisplacements);
+void wheelspeeds_periodic(WheelDisplacements* wheelDisplacements);
 
 #endif //VCU_FIRMWARE_2024_WHEELSPEEDS_H

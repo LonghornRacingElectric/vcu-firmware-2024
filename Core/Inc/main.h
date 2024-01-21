@@ -31,7 +31,6 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -63,30 +62,26 @@ void Error_Handler(void);
 #define BSPD_MotorOn_GPIO_Port GPIOC
 #define BSPD_Shutdown_Pin GPIO_PIN_15
 #define BSPD_Shutdown_GPIO_Port GPIOC
-#define RCC_HSE_IN_Pin GPIO_PIN_0
-#define RCC_HSE_IN_GPIO_Port GPIOH
-#define RCC_HSE_OUT_Pin GPIO_PIN_1
-#define RCC_HSE_OUT_GPIO_Port GPIOH
-#define IN_Button_Pin GPIO_PIN_0
-#define IN_Button_GPIO_Port GPIOC
-#define SPI_MOSI_Pin GPIO_PIN_1
-#define SPI_MOSI_GPIO_Port GPIOC
-#define SPI_MISO_Pin GPIO_PIN_2
-#define SPI_MISO_GPIO_Port GPIOC
+#define CalibButton_Pin GPIO_PIN_0
+#define CalibButton_GPIO_Port GPIOC
+#define BBSPI_SDI_Pin GPIO_PIN_1
+#define BBSPI_SDI_GPIO_Port GPIOC
+#define BBSPI_SDO_Pin GPIO_PIN_2
+#define BBSPI_SDO_GPIO_Port GPIOC
 #define BSPD_BrakeFailure_Pin GPIO_PIN_3
 #define BSPD_BrakeFailure_GPIO_Port GPIOC
-#define OUT_LEDR_Pin GPIO_PIN_0
-#define OUT_LEDR_GPIO_Port GPIOA
-#define OUT_LEDG_Pin GPIO_PIN_1
-#define OUT_LEDG_GPIO_Port GPIOA
-#define OUT_LEDB_Pin GPIO_PIN_2
-#define OUT_LEDB_GPIO_Port GPIOA
+#define LED_B_Pin GPIO_PIN_0
+#define LED_B_GPIO_Port GPIOA
+#define LED_R_Pin GPIO_PIN_1
+#define LED_R_GPIO_Port GPIOA
+#define LED_G_Pin GPIO_PIN_2
+#define LED_G_GPIO_Port GPIOA
 #define ADC_Steer_Pin GPIO_PIN_3
 #define ADC_Steer_GPIO_Port GPIOA
 #define ADC_Sus1_Pin GPIO_PIN_4
 #define ADC_Sus1_GPIO_Port GPIOA
-#define OUT_ReadyToDrive_Pin GPIO_PIN_5
-#define OUT_ReadyToDrive_GPIO_Port GPIOA
+#define ReadyToDrive_Pin GPIO_PIN_5
+#define ReadyToDrive_GPIO_Port GPIOA
 #define ADC_Sus2_Pin GPIO_PIN_6
 #define ADC_Sus2_GPIO_Port GPIOA
 #define ADC_APPS1_Pin GPIO_PIN_7
@@ -97,26 +92,18 @@ void Error_Handler(void);
 #define ADC_BSE2_GPIO_Port GPIOC
 #define ADC_BSE1_Pin GPIO_PIN_0
 #define ADC_BSE1_GPIO_Port GPIOB
-#define IN_DriveSwitch_Pin GPIO_PIN_1
-#define IN_DriveSwitch_GPIO_Port GPIOB
+#define DriveSwitch_Pin GPIO_PIN_1
+#define DriveSwitch_GPIO_Port GPIOB
 #define BSPD_MotorFailure_Pin GPIO_PIN_2
 #define BSPD_MotorFailure_GPIO_Port GPIOB
-#define SPI_SCK_Pin GPIO_PIN_10
-#define SPI_SCK_GPIO_Port GPIOB
+#define BBSPI_CLK_Pin GPIO_PIN_10
+#define BBSPI_CLK_GPIO_Port GPIOB
 #define SPI_CS_IMU_Pin GPIO_PIN_12
 #define SPI_CS_IMU_GPIO_Port GPIOB
-#define NVM_D0_Pin GPIO_PIN_13
-#define NVM_D0_GPIO_Port GPIOB
-#define USB_UART_TX_Pin GPIO_PIN_14
-#define USB_UART_TX_GPIO_Port GPIOB
-#define USB_UART_RX_Pin GPIO_PIN_15
-#define USB_UART_RX_GPIO_Port GPIOB
 #define CAN_Term_Pin GPIO_PIN_6
 #define CAN_Term_GPIO_Port GPIOC
-#define OUT_IMD_LED_Pin GPIO_PIN_7
-#define OUT_IMD_LED_GPIO_Port GPIOC
-#define NVM_D1_Pin GPIO_PIN_9
-#define NVM_D1_GPIO_Port GPIOC
+#define IMD_LED_Pin GPIO_PIN_7
+#define IMD_LED_GPIO_Port GPIOC
 #define CELL_UART_RX_Pin GPIO_PIN_8
 #define CELL_UART_RX_GPIO_Port GPIOA
 #define GPS_UART_TX_Pin GPIO_PIN_9
@@ -125,32 +112,20 @@ void Error_Handler(void);
 #define GPS_UART_RX_GPIO_Port GPIOA
 #define SPI_CS_EEPROM_Pin GPIO_PIN_11
 #define SPI_CS_EEPROM_GPIO_Port GPIOA
-#define OUT_AMS_LED_Pin GPIO_PIN_12
-#define OUT_AMS_LED_GPIO_Port GPIOA
+#define AMS_LED_Pin GPIO_PIN_12
+#define AMS_LED_GPIO_Port GPIOA
 #define JTMS_Pin GPIO_PIN_13
 #define JTMS_GPIO_Port GPIOA
 #define JTCK_Pin GPIO_PIN_14
 #define JTCK_GPIO_Port GPIOA
-#define JTDI_Pin GPIO_PIN_15
-#define JTDI_GPIO_Port GPIOA
-#define NVM_D2_Pin GPIO_PIN_10
-#define NVM_D2_GPIO_Port GPIOC
-#define NVM_D3_Pin GPIO_PIN_11
-#define NVM_D3_GPIO_Port GPIOC
-#define NVM_CLK_Pin GPIO_PIN_12
-#define NVM_CLK_GPIO_Port GPIOC
-#define NVM_CMD_Pin GPIO_PIN_2
-#define NVM_CMD_GPIO_Port GPIOD
-#define JTDO_Pin GPIO_PIN_3
-#define JTDO_GPIO_Port GPIOB
 #define CELL_UART_TX_Pin GPIO_PIN_4
 #define CELL_UART_TX_GPIO_Port GPIOB
 #define CAN_RX_Pin GPIO_PIN_5
 #define CAN_RX_GPIO_Port GPIOB
 #define CAN_TX_Pin GPIO_PIN_6
 #define CAN_TX_GPIO_Port GPIOB
-#define NVM_DETECT_Pin GPIO_PIN_9
-#define NVM_DETECT_GPIO_Port GPIOB
+#define SD_DETECT_Pin GPIO_PIN_9
+#define SD_DETECT_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
