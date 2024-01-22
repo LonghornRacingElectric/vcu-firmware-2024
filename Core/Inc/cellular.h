@@ -26,6 +26,8 @@ static void cellular_send(std::string* command);
 
 static void cellular_receive(std::string& expected);
 
+static void cellular_receive_response(int size, std::string& response, int time);
+
 static void cellular_sendAndExpectOk(std::string* command);
 
 static bool cellular_areParametersUpdated();
@@ -35,6 +37,8 @@ static void cellular_updateParameters(VcuParameters *vcuCoreParameters);
 static void cellular_sendTelemetry();
 
 static void cellular_disableEcho();
+
+static void cellular_findTMobileHSNCode(std::string& code);
 
 /**
  * only needs to be done once, then it's stored in the module's NVM
@@ -54,5 +58,11 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
                        PduStatus *pduStatus, InverterStatus *inverterStatus,
                        AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
                        ImuData *imuData, GpsData *gpsData);
+
+
+
+void register_TMobile();
+
+
 
 #endif //VCU_FIRMWARE_2024_CELLULAR_H
