@@ -24,7 +24,7 @@ static std::string CELL_OK = "\r\nOK\r\n";
 // private helper methods
 static void cellular_send(std::string* command);
 
-static void cellular_receive(std::string& expected);
+static bool cellular_receive(std::string& expected, bool care);
 
 static void cellular_receive_response(int size, std::string& response, int time);
 
