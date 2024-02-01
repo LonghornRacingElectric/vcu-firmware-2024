@@ -212,7 +212,7 @@ void cellular_init() {
   cellular_testConnection();
   register_TMobile();
 
-  std::string phoneNumber = "18326411809";
+  std::string phoneNumber = "15555555555";
   std::string message = "Hi it's Angelique ;)";
   cellular_sendText(&phoneNumber, &message);
 
