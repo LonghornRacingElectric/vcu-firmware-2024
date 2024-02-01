@@ -25,13 +25,13 @@ static bool cellular_receive(std::string &expected, bool care) {
   return true;
 }
 
-static void cellular_receive_response(int size, std::string &response, int time) {
+static void cellular_receiveAny(int size, std::string &response, int time) {
     static char buffer[512];
     memset(buffer, 0, sizeof(buffer));
-    HAL_UART_Receive(&huart7, (uint8_t *) buffer, size, time);
-    response = std::string(buffer);
-
-
+    uint16_t rxAmount = 0;
+    HAL_UARTEx_ReceiveToIdle(&huart7, (uint8_t *) buffer, 2, &rxAmount, time); // \r\n
+    HAL_UARTEx_ReceiveToIdle(&huart7, (uint8_t *) buffer, size, &rxAmount, time);
+    response = "\r\n" + std::string(buffer);
 }
 
 static void cellular_sendAndExpectOk(std::string *command) {
@@ -135,7 +135,7 @@ static void cellular_findTMobileHSNCode(std::string& code)
     std::string command = "AT+COPS=?\r";
     cellular_send(&command);
     std::string response;
-    cellular_receive_response(500, response, 180000);
+  cellular_receiveAny(500, response, 180000);
     for(int i = 0; i < response.size(); i++)
     {
         char currentChar = response[i];
@@ -177,6 +177,32 @@ static void cellular_findTMobileHSNCode(std::string& code)
     }
 }
 
+static void cellular_sendText(std::string* phoneNumber, std::string* message) {
+  std::string command;
+  std::string response;
+
+  command = "AT+CMGF=1\r";
+  cellular_sendAndExpectOk(&command);
+
+  command = "AT+CMGS=\"" + *phoneNumber + "\"\r";
+  response = "\r\n> ";
+  cellular_send(&command);
+  cellular_receive(response, true);
+
+  cellular_send(message);
+
+  command = "\x1A"; // Ctrl+Z character to indicate end of message
+  response = "\r\n\r\n+CMGS: 3\r\n\r\nOK\r\n";
+  cellular_send(&command);
+
+  cellular_receiveAny(64, response, 30000);
+  uint8_t index = response.size() - 6;
+  const char* okBegin = response.c_str() + index;
+  if(strcmp(okBegin, "\r\nOK\r\n") != 0) {
+    Error_Handler();
+  }
+}
+
 // public methods
 void cellular_init() {
   cellular_disableEcho();
@@ -185,17 +211,23 @@ void cellular_init() {
   cellular_disableEcho();
   cellular_testConnection();
   register_TMobile();
-  cellular_mqttInit(); // TODO MQTT disconnect if already connected
-////
-for(int i = 0; i < 200; i++)
-{
-    std::string command = "AT+UMQTTC=2,0,0,\"/data/dynamics\",\"{'time': " + std::to_string(1706483160 + i) + ", 'torque_command': " + std::to_string(i) + "}\"\r";
-    std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
-    cellular_send(&command);
-    cellular_receive(response, false);
-    HAL_Delay(5000);
 
-}
+  std::string phoneNumber = "18326411809";
+  std::string message = "Hi\n- Angelique";
+  cellular_sendText(&phoneNumber, &message);
+
+
+//  cellular_mqttInit(); // TODO MQTT disconnect if already connected
+//////
+//for(int i = 0; i < 200; i++)
+//{
+//    std::string command = "AT+UMQTTC=2,0,0,\"/data/dynamics\",\"{'time': " + std::to_string(1706483160 + i) + ", 'torque_command': " + std::to_string(i) + "}\"\r";
+//    std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
+//    cellular_send(&command);
+//    cellular_receive(response, false);
+//    HAL_Delay(5000);
+//
+//}
 
 
 
@@ -208,7 +240,7 @@ void register_TMobile()
     std::string command = "AT+COPS?\r";
     std::string response;
     cellular_send(&command);
-    cellular_receive_response(500, response, 1000);
+  cellular_receiveAny(500, response, 1000);
     bool has_conn = false;
     for(int i = 0; i < response.size(); i++)
     {
@@ -225,7 +257,7 @@ void register_TMobile()
         command = "AT+COPS=1,2,\"" + TMobile_HSNCode + "\"" + "\r";
 
         cellular_send(&command);
-        cellular_receive_response(500, response, 180000);
+      cellular_receiveAny(500, response, 180000);
     }
 
 }

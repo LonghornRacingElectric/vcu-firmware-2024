@@ -26,7 +26,7 @@ static void cellular_send(std::string* command);
 
 static bool cellular_receive(std::string& expected, bool care);
 
-static void cellular_receive_response(int size, std::string& response, int time);
+static void cellular_receiveAny(int size, std::string& response, int time);
 
 static void cellular_sendAndExpectOk(std::string* command);
 
