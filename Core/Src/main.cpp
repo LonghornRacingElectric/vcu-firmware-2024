@@ -127,9 +127,11 @@ int main(void)
   MX_TIM2_Init();
   MX_ADC1_Init();
   MX_FATFS_Init();
-  MX_FDCAN2_Init();
-  MX_TIM5_Init();
   MX_SDMMC1_SD_Init();
+  MX_TIM5_Init();
+  MX_FDCAN2_Init();
+  MX_USART1_UART_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
   led_init();
   clock_init();
@@ -255,7 +257,8 @@ void PeriphCommonClock_Config(void)
 
   /** Initializes the peripherals clock
   */
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_LPUART1;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_UART4
+                              |RCC_PERIPHCLK_LPUART1;
   PeriphClkInitStruct.PLL2.PLL2M = 10;
   PeriphClkInitStruct.PLL2.PLL2N = 288;
   PeriphClkInitStruct.PLL2.PLL2P = 125;

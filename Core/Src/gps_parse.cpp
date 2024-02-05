@@ -1,6 +1,7 @@
 #include "gps.h"
 #include <string>
 #include <cstring>
+#include <sstream>
 #include <algorithm>
 using namespace std;
 
@@ -52,129 +53,134 @@ using namespace std;
     @return True if successfully parsed, false if fails check or parsing
 */
 /**************************************************************************/
-bool Adafruit_GPS::parse(char* nmea) {
+bool Adafruit_GPS::parse(const string& nmea) {
     if (!check(nmea))
         return false;
-    // passed the check, so there's a valid source in thisSource and a valid
-    // sentence in thisSentence
-    char *p = nmea; // Pointer to move through the sentence -- good parsers are
-    // non-destructive
-    p = strchr(p, ',') + 1; // Skip to char after the next comma, then check.
+    // passed the check, so there's a valid source in thisSource and a valid sentence in thisSentence
+
+    string token;
+    string dir_token;
+    stringstream parsed_str(nmea);
+    getline(parsed_str, token, ',');
 
     // This may look inefficient, but an M0 will get down the list in about 1 us /
     // strcmp()! Put the GPS sentences from Adafruit_GPS at the top to make
     // pruning excess code easier. Otherwise, keep them alphabetical for ease of
     // reading.
-    if (!strcmp(thisSentence, "GGA")) { //************************************GGA
-        // Adafruit from Actisense NGW-1 from SH CP150C
-        parseTime(p);
-        p = strchr(p, ',') + 1; // parse time with specialized function
-        // parse out both latitude and direction, then go to next field, or fail
-        if (parseCoord(p, &latitudeDegrees, &latitude, &latitude_fixed, &latitude_dir))
-            newDataValue(NMEA_LAT, latitudeDegrees);
-        p = strchr(p, ',') + 1;
-        p = strchr(p, ',') + 1;
-        // parse out both longitude and direction, then go to next field, or fail
-        if (parseCoord(p, &longitudeDegrees, &longitude, &longitude_fixed, &longitude_dir))
-            newDataValue(NMEA_LON, longitudeDegrees);
-        p = strchr(p, ',') + 1;
-        p = strchr(p, ',') + 1;
-        if (!isEmpty(p)) { // if it's a , (or a * at end of sentence) the value is
-            // not included
-            fixquality = atoi(p); // needs additional processing
-            if (fixquality > 0) {
-                has_fix = true;
-            } else
-                has_fix = false;
-        }
-        p = strchr(p, ',') + 1; // then move on to the next
-        // Most can just be parsed with atoi() or atof(), then move on to the next.
-        if (!isEmpty(p))
-            satellites = atoi(p);
-        p = strchr(p, ',') + 1;
-        if (!isEmpty(p))
-            newDataValue(NMEA_HDOP, HDOP = atof(p));
-        p = strchr(p, ',') + 1;
-        if (!isEmpty(p))
-            altitude = atof(p);
-        p = strchr(p, ',') + 1;
-        p = strchr(p, ',') + 1; // skip the units
-        if (!isEmpty(p))
-            geoidheight = atof(p); // skip the rest
+    if (thisSentence == "GGA") { //************************************GGA
+        // Adafruit from Actisense NGW-1  from SH CP150C
+        // Gets time token from the string
+        getline(parsed_str, token, ',');
+        parseTime(token);
 
-    } else if (!strcmp(thisSentence, "RMC")) { //*****************************RMC
-        // in Adafruit from Actisense NGW-1 from SH CP150C
-        parseTime(p);
-        p = strchr(p, ',') + 1;
-        parseFix(p);
-        p = strchr(p, ',') + 1;
+        //Gets latitude and longitude
+        getline(parsed_str, token, ',');
+        getline(parsed_str, dir_token, ',');
         // parse out both latitude and direction, then go to next field, or fail
-        if (parseCoord(p, &latitudeDegrees, &latitude, &latitude_fixed, &latitude_dir))
-            newDataValue(NMEA_LAT, latitudeDegrees);
-        p = strchr(p, ',') + 1;
-        p = strchr(p, ',') + 1;
+        parseCoord(token, dir_token);
+
+        getline(parsed_str, token, ',');
+        getline(parsed_str, dir_token, ',');
         // parse out both longitude and direction, then go to next field, or fail
-        if (parseCoord(p, &longitudeDegrees, &longitude, &longitude_fixed, &longitude_dir))
-            newDataValue(NMEA_LON, longitudeDegrees);
-        p = strchr(p, ',') + 1;
-        p = strchr(p, ',') + 1;
-        if (!isEmpty(p))
-            newDataValue(NMEA_SOG, speed = atof(p));
-        p = strchr(p, ',') + 1;
-        if (!isEmpty(p))
-            newDataValue(NMEA_COG, angle = atof(p));
-        p = strchr(p, ',') + 1;
-        if (!isEmpty(p)) {
-            uint32_t fulldate = atof(p);
+        parseCoord(token, dir_token);
+
+        getline(parsed_str, token, ',');
+        // parse out both latitude and direction, then go to next field, or fail
+        if (!token.empty()) { // if it's a ',' (or a '*' at end of sentence) the value is not included
+            fixquality = stoi(token);
+            has_fix = fixquality > 0;
+        }
+        // p = strchr(p, ',') + 1; // then move on to the next
+        getline(parsed_str, token, ',');
+        // Most can just be parsed with atoi() or atof(), then move on to the next.
+        if (!token.empty())
+            satellites = stoi(token);
+        getline(parsed_str, token, ',');
+        if (!token.empty())
+            HDOP = stof(token);
+        getline(parsed_str, token, ',');
+        if (!token.empty())
+            altitude = stof(token);
+        getline(parsed_str, token, ',');
+        getline(parsed_str, token, ','); // Runs twice because the token is just the unit of meters 'M' lol
+        if (!token.empty())
+            geoidheight = stof(token); // skip the rest
+
+    } else if (thisSentence == "RMC") { //*****************************RMC
+        // in Adafruit from Actisense NGW-1 from SH CP150C
+        getline(parsed_str, token, ',');
+        parseTime(token);
+
+        getline(parsed_str, token, ',');
+        parseFix(token);
+
+        getline(parsed_str, token, ',');
+        getline(parsed_str, dir_token, ',');
+        // parse out both latitude and direction, then go to next field, or fail
+        parseCoord(token, dir_token);
+
+        getline(parsed_str, token, ',');
+        getline(parsed_str, dir_token, ',');
+        // parse out both longitude and direction, then go to next field, or fail
+        parseCoord(token, dir_token);
+
+        getline(parsed_str, token, ',');
+        if (!token.empty()) speed = stof(token);
+        getline(parsed_str, token, ',');
+        if (!token.empty()) angle = stof(token);
+        getline(parsed_str, token, ',');
+        if (!token.empty()) {
+            uint32_t fulldate = stoi(token);
             day = fulldate / 10000;
             month = (fulldate % 10000) / 100;
             year = (fulldate % 100);
         } // skip the rest
 
-    } else if (!strcmp(thisSentence, "GLL")) { //*****************************GLL
+    } else if (thisSentence == "GLL") { //*****************************GLL
         // in Adafruit from Actisense NGW-1 from SH CP150C
         // parse out both latitude and direction, then go to next field, or fail
-        if (parseCoord(p, &latitudeDegrees, &latitude, &latitude_fixed, &latitude_dir))
-            newDataValue(NMEA_LAT, latitudeDegrees);
-        p = strchr(p, ',') + 1;
-        p = strchr(p, ',') + 1;
-        // parse out both longitude and direction, then go to next field, or fail
-        if (parseCoord(p, &longitudeDegrees, &longitude, &longitude_fixed, &longitude_dir))
-            newDataValue(NMEA_LON, longitudeDegrees);
-        p = strchr(p, ',') + 1;
-        p = strchr(p, ',') + 1;
-        parseTime(p);
-        p = strchr(p, ',') + 1;
-        parseFix(p); // skip the rest
 
-    } else if (!strcmp(thisSentence, "GSA")) { //*****************************GSA
+        getline(parsed_str, token, ',');
+        getline(parsed_str, dir_token, ',');
+        parseCoord(token, dir_token);
+
+        getline(parsed_str, token, ',');
+        getline(parsed_str, dir_token, ',');
+        // parse out both longitude and direction, then go to next field, or fail
+        parseCoord(token, dir_token);
+
+        getline(parsed_str, token, ',');
+        parseTime(token);
+        getline(parsed_str, token, ',');
+        parseFix(token); // skip the rest
+
+    } else if (thisSentence == "GSA") { //*****************************GSA
         // in Adafruit from Actisense NGW-1
-        p = strchr(p, ',') + 1; // skip selection mode
-        if (!isEmpty(p))
-            fixquality_3d = atoi(p);
-        p = strchr(p, ',') + 1;
+        getline(parsed_str, token, ',');
+        if (!token.empty())
+            fixquality_3d = stoi(token);
+        getline(parsed_str, token, ',');
         // skip 12 Satellite PDNs without interpreting them
         for (int i = 0; i < 12; i++)
-            p = strchr(p, ',') + 1;
-        if (!isEmpty(p))
-            PDOP = atof(p);
-        p = strchr(p, ',') + 1;
+            getline(parsed_str, token, ',');
+        if (!token.empty())
+            PDOP = stof(token);
+        getline(parsed_str, token, ',');
         // parse out HDOP, we also parse this from the GGA sentence. Chipset should
         // report the same for both
-        if (!isEmpty(p))
-            newDataValue(NMEA_HDOP, HDOP = atof(p));
-        p = strchr(p, ',') + 1;
-        if (!isEmpty(p))
-            VDOP = atof(p); // last before checksum
+        if (!token.empty()) HDOP = stof(token);
+        getline(parsed_str, token, ',');
+        if (!token.empty())
+            VDOP = stof(token); // last before checksum
 
-    } else if (!strcmp(thisSentence, "TOP")) { //*****************************TOP
+    } else if (thisSentence == "TOP") { //*****************************TOP
         // See:
         // https://learn.adafruit.com/adafruit-ultimate-gps-featherwing/antenna-options
         // There is an output sentence that will tell you the status of the
         // antenna. $PGTOP,11,x where x is the status number. If x is 3 that means
         // it is using the external antenna. If x is 2 it's using the internal
-        p = strchr(p, ',') + 1;
-        parseAntenna(p);
+        getline(parsed_str, token, ',');
+        parseAntenna(token);
     }
 
     else {
@@ -182,8 +188,8 @@ bool Adafruit_GPS::parse(char* nmea) {
     }
 
     // Record the successful parsing of where the last data came from and when
-    strcpy(lastSource, thisSource);
-    strcpy(lastSentence, thisSentence);
+    lastSource = thisSource;
+    lastSentence = thisSentence;
     // lastUpdate = millis();
     return true;
 }
@@ -197,55 +203,46 @@ bool Adafruit_GPS::parse(char* nmea) {
     @return True if well formed, false if it has problems
 */
 /**************************************************************************/
-bool Adafruit_GPS::check(char *nmea) {
+bool Adafruit_GPS::check(const string& nmea) {
     thisCheck = 0; // new check
-    *thisSentence = *thisSource = 0;
-    if (*nmea != '$' && *nmea != '!')
+    thisSentence.clear();
+    thisSource.clear();
+    if (nmea[0] != '$' && nmea[0] != '!')
         return false; // doesn't start with $ or !
     else
         thisCheck += NMEA_HAS_DOLLAR;
-    // do checksum check -- first look if we even have one -- ignore all but last
-    // *
-    char *ast = nmea; // not strchr(nmea,'*'); for first *
-    while (*ast)
-        ast++; // go to the end
-    while (*ast != '*' && ast > nmea)
-        ast--; // then back to * if it's there
-    if (*ast != '*')
-        return false; // there is no asterisk
+    auto lastAsteriskIdx = nmea.rfind('*');
+    if(lastAsteriskIdx == string::npos)
+        return false;
     else {
-        uint16_t sum = parseHex(*(ast + 1)) * 16; // extract checksum
-        sum += parseHex(*(ast + 2));
-        char *p = nmea; // check checksum
-        for (char *p1 = p + 1; p1 < ast; p1++)
-            sum ^= *p1;
-        if (sum != 0)
+        auto checkSumStr = nmea.substr(lastAsteriskIdx + 1, 2);
+        uint16_t checkSum = stoi(checkSumStr, nullptr, 16);
+        for(size_t i = 1; i < lastAsteriskIdx; i++)
+            checkSum ^= nmea[i];
+        if (checkSum != 0)
             return false; // bad checksum :(
         else
             thisCheck += NMEA_HAS_CHECKSUM;
     }
     // extract source of variable length
-    char *p = nmea + 1;
-    const char *src = tokenOnList(p, sources);
-    if (src) {
-        strcpy(thisSource, src);
+    string parsed_str = nmea.substr(1);
+    thisSource = tokenOnList(parsed_str, sources);
+    if (!thisSource.empty()) {
         thisCheck += NMEA_HAS_SOURCE;
     } else
         return false;
-    p += strlen(src);
+    parsed_str.erase(0, thisSource.length()); // remove source from string
     // extract sentence id and check if parsed
-    const char *snc = tokenOnList(p, sentences_parsed);
-    if (snc) {
-        strcpy(thisSentence, snc);
+    thisSentence = tokenOnList(parsed_str, sentences_parsed);
+    if (!thisSentence.empty()) {
         thisCheck += NMEA_HAS_SENTENCE_P + NMEA_HAS_SENTENCE;
     } else { // check if known
-        snc = tokenOnList(p, sentences_known);
-        if (snc) {
-            strcpy(thisSentence, snc);
+        thisSentence = tokenOnList(parsed_str, sentences_known);
+        if (!thisSentence.empty()) {
             thisCheck += NMEA_HAS_SENTENCE;
             return false; // known but not parsed
         } else {
-            parseStr(thisSentence, p, NMEA_MAX_SENTENCE_ID);
+            parseStr(thisSentence, parsed_str, NMEA_MAX_SENTENCE_ID);
             return false; // unknown
         }
     }
@@ -260,16 +257,13 @@ bool Adafruit_GPS::check(char *nmea) {
     @return Pointer to the found token, or NULL if it fails
 */
 /**************************************************************************/
-const char *Adafruit_GPS::tokenOnList(char *token, const char **list) {
-    int i = 0; // index in the list
-    while (strncmp(list[i], "ZZ", 2) &&
-           i < 1000) { // stop at terminator and don't crash without it
-        // test for a match on the sentence name
-        if (!strncmp((const char *)list[i], (const char *)token, strlen(list[i])))
-            return list[i];
-        i++;
-    }
-    return NULL; // couldn't find a match
+string Adafruit_GPS::tokenOnList(string& token, const unordered_set<string>& list) {
+    auto it = list.find(token);
+    if(it != list.end())
+        return *it;
+    else
+
+    return ""; // couldn't find a match
 }
 
 /**************************************************************************/
@@ -281,15 +275,13 @@ const char *Adafruit_GPS::tokenOnList(char *token, const char **list) {
     @return True if on the list, false if it fails check or is not on the list
 */
 /**************************************************************************/
-bool Adafruit_GPS::onList(char *nmea, const char **list) {
+bool Adafruit_GPS::onList(string& nmea, const unordered_set<string>& list) {
     if (!check(nmea)) // sets thisSentence if valid
         return false;   // not a valid sentence
-    // stop at terminator with first two letters ZZ and don't crash without it
-    for (int i = 0; strncmp(list[i], "ZZ", 2) && i < 1000; i++) {
-        // test for a match on the sentence name
-        if (!strcmp((const char *)list[i], (const char *)thisSentence))
-            return true;
-    }
+    auto it = list.find(thisSentence);
+    if(it != list.end())
+        return true;
+    else
     return false; // couldn't find a match
 }
 
@@ -316,40 +308,29 @@ bool Adafruit_GPS::onList(char *nmea, const char **list) {
     @return true if successful, false if failed or no value
 */
 /**************************************************************************/
-bool Adafruit_GPS::parseCoord(char *pStart, float *angleDegrees,
-                              float *angle, int32_t *angle_fixed,
-                              char *dir) {
-    char *p = pStart;
-    if (!isEmpty(p)) {
-        // get the number in DDDMM.mmmm format and break into components
-        char degreebuff[10] = {0}; // Ensure string is terminated after strncpy
-        char *e = strchr(p, '.');
-        if (e == NULL || e - p > 6)
-            return false;                // no decimal point in range
-        strncpy(degreebuff, p, e - p); // get DDDMM
-        long dddmm = atol(degreebuff);
-        long degrees = (dddmm / 100);         // truncate the minutes
-        long minutes = dddmm - degrees * 100; // remove the degrees
-        p = e;                                // start from the decimal point
-        float decminutes = atof(e); // the fraction after the decimal point
-        p = strchr(p, ',') + 1;            // go to the next field
+bool Adafruit_GPS::parseCoord(string& mag, string& dir) {
+    if (!mag.empty() && !dir.empty()) {
+        auto e = mag.find('.');
+        if(e == string::npos || e - mag.length() > 6)
+            return false;
+        auto degreebuff = mag.substr(0, e); //Get DDDMM
+        uint16_t dddmm = stoi(degreebuff);
+        uint16_t degrees = dddmm / 100;
+        uint16_t minutes = dddmm - degrees * 100;
+        float decminutes = stof(mag.substr(e));
 
-        // get the NSEW direction as a character
-        char nsew = 'X';
-        if (!isEmpty(p))
-            nsew = *p; // field is not empty
-        else
-            return false; // no direction provided
+        if(dir.empty())
+            return false;
+        char nsew = dir[0];
 
         // set the various numerical formats to their values
-        long fixed = degrees * 10000000 + (minutes * 10000000) / 60 +
+        int32_t fixed = degrees * 10000000 + (uint32_t) ((minutes * 10000000) / 60) +
                      (decminutes * 10000000) / 60;
-        float ang = degrees * 100 + minutes + decminutes;
-        float deg = fixed / (float)10000000.;
-        if (nsew == 'S' ||
-            nsew == 'W') { // fixed and deg are signed, but DDDMM.mmmm is not
-            fixed = -fixed;
-            deg = -deg;
+        float ang = (float) degrees * 100 + (float) minutes + decminutes;
+        float deg = (float) fixed / (float)10000000.;
+        if (nsew == 'S' || nsew == 'W') { // fixed and deg are signed, but DDDMM.mmmm is not
+            fixed = -1 * fixed;
+            deg = -1 * deg;
         }
 
         // reject directions that are not NSEW
@@ -363,15 +344,18 @@ bool Adafruit_GPS::parseCoord(char *pStart, float *angleDegrees,
         if (abs(deg) > 180)
             return false;
 
-        // store in locations passed as args
-        if (angle != NULL)
-            *angle = ang;
-        if (angle_fixed != NULL)
-            *angle_fixed = fixed;
-        if (angleDegrees != NULL)
-            *angleDegrees = deg;
-        if (dir != NULL)
-            *dir = nsew;
+        if(nsew == 'N' || nsew == 'S'){
+            latitude = ang;
+            latitude_fixed = fixed;
+            latitudeDegrees = deg;
+            latitude_dir = nsew;
+        } else if(nsew == 'E' || nsew == 'W'){
+            longitude = ang;
+            longitude_fixed = fixed;
+            longitudeDegrees = deg;
+            longitude_dir = nsew;
+        } else
+            return false;
     } else
         return false; // no number
     return true;
@@ -387,22 +371,20 @@ bool Adafruit_GPS::parseCoord(char *pStart, float *angleDegrees,
     @return Pointer to the string buffer
 */
 /**************************************************************************/
-char *Adafruit_GPS::parseStr(char *buff, char *p, int n) {
-    char *e = strchr(p, ',');
+string Adafruit_GPS::parseStr(string& buff, string& p, int n) {
+    auto e = p.find(',');
     int len = 0;
-    if (e) {
-        len = min(int(e - p), n - 1);
-        strncpy(buff, p, len); // copy up to the comma
-        buff[len] = 0;
+    if(e != string::npos){
+        len = min((int)e, n);
+        buff = p.substr(0, len);
     } else {
-        e = strchr(p, '*');
-        if (e) {
-            len = min(int(e - p), n - 1);
-            strncpy(buff, p, len); // or up to the *
-            buff[e - p] = 0;
+        e = p.find('*');
+        if(e != string::npos){
+            len = min((int)e, n);
+            buff = p.substr(0, len);
         } else {
-            len = min((int)strlen(p), n - 1);
-            strncpy(buff, p, len); // or to the end or max capacity
+            len = min((int)p.length(), n);
+            buff = p.substr(0, len);
         }
     }
     return buff;
@@ -416,21 +398,20 @@ char *Adafruit_GPS::parseStr(char *buff, char *p, int n) {
     @return true if successful, false otherwise
 */
 /**************************************************************************/
-bool Adafruit_GPS::parseTime(char *p) {
-    if (!isEmpty(p)) { // get time
-        uint32_t time = atol(p);
-        hour = time / 10000;
-        minute = (time % 10000) / 100;
-        seconds = (time % 100);
-        char *dec = strchr(p, '.');
-        char *comstar = min(strchr(p, ','), strchr(p, '*'));
-        if (dec != NULL && comstar != NULL && dec < comstar)
-            milliseconds = atof(dec) * 1000;
-        else
-            milliseconds = 0;
-        return true;
-    }
-    return false;
+bool Adafruit_GPS::parseTime(string& p) {
+    if(p.empty())
+        return false;
+    uint32_t time = stoi(p);
+    hour = time / 10000;
+    minute = (time % 10000) / 100;
+    seconds = (time % 100);
+    auto dec = p.find('.');
+    auto comstar = min(p.find(','), p.find('*'));
+    if(dec != string::npos && comstar != string::npos && dec < comstar)
+        milliseconds = stoi(p.substr(dec + 1, comstar - dec - 1)) * 1000;
+    else
+        milliseconds = 0;
+    return true;
 }
 
 /**************************************************************************/
@@ -440,8 +421,8 @@ bool Adafruit_GPS::parseTime(char *p) {
     @return True if we parsed it, false if it has invalid data
 */
 /**************************************************************************/
-bool Adafruit_GPS::parseFix(char *p) {
-    if (!isEmpty(p)) {
+bool Adafruit_GPS::parseFix(string& p) {
+    if (!p.empty()) {
         if (p[0] == 'A') {
             has_fix = true;
         } else if (p[0] == 'V')
@@ -460,8 +441,8 @@ bool Adafruit_GPS::parseFix(char *p) {
     @return 3=external 2=internal 1=there was an antenna short or problem
 */
 /**************************************************************************/
-bool Adafruit_GPS::parseAntenna(char *p) {
-    if (!isEmpty(p)) {
+bool Adafruit_GPS::parseAntenna(string& p) {
+    if (!p.empty()) {
         if (p[0] == '3') {
             antenna = static_cast<AntennaStatus>(3);
         } else if (p[0] == '2') {
@@ -490,37 +471,3 @@ bool Adafruit_GPS::isEmpty(char *pStart) {
     else
         return true;
 }
-
-/**************************************************************************/
-/*!
-    @brief Parse a hex character and return the appropriate decimal value
-    @param c Hex character, e.g. '0' or 'B'
-    @return Integer value of the hex character. Returns 0 if c is not a proper
-   character
-*/
-/**************************************************************************/
-// read a Hex value and return the decimal equivalent
-uint8_t Adafruit_GPS::parseHex(char c) {
-    if (c < '0')
-        return 0;
-    if (c <= '9')
-        return c - '0';
-    if (c < 'A')
-        return 0;
-    if (c <= 'F')
-        return (c - 'A') + 10;
-    // if (c > 'F')
-    return 0;
-}
-
-/**************************************************************************/
-/*!
-    @brief Update the value and history information with a new value. Call
-    whenever a new data value is received. The function does nothing if the
-    NMEA extensions are not enabled.
-    @param idx The data index for which a new value has been received
-    @param v The new value received
-    @return none
-*/
-/**************************************************************************/
-void Adafruit_GPS::newDataValue(nmea_index_t idx, float v) {}

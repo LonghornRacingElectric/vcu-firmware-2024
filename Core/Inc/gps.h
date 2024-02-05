@@ -3,10 +3,11 @@
 
 #include <cstdint>
 #include <string>
+#include <unordered_set>
 #include "usart.h"
 #include "adafruit_defines.h"
+using namespace std;
 
-#define MAXLINELENGTH 120 ///< how long are max NMEA lines to parse?
 #define NMEA_MAX_SENTENCE_ID                                                   \
   20 ///< maximum length of a sentence ID name, including terminating 0
 #define NMEA_MAX_SOURCE_ID                                                     \
@@ -39,26 +40,22 @@ private:
 
     bool received;
 
-    const char* sources[7] = {"II", "WI", "GP", "PG",
+    const unordered_set<string> sources = {"II", "WI", "GP", "PG",
                               "GN", "P",  "ZZZ"}; ///< valid source ids
-    const char *sentences_parsed[6] = {"GGA", "GLL", "GSA", "RMC",
+    const unordered_set<string> sentences_parsed = {"GGA", "GLL", "GSA", "RMC",
                                        "TOP", "ZZZ"}; ///< parseable sentence ids
-    const char *sentences_known[4] = {"DBT", "HDM", "HDT",
+    const unordered_set<string> sentences_known = {"DBT", "HDM", "HDT",
                                       "ZZZ"}; ///< known, but not parseable
 
-    bool check(char* nmea);
-    const char* tokenOnList(char *token, const char **list);
-    bool onList(char *nmea, const char **list);
-    bool parseCoord(char *pStart, float *angleDegrees,
-                    float *angle, int32_t *angle_fixed,
-                    char *dir);
-    char* parseStr(char *buff, char *p, int n);
-    bool parseTime(char *p);
-    bool parseFix(char *p);
-    bool parseAntenna(char *p);
+    bool check(const string& nmea);
+    static string tokenOnList(string& token, const unordered_set<string>& list);
+    bool onList(string& nmea, const unordered_set<string>&list);
+    bool parseCoord(string& p1, string& p2);
+    static string parseStr(string& buff, string& p, int n);
+    bool parseTime(string& p);
+    bool parseFix(string& p);
+    bool parseAntenna(string& p);
     bool isEmpty(char *pStart);
-    uint8_t parseHex(char c);
-    void newDataValue(nmea_index_t tag, float v);
 
 public:
 
@@ -81,25 +78,42 @@ public:
     bool is_ready;
     uint16_t milliseconds;
 
-    char last_line[128]{};
-
-    std::string firmware_version;
+    string last_line;
 
     int thisCheck = 0; //<the results of the check on the current sentence
-    char thisSource[NMEA_MAX_SOURCE_ID] = {0};
-    char thisSentence[NMEA_MAX_SENTENCE_ID] = {0};
-    char lastSource[NMEA_MAX_SOURCE_ID] = {0};
-    char lastSentence[NMEA_MAX_SENTENCE_ID] = {0};
+    string thisSource;
+    string thisSentence;
+    string lastSource;
+    string lastSentence;
 
 
 
     Adafruit_GPS(UART_HandleTypeDef &hlpuart);
     virtual ~Adafruit_GPS() = default;
     int send_command(const char *cmd);
+    int waitForNewMessage();
+    /**
+     * Checks whether we received the next NMEA sentence from the GPS module
+     * @return true or false
+     */
     bool newNMEAreceived() const;
+    /**
+     * Pauses the GPS module
+     * @param p true to pause, false to resume
+     * @return true if paused, false if resumed
+     */
     bool pause(bool p);
-    char* lastNMEA();
-    bool parse(char* nmea);
+    /**
+     * Returns a copy of the most recent NMEA sentence, used for parsing
+     * @return
+     */
+    string lastNMEA();
+    /**
+     * Parses the NMEA sentence and puts the values into the field variables
+     * @param nmea the NMEA sentence
+     * @return true if the sentence was parsed successfully, false if not
+     */
+    bool parse(const string& nmea);
     char read_command();
 };
 
