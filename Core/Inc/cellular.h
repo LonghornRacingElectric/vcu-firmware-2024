@@ -32,9 +32,25 @@ static void cellular_sendAndExpectOk(std::string* command);
 
 static bool cellular_areParametersUpdated();
 
+static int cellular_Base64encode(char *encoded, const char *string, int len);
+
+static void cellular_split8(uint8_t*& arr, uint8_t num);
+
+static void cellular_split16(uint8_t*& arr, uint16_t num);
+
+static void cellular_split32(uint8_t*& arr, uint32_t num);
+
 static void cellular_updateParameters(VcuParameters *vcuCoreParameters);
 
-static void cellular_sendTelemetry();
+static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
+                                       PduStatus *pduStatus, InverterStatus *inverterStatus,
+                                       AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
+                                       ImuData *imuData, GpsData *gpsData);
+
+static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
+                                       PduStatus *pduStatus, InverterStatus *inverterStatus,
+                                       AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
+                                       ImuData *imuData, GpsData *gpsData)
 
 static void cellular_disableEcho();
 
@@ -61,7 +77,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
 
 
 
-void register_TMobile();
+void cellular_register_TMobile();
 
 
 
