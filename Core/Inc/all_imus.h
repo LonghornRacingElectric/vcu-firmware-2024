@@ -4,16 +4,16 @@
 #include "imu.h"
 
 typedef struct ImuData {
-  xyz accel1;
-  xyz accel2;
-  xyz accel3;
+  xyz accelVcu;
+  xyz accelHvc;
+  xyz accelPdu;
   xyz accelFl;
   xyz accelFr;
   xyz accelBl;
   xyz accelBr;
-  xyz gyro1;
-  xyz gyro2;
-  xyz gyro3;
+  xyz gyroVcu;
+  xyz gyroHvc;
+  xyz gyroPdu;
 } ImuData;
 
 /**

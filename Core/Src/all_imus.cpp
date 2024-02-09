@@ -23,17 +23,17 @@ void allImus_init() {
     can_addInbox(UNS_VCU_IMU_4, &imu_unsSbl_inbox);
 }
 
-static void externalImus_getAccels(xyz* accel1, xyz* accel2, xyz* accelFl, xyz* accelFr, xyz* accelBl, xyz* accelBr) {
+static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, xyz* accelFr, xyz* accelBl, xyz* accelBr) {
   if(imu_hvcaccel_inbox.isRecent) {
-    accel1->x = (float) can_readBytes(imu_hvcaccel_inbox.data, 0, 1) / 100.0f;
-    accel1->y = (float) can_readBytes(imu_hvcaccel_inbox.data, 2, 3) / 100.0f;
-    accel1->z = (float) can_readBytes(imu_hvcaccel_inbox.data, 4, 5) / 100.0f;
+    accelHvc->x = (float) can_readBytes(imu_hvcaccel_inbox.data, 0, 1) / 100.0f;
+    accelHvc->y = (float) can_readBytes(imu_hvcaccel_inbox.data, 2, 3) / 100.0f;
+    accelHvc->z = (float) can_readBytes(imu_hvcaccel_inbox.data, 4, 5) / 100.0f;
     imu_hvcaccel_inbox.isRecent = false;
   }
   if(imu_pduaccel_inbox.isRecent) {
-    accel2->x = (float) can_readBytes(imu_pduaccel_inbox.data, 0, 1) / 100.0f;
-    accel2->y = (float) can_readBytes(imu_pduaccel_inbox.data, 2, 3) / 100.0f;
-    accel2->z = (float) can_readBytes(imu_pduaccel_inbox.data, 4, 5) / 100.0f;
+    accelPdu->x = (float) can_readBytes(imu_pduaccel_inbox.data, 0, 1) / 100.0f;
+    accelPdu->y = (float) can_readBytes(imu_pduaccel_inbox.data, 2, 3) / 100.0f;
+    accelPdu->z = (float) can_readBytes(imu_pduaccel_inbox.data, 4, 5) / 100.0f;
     imu_pduaccel_inbox.isRecent = false;
   }
   if(imu_unsSfl_inbox.isRecent) {
@@ -63,24 +63,28 @@ static void externalImus_getAccels(xyz* accel1, xyz* accel2, xyz* accelFl, xyz* 
 
 }
 
-static void externalImus_getGyros(xyz* gyro1, xyz* gyro2) {
+static void externalImus_getGyros(xyz* gyroHvc, xyz* gyroPdu) {
   if(imu_hvcgyro_inbox.isRecent) {
-    gyro1->x = (float) can_readBytes(imu_hvcgyro_inbox.data, 0, 1) / 100.0f;
-    gyro1->y = (float) can_readBytes(imu_hvcgyro_inbox.data, 2, 3) / 100.0f;
-    gyro1->z = (float) can_readBytes(imu_hvcgyro_inbox.data, 4, 5) / 100.0f;
+    gyroHvc->x = (float) can_readBytes(imu_hvcgyro_inbox.data, 0, 1) / 100.0f;
+    gyroHvc->y = (float) can_readBytes(imu_hvcgyro_inbox.data, 2, 3) / 100.0f;
+    gyroHvc->z = (float) can_readBytes(imu_hvcgyro_inbox.data, 4, 5) / 100.0f;
     imu_hvcgyro_inbox.isRecent = false;
   }
   if(imu_pdugyro_inbox.isRecent) {
-    gyro2->x = (float) can_readBytes(imu_pdugyro_inbox.data, 0, 1) / 100.0f;
-    gyro2->y = (float) can_readBytes(imu_pdugyro_inbox.data, 2, 3) / 100.0f;
-    gyro2->z = (float) can_readBytes(imu_pdugyro_inbox.data, 4, 5) / 100.0f;
+    gyroPdu->x = (float) can_readBytes(imu_pdugyro_inbox.data, 0, 1) / 100.0f;
+    gyroPdu->y = (float) can_readBytes(imu_pdugyro_inbox.data, 2, 3) / 100.0f;
+    gyroPdu->z = (float) can_readBytes(imu_pdugyro_inbox.data, 4, 5) / 100.0f;
     imu_pdugyro_inbox.isRecent = false;
   }
 }
 
 void allImus_periodic(ImuData *imuData) {
-  imu_periodic();
 
-  externalImus_getAccels(&imuData->accel1, &imuData->accel2, &imuData->accelFl, &imuData->accelFr, &imuData->accelBl, &imuData->accelBr);
-  externalImus_getGyros(&imuData->gyro1, &imuData->gyro2);
+  // Maybe check if IMU is ready before reading from it?
+  // There are functions within imu.c in LL that function like this
+  imu_getAccel(&imuData->accelVcu);
+  imu_getGyro(&imuData->gyroVcu);
+
+  externalImus_getAccels(&imuData->accelHvc, &imuData->accelPdu, &imuData->accelFl, &imuData->accelFr, &imuData->accelBl, &imuData->accelBr);
+  externalImus_getGyros(&imuData->gyroHvc, &imuData->gyroPdu);
 }
