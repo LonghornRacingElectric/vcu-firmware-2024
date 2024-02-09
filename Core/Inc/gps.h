@@ -122,6 +122,7 @@ typedef struct GpsData {
   float longitude;
   float speed;
   float heading;
+  uint8_t hour, minute, seconds, year, month, day;
   uint64_t timeMillis;
 } GpsData;
 

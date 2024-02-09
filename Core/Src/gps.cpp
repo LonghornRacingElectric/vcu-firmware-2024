@@ -64,8 +64,7 @@ string Adafruit_GPS::lastNMEA() {
 int Adafruit_GPS::waitForNewMessage() {
   auto error = HAL_UARTEx_ReceiveToIdle_DMA(&uart_handler, (uint8_t *) gps_currLine, MAX_GPS_LINE_SIZE);
   if (error != HAL_OK) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL);
-
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS);
   }
   return error;
 }
@@ -84,7 +83,7 @@ void gps_init() {
         return;
     }
     //sets the update rate to 1 Hz
-    status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_UPDATE_1HZ));
+    status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_UPDATE_10HZ));
     if(status != HAL_OK) {
         return;
     }
@@ -107,6 +106,12 @@ void gps_periodic(GpsData* gpsData) {
             gpsData->longitude = gps.longitudeDegrees;
             gpsData->speed = gps.speed;
             gpsData->heading = gps.angle;
+            gpsData->hour = gps.hour;
+            gpsData->minute = gps.minute;
+            gpsData->seconds = gps.seconds;
+            gpsData->year = gps.year;
+            gpsData->month = gps.month;
+            gpsData->day = gps.day;
             gpsData->timeMillis = HAL_GetTick() - gps.milliseconds;
             gps.milliseconds = HAL_GetTick();
         }
