@@ -17,10 +17,10 @@ void allImus_init() {
     can_addInbox(HVC_VCU_IMU_GYRO, &imu_hvcgyro_inbox);
     can_addInbox(PDU_VCU_IMU_ACCEL, &imu_pduaccel_inbox);
     can_addInbox(PDU_VCU_IMU_GYRO, &imu_pdugyro_inbox);
-    can_addInbox(UNS_VCU_IMU_1, &imu_unsSfr_inbox);
-    can_addInbox(UNS_VCU_IMU_2, &imu_unsSfl_inbox);
-    can_addInbox(UNS_VCU_IMU_3, &imu_unsSbr_inbox);
-    can_addInbox(UNS_VCU_IMU_4, &imu_unsSbl_inbox);
+    can_addInbox(UNSFR_VCU_IMU, &imu_unsSfr_inbox);
+    can_addInbox(UNSFL_VCU_IMU, &imu_unsSfl_inbox);
+    can_addInbox(UNSBR_VCU_IMU, &imu_unsSbr_inbox);
+    can_addInbox(UNSBL_VCU_IMU, &imu_unsSbl_inbox);
 }
 
 static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, xyz* accelFr, xyz* accelBl, xyz* accelBr) {
