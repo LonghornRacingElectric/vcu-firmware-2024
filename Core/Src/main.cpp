@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "bdma2.h"
 #include "dma.h"
 #include "fatfs.h"
 #include "fdcan.h"
@@ -32,13 +33,14 @@
 #include "clock.h"
 #include "led.h"
 #include "inverter.h"
+#include "faults.h"
+#include "gps.h"
 #include "angel_can.h"
 #include "cellular.h"
 #include "pdu.h"
 #include "hvc.h"
 #include "dash.h"
 #include "indicators.h"
-#include "gps.h"
 #include "all_imus.h"
 #include "wheelspeeds.h"
 #include "nvm.h"
@@ -119,7 +121,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_FDCAN2_Init();
+  MX_BDMA2_Init();
   MX_LPUART1_UART_Init();
   MX_UART7_Init();
   MX_TIM2_Init();
@@ -127,6 +129,9 @@ int main(void)
   MX_FATFS_Init();
   MX_SDMMC1_SD_Init();
   MX_TIM5_Init();
+  MX_FDCAN2_Init();
+  MX_USART1_UART_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
   led_init();
   clock_init();
@@ -151,6 +156,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    /* Example code for reading the GPS data. This is how the arduino does it */
+
     float deltaTime = clock_getDeltaTime();
     led_rainbow(deltaTime);
 
@@ -174,6 +181,7 @@ int main(void)
     cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                       &pduStatus, &inverterStatus, &analogVoltages,
                       &wheelDisplacements, &imuData, &gpsData);
+    FAULT_CLEARALL(&vcu_fault_vector);
   }
   /* USER CODE END 3 */
 }
@@ -249,7 +257,8 @@ void PeriphCommonClock_Config(void)
 
   /** Initializes the peripherals clock
   */
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_LPUART1;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_UART4
+                              |RCC_PERIPHCLK_LPUART1;
   PeriphClkInitStruct.PLL2.PLL2M = 10;
   PeriphClkInitStruct.PLL2.PLL2N = 288;
   PeriphClkInitStruct.PLL2.PLL2P = 125;
