@@ -36,7 +36,7 @@ static void cellular_split32(uint8_t*& arr, uint32_t num)
 }
 
 
-static int cellular_Base64encode(char *encoded, const char *string, int len)
+static int cellular_Base64encode(char *encoded, const uint8_t *string, int len)
 {
     int i;
     char *p;
@@ -117,213 +117,391 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
         uint8_t *ptr = arr;
 
         // For HF
-        uint8_t version = 1;
-        cellular_split8(ptr, version);
 
-        uint32_t realTimeClock = 0; // I do not know where to get this data
-        cellular_split32(ptr, realTimeClock);
+        // version number
+        uint8_t oneByteU = 1;
+        cellular_split8(ptr, oneByteU);
 
-        int16_t vcuTR = (int16_t)(vcuCoreOutput->inverterTorqueRequest / 0.1f);
-        cellular_split16(ptr, vcuTR);
+        // Real Time Clock
+        uint32_t fourBytesU = 0; // I do not know where to get this data
+        cellular_split32(ptr, fourBytesU);
 
-        uint8_t vcuFlag = 0; // I do not know where to get this data
-        cellular_split8(ptr, vcuFlag);
+        // VCU TorqueRequest
+        int16_t twoBytes = (int16_t)(vcuCoreOutput->inverterTorqueRequest / 0.1f);
+        cellular_split16(ptr, twoBytes);
 
-        int16_t vcuDisplacementX = (int16_t)(vcuCoreOutput->vehicleDisplacement.x / 0.1f);
-        cellular_split16(ptr, vcuDisplacementX);
+        // vcu flag
+        oneByteU = 0; // I do not know where to get this data
+        cellular_split8(ptr, oneByteU);
 
-        int16_t vcuDisplacementY = (int16_t)(vcuCoreOutput->vehicleDisplacement.y / 0.1f);
-        cellular_split16(ptr, vcuDisplacementY);
+        // vcu displacement x y z
+        twoBytes = (int16_t)(vcuCoreOutput->vehicleDisplacement.x / 0.1f);
+        cellular_split16(ptr, twoBytes);
 
-        int16_t vcuDisplacementZ = (int16_t)(vcuCoreOutput->vehicleDisplacement.z / 0.1f);
-        cellular_split16(ptr, vcuDisplacementZ);
+        twoBytes = (int16_t)(vcuCoreOutput->vehicleDisplacement.y / 0.1f);
+        cellular_split16(ptr, twoBytes);
 
-        int16_t vcuVelocityX = (int16_t)(vcuCoreOutput->vehicleVelocity.x / 0.01f);
-        cellular_split16(ptr, vcuVelocityX);
+        twoBytes = (int16_t)(vcuCoreOutput->vehicleDisplacement.z / 0.1f);
+        cellular_split16(ptr, twoBytes);
 
-        int16_t vcuVelocityY = (int16_t)(vcuCoreOutput->vehicleVelocity.y / 0.01f);
-        cellular_split16(ptr, vcuVelocityY);
+        // VCU Velocity x y z
+        twoBytes = (int16_t)(vcuCoreOutput->vehicleVelocity.x / 0.01f);
+        cellular_split16(ptr, twoBytes);
 
-        int16_t vcuVelocityZ = (int16_t)(vcuCoreOutput->vehicleVelocity.z / 0.01f);
-        cellular_split16(ptr, vcuVelocityZ);
+        twoBytes = (int16_t)(vcuCoreOutput->vehicleVelocity.y / 0.01f);
+        cellular_split16(ptr,twoBytes);
 
-        int16_t vcuAccelerationX = (int16_t)(vcuCoreOutput->vehicleAcceleration.x / 0.001f);
-        cellular_split16(ptr, vcuAccelerationX);
+        twoBytes = (int16_t)(vcuCoreOutput->vehicleVelocity.z / 0.01f);
+        cellular_split16(ptr, twoBytes);
 
-        int16_t vcuAccelerationY = (int16_t)(vcuCoreOutput->vehicleAcceleration.y / 0.001f);
-        cellular_split16(ptr, vcuAccelerationY);
+        // VCU Acceleration
+        twoBytes = (int16_t)(vcuCoreOutput->vehicleAcceleration.x / 0.001f);
+        cellular_split16(ptr, twoBytes);
 
-        int16_t vcuAccelerationZ = (int16_t)(vcuCoreOutput->vehicleAcceleration.z / 0.001f);
-        cellular_split16(ptr, vcuAccelerationZ);
+        twoBytes = (int16_t)(vcuCoreOutput->vehicleAcceleration.y / 0.001f);
+        cellular_split16(ptr, twoBytes);
 
-        uint16_t hvPackVoltage = (uint16_t)(hvcStatus->packVoltage / 0.01f);
-        cellular_split16(ptr, hvPackVoltage);
+        twoBytes = (int16_t)(vcuCoreOutput->vehicleAcceleration.z / 0.001f);
+        cellular_split16(ptr, twoBytes);
 
-        uint16_t hvTractiveVoltage = (uint16_t)(0.01); // Dont know :(
-        cellular_split16(ptr, hvTractiveVoltage);
 
-        int16_t hvCurrent = (int16_t)(hvcStatus->packCurrent / 0.01f);
-        cellular_split16(ptr, hvCurrent);
+        // HV Pack voltage
+        uint16_t twoByesU = (uint16_t)(hvcStatus->packVoltage / 0.01f);
+        cellular_split16(ptr, twoByesU);
 
-        uint16_t lvVoltage = (uint16_t)(pduStatus->lvVoltage / 0.01f);
-        cellular_split16(ptr, lvVoltage);
+        // HV Tractive Voltage
+        twoByesU = (uint16_t)(0.01); // Dont know :(
+        cellular_split16(ptr, twoByesU);
 
-        int16_t lvCurrent = (int16_t)(pduStatus->lvCurrent / 0.01f);
-        cellular_split16(ptr, lvCurrent);
+        // HV Current
+        twoBytes = (int16_t)(hvcStatus->packCurrent / 0.01f);
+        cellular_split16(ptr, twoBytes);
 
-        uint8_t contactorState = (uint8_t)(hvcStatus->contactorStatus);
-        cellular_split8(ptr, contactorState);
+        // LV Voltage
+        twoByesU = (uint16_t)(pduStatus->lvVoltage / 0.01f);
+        cellular_split16(ptr, twoByesU);
 
-        uint16_t avgCellVoltage = 0; // dont know
-        cellular_split16(ptr, avgCellVoltage);
+        // LV Current
+        twoBytes = (int16_t)(pduStatus->lvCurrent / 0.01f);
+        cellular_split16(ptr, twoBytes);
 
-        uint8_t avgCellTemp = (uint8_t)(hvcStatus->packTempMean);
-        cellular_split8(ptr, avgCellTemp);
+        // contactor state
+        oneByteU = (uint8_t)(hvcStatus->contactorStatus);
+        cellular_split8(ptr, oneByteU);
 
-        uint16_t apps1 = (uint16_t)(analogVoltages->apps1 / 0.001f);
-        cellular_split16(ptr, apps1);
+        // average cell voltage
+        twoByesU = 0; // dont know
+        cellular_split16(ptr, twoByesU);
 
-        uint16_t apps2 = (uint16_t)(analogVoltages->apps2 / 0.001f);
-        cellular_split16(ptr, apps2);
+        // average Cell Temp
+        oneByteU = (uint8_t)(hvcStatus->packTempMean);
+        cellular_split8(ptr, oneByteU);
 
-        uint16_t bse1 = (uint16_t)(analogVoltages->bse1 / 0.001f);
-        cellular_split16(ptr, bse1);
+        // apps 1
+        twoByesU = (uint16_t)(analogVoltages->apps1 / 0.001f);
+        cellular_split16(ptr, twoByesU);
 
-        uint16_t bse2 = (uint16_t)(analogVoltages->bse2 / 0.001f);
-        cellular_split16(ptr, bse2);
+        // apps 2
+        twoByesU = (uint16_t)(analogVoltages->apps2 / 0.001f);
+        cellular_split16(ptr, twoByesU);
 
-        uint16_t sus1 = (uint16_t)(analogVoltages->sus1 / 0.001f);
-        cellular_split16(ptr, sus1);
+        // bse1
+        twoByesU = (uint16_t)(analogVoltages->bse1 / 0.001f);
+        cellular_split16(ptr, twoByesU);
 
-        uint16_t sus2 = (uint16_t)(analogVoltages->sus2 / 0.001f);
-        cellular_split16(ptr, sus2);
+        // bse 2
+        twoByesU = (uint16_t)(analogVoltages->bse2 / 0.001f);
+        cellular_split16(ptr, twoByesU);
 
-        uint16_t steer = (uint16_t)(analogVoltages->steer / 0.001f);
-        cellular_split16(ptr, steer);
+        // sus 1
+        twoByesU = (uint16_t)(analogVoltages->sus1 / 0.001f);
+        cellular_split16(ptr, twoByesU);
 
-        int32_t gpsLat = (int32_t)(gpsData->latitude / 0.0001f);
-        cellular_split32(ptr, gpsLat);
+        // sus 2
+        twoByesU = (uint16_t)(analogVoltages->sus2 / 0.001f);
+        cellular_split16(ptr, twoByesU);
 
-        int32_t gpsLong = (int32_t)(gpsData->longitude / 0.0001f);
-        cellular_split32(ptr, gpsLong);
+        // steer
+        twoByesU = (uint16_t)(analogVoltages->steer / 0.001f);
+        cellular_split16(ptr, twoByesU);
 
-        uint16_t gpsSpeed = (uint16_t)(gpsData->speed / 0.01f);
-        cellular_split16(ptr, gpsSpeed);
+        // gpd Latitude
+        int32_t fourBytes = (int32_t)(gpsData->latitude / 0.0001f);
+        cellular_split32(ptr, fourBytes);
 
-        uint16_t gpsHeading = (uint16_t)(gpsData->heading / 0.01f);
-        cellular_split16(ptr, gpsHeading);
+        // gps longitude
+        fourBytes = (int32_t)(gpsData->longitude / 0.0001f);
+        cellular_split32(ptr, fourBytes);
 
-        int16_t imuAcceleration[21];
-        int16_t imuGyro[9];
-        int acsCount = 0;
+        // gps speed
+        twoByesU = (uint16_t)(gpsData->speed / 0.01f);
+        cellular_split16(ptr, twoByesU);
 
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accel1.x / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accel1.y / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accel1.z / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accel2.x / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accel2.y / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accel2.z / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accel3.x / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accel3.y / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accel3.z / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelFl.x / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelFl.y / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelFl.z / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelFr.x / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelFr.y / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelFr.z / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelBl.x / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelBl.y / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelBl.z / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelBr.x / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelBr.y / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
-        imuAcceleration[acsCount++] = (int16_t)(imuData->accelBr.z / 0.001f);
-        cellular_split16(ptr, imuAcceleration[acsCount - 1]);
+        // gps heading
+        twoByesU = (uint16_t)(gpsData->heading / 0.01f);
+        cellular_split16(ptr, twoByesU);
 
-        acsCount = 0;
 
-        imuGyro[acsCount++] = (int16_t)(imuData->gyro1.x / 1);
-        cellular_split16(ptr, imuGyro[acsCount - 1]);
-        imuGyro[acsCount++] = (int16_t)(imuData->gyro1.y / 1);
-        cellular_split16(ptr, imuGyro[acsCount - 1]);
-        imuGyro[acsCount++] = (int16_t)(imuData->gyro1.z / 1);
-        cellular_split16(ptr, imuGyro[acsCount - 1]);
-        imuGyro[acsCount++] = (int16_t)(imuData->gyro2.x / 1);
-        cellular_split16(ptr, imuGyro[acsCount - 1]);
-        imuGyro[acsCount++] = (int16_t)(imuData->gyro2.y / 1);
-        cellular_split16(ptr, imuGyro[acsCount - 1]);
-        imuGyro[acsCount++] = (int16_t)(imuData->gyro2.z / 1);
-        cellular_split16(ptr, imuGyro[acsCount - 1]);
-        imuGyro[acsCount++] = (int16_t)(imuData->gyro3.x / 1);
-        cellular_split16(ptr, imuGyro[acsCount - 1]);
-        imuGyro[acsCount++] = (int16_t)(imuData->gyro3.y / 1);
-        cellular_split16(ptr, imuGyro[acsCount - 1]);
-        imuGyro[acsCount++] = (int16_t)(imuData->gyro3.z / 1);
-        cellular_split16(ptr, imuGyro[acsCount - 1]);
 
-        int16_t wheelSpeed[4];
-        acsCount = 0;
+        // IMU Acceleration (x,y,z): accel1, accel2, accel3, Fl, Fr, Bl, Br
+        twoBytes = (int16_t)(imuData->accel1.x / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accel1.y / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accel1.z / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accel2.x / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accel2.y / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accel2.z / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accel3.x / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accel3.y / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accel3.z / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelFl.x / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelFl.y / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelFl.z / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelFr.x / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelFr.y / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelFr.z / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelBl.x / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelBl.y / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelBl.z / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelBr.x / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelBr.y / 0.001f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->accelBr.z / 0.001f);
+        cellular_split16(ptr, twoBytes);
 
-        wheelSpeed[acsCount++] = (int16_t)(wheelDisplacements->fl / 0.1f);
-        cellular_split16(ptr, wheelSpeed[acsCount - 1]);
-        wheelSpeed[acsCount++] = (int16_t)(wheelDisplacements->fr / 0.1f);
-        cellular_split16(ptr, wheelSpeed[acsCount - 1]);
-        wheelSpeed[acsCount++] = (int16_t)(wheelDisplacements->bl / 0.1f);
-        cellular_split16(ptr, wheelSpeed[acsCount - 1]);
-        wheelSpeed[acsCount++] = (int16_t)(wheelDisplacements->br / 0.1f);
-        cellular_split16(ptr, wheelSpeed[acsCount - 1]);
 
-        uint16_t inverterVolt = (uint16_t)(inverterStatus->voltage / 0.01f);
-        cellular_split16(ptr, inverterVolt);
+        // IMU Gyro (x,y,z): gyro1, gyro2, gyro3
+        twoBytes = (int16_t)(imuData->gyro1.x / 1);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->gyro1.y / 1);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->gyro1.z / 1);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->gyro2.x / 1);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->gyro2.y / 1);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->gyro2.z / 1);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->gyro3.x / 1);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->gyro3.y / 1);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(imuData->gyro3.z / 1);
+        cellular_split16(ptr, twoBytes);
 
+
+        // Wheel Speed: fl, fr, bl, br
+        twoBytes = (int16_t)(wheelDisplacements->fl / 0.1f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(wheelDisplacements->fr / 0.1f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(wheelDisplacements->bl / 0.1f);
+        cellular_split16(ptr, twoBytes);
+        twoBytes = (int16_t)(wheelDisplacements->br / 0.1f);
+        cellular_split16(ptr, twoBytes);
+
+        // inverter Voltage
+        twoByesU = (uint16_t)(inverterStatus->voltage / 0.01f);
+        cellular_split16(ptr, twoByesU);
+
+        // inverter current
         int16_t inverterCurrent = (int16_t)(inverterStatus->current / 0.01f);
         cellular_split16(ptr, inverterCurrent);
 
-        uint16_t inverterRPM = (uint16_t)(inverterStatus->rpm / 1);
-        cellular_split16(ptr, inverterRPM);
+        // inverter RPM
+        twoByesU = (uint16_t)(inverterStatus->rpm / 1);
+        cellular_split16(ptr, twoByesU);
 
-        int16_t inverterTorque = (int16_t)(inverterStatus->torqueActual / 0.1f);
-        cellular_split16(ptr, inverterTorque);
+        // inverter Torque
+        twoBytes = (int16_t)(inverterStatus->torqueActual / 0.1f);
+        cellular_split16(ptr, twoBytes  );
 
 
         // now encoding data
-        char original[164];
-        for(int i = 0; i < 164; i++)
-        {
-            original[i] = (char)(arr[i]);
-        }
-        char encoded[164];
-        cellular_Base64encode(encoded, original, 164);
-        for(int i = 0; i < 164; i++)
+        char encoded[219];
+        cellular_Base64encode(encoded, arr, 164);
+        for(int i = 0; i < 219; i++)
         {
             dataToEncode = dataToEncode + encoded[i];
         }
-        std::string command = "AT+UMQTTC=2,0,0,\"/data/dynamics\",\"" + dataToEncode + "\"\r";
+        std::string command = "AT+UMQTTC=2,0,0,\"/h\",\"" + dataToEncode + "\"\r";
         std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
         cellular_send(&command);
         cellular_receive(response, false);
 
    }
+
+static void cellular_createDummyHFSend(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
+                                       PduStatus *pduStatus, InverterStatus *inverterStatus,
+                                       AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
+                                       ImuData *imuData, GpsData *gpsData)
+{
+    // For HF
+
+
+
+    // VCU TorqueRequest
+    vcuCoreOutput->inverterTorqueRequest = 19;
+
+    vcuCoreOutput->vehicleDisplacement.x = 10;
+
+    vcuCoreOutput->vehicleDisplacement.y = 9;
+
+    vcuCoreOutput->vehicleDisplacement.z = -8;
+
+    // VCU Velocity x y z
+    vcuCoreOutput->vehicleVelocity.x = -31;
+
+
+    vcuCoreOutput->vehicleVelocity.y = 91;
+
+    vcuCoreOutput->vehicleVelocity.z = -19;
+
+    // VCU Acceleration
+    vcuCoreOutput->vehicleAcceleration.x = 1;
+
+
+    vcuCoreOutput->vehicleAcceleration.y = 0.2f;
+
+    vcuCoreOutput->vehicleAcceleration.z = 0.045f;
+
+
+
+    // HV Pack voltage
+    hvcStatus->packVoltage = 0.1f;
+
+
+    // HV Current
+    hvcStatus->packCurrent = 0.1f;
+
+    // LV Voltage
+    pduStatus->lvVoltage = 0.78f;
+
+    // LV Current
+    pduStatus->lvCurrent = -3.25f;
+
+
+    // contactor state
+    hvcStatus->contactorStatus = HvcStatus::FULLY_OPEN;
+
+
+    // average Cell Temp
+    hvcStatus->packTempMean = 0.1f;
+
+
+    // apps 1
+    analogVoltages->apps1 = 0.04f;
+
+    // apps 2
+    analogVoltages->apps2 = 1.2f;
+
+    // bse1
+    analogVoltages->bse1 = 3.2f;
+
+
+    // bse 2
+    analogVoltages->bse2 = 0.045f;
+
+    // sus 1
+    analogVoltages->sus1 = 0.03f;
+
+
+    // sus 2
+    analogVoltages->sus2 = 0.05f;
+
+
+    // steer
+    analogVoltages->steer = 0.45f;
+
+    // gpd Latitude
+    gpsData->latitude = -0.0543f;
+
+    // gps longitude
+    gpsData->longitude = 0.00456f;
+
+    // gps speed
+    gpsData->speed = 0.34f;
+
+    // gps heading
+    gpsData->heading = 1;
+
+
+
+
+    // IMU Acceleration (x,y,z): accel1, accel2, accel3, Fl, Fr, Bl, Br
+    imuData->accel1.x = 0.546f;
+    imuData->accel1. y= 0.546f;
+    imuData->accel1.z = 0.546f;
+    imuData->accel2.x = 0.546f;
+    imuData->accel2.y = 0.546f;
+    imuData->accel2.z = 0.546f;
+    imuData->accel3.x = 0.546f;
+    imuData->accel3.y = 0.546f;
+    imuData->accel3.z = 0.546f;
+    imuData->accelFl.x = 0.546f;
+    imuData->accelFl.y = 0.546f;
+    imuData->accelFl.z = 0.546f;
+    imuData->accelFr.x = 0.546f;
+    imuData->accelFr.y = 0.546f;
+    imuData->accelFr.z = 0.546f;
+    imuData->accelBl.x = 0.546f;
+    imuData->accelBl.y = 0.546f;
+    imuData->accelBl.z = 0.546f;
+    imuData->accelBr.x = 0.546f;
+    imuData->accelBr.y = 0.546f;
+    imuData->accelBr.z = 0.546f;
+
+
+    // IMU Gyro (x,y,z): gyro1, gyro2, gyro3
+    imuData->gyro1.x = 34;
+    imuData->gyro1.y = 34;
+    imuData->gyro1.z = 34;
+    imuData->gyro2.x = 34;
+    imuData->gyro2.y = 34;
+    imuData->gyro2.z = 34;
+    imuData->gyro3.x = 34;
+    imuData->gyro3.y = 34;
+    imuData->gyro3.z = 34;
+
+
+    // Wheel Speed: fl, fr, bl, br
+    wheelDisplacements->fl = 4.5f;
+    wheelDisplacements->fr = 4.5f;
+    wheelDisplacements->bl = 4.5f;
+    wheelDisplacements->br = 4.5f;
+
+    // inverter Voltage
+    inverterStatus->voltage = 0.39f;
+
+    // inverter current
+    inverterStatus->current = 0.39f;
+
+
+    // inverter RPM
+    inverterStatus->rpm = 67;
+
+    // inverter Torque
+    inverterStatus->torqueActual = 9.3f;
+}
 
 static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                                        PduStatus *pduStatus, InverterStatus *inverterStatus,
@@ -334,6 +512,7 @@ static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcSt
     uint8_t arr[427];
     uint8_t *ptr = arr;
     // Where do I get this data?
+
     uint16_t year = 2024;
     cellular_split16(ptr, year);
 
@@ -364,15 +543,12 @@ static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcSt
 
     for(int i = 0; i < 140; i++)
     {
-        if(i < 90)
-        {
-            cellular_split16(ptr, cellVoltages[i]);
-            cellular_split8(ptr, cellTemperature[i]);
-        }
-        else
-        {
-            cellular_split16(ptr, cellVoltages[i]);
-        }
+        cellular_split16(ptr, cellVoltages[i]);
+    }
+
+    for(int i = 0; i < 90; i++)
+    {
+        cellular_split8(ptr, cellTemperature[i]);
     }
 
     uint16_t hvSOC = (uint16_t)(hvcStatus->stateOfCharge / 0.01f);
@@ -415,19 +591,15 @@ static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcSt
     uint16_t waterFlowRate = 0;
     cellular_split16(ptr, waterFlowRate);
 
-    // now encoding data
-    char original[427];
-    for(int i = 0; i < 427; i++)
-    {
-        original[i] = (char)(arr[i]);
-    }
-    char encoded[427];
-    cellular_Base64encode(encoded, original, 427);
-    for(int i = 0; i < 427; i++)
+
+
+    char encoded[570];
+    cellular_Base64encode(encoded, arr, 427);
+    for(int i = 0; i < 570; i++)
     {
         dataToEncode = dataToEncode + encoded[i];
     }
-    std::string command = "AT+UMQTTC=2,0,0,\"/data/dynamics\",\"" + dataToEncode + "\"\r";
+    std::string command = "AT+UMQTTC=2,0,0,\"/l\",\"" + dataToEncode + "\"\r";
     std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
     cellular_send(&command);
     cellular_receive(response, false);
@@ -481,7 +653,7 @@ static void cellular_mqttInit() {
   cellular_send(&command);
   cellular_receive(response, true);
     y++;
-  command = "AT+UMQTT=2,\"ec2-3-19-28-149.us-east-2.compute.amazonaws.com\",1883\r";
+  command = "AT+UMQTT=2,\"ec2-3-144-165-211.us-east-2.compute.amazonaws.com\",1883\r";
   response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
   cellular_send(&command);
   cellular_receive(response, true);
@@ -576,7 +748,6 @@ static void cellular_sendText(std::string* phoneNumber, std::string* message) {
   cellular_send(message);
 
   command = "\x1A"; // Ctrl+Z character to indicate end of message
-  response = "\r\n\r\n+CMGS: 3\r\n\r\nOK\r\n";
   cellular_send(&command);
 
   cellular_receiveAny(64, response, 30000);
@@ -591,19 +762,33 @@ static void cellular_sendText(std::string* phoneNumber, std::string* message) {
 
 void cellular_init()
 {
-  cellular_disableEcho();
-  cellular_testConnection();
-  cellular_disableEcho();
-  cellular_disableEcho();
-  cellular_disableEcho();
-  cellular_testConnection();
-  cellular_register_TMobile();
-  cellular_mqttInit();
+    volatile int x = 99;
+    cellular_disableEcho();
+    cellular_testConnection();
+    cellular_disableEcho();
+    cellular_disableEcho();
+    cellular_disableEcho();
+    cellular_testConnection();
+    x++;
+    cellular_register_TMobile();
+    x++;
+    cellular_mqttInit();
+    x++;
 
+    VcuOutput *vcuCoreOutput;
+    HvcStatus *hvcStatus;
+    PduStatus *pduStatus;
+    InverterStatus *inverterStatus;
+    AnalogVoltages *analogVoltages;
+    WheelDisplacements *wheelDisplacements;
+    ImuData *imuData;
+    GpsData *gpsData;
+    x++;
+    cellular_createDummyHFSend(vcuCoreOutput, hvcStatus, pduStatus, inverterStatus, analogVoltages, wheelDisplacements, imuData, gpsData);
+    x++;
+    cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus, pduStatus, inverterStatus, analogVoltages, wheelDisplacements, imuData, gpsData);
 
-
-
-
+    x++;
 
 
 
@@ -618,8 +803,9 @@ void cellular_init()
 //    HAL_Delay(5000);
 //
 //}
-//  std::string phoneNumber = "15555555555";
-//  std::string message = "Hi it's Angelique ;)";
+
+//  std::string phoneNumber = "18326411809";
+//  std::string message = "Hello Matthew, we are here to talk about your car's extended warranty!";
 //  cellular_sendText(&phoneNumber, &message);
 
 
@@ -629,10 +815,12 @@ void cellular_init()
 
 void cellular_register_TMobile()
 {
+    volatile int y = 10;
     std::string command = "AT+COPS?\r";
     std::string response;
     cellular_send(&command);
   cellular_receiveAny(500, response, 1000);
+  y++;
     bool has_conn = false;
     for(int i = 0; i < response.size(); i++)
     {
@@ -651,6 +839,7 @@ void cellular_register_TMobile()
         cellular_send(&command);
       cellular_receiveAny(500, response, 180000);
     }
+    y++;
 
 }
 

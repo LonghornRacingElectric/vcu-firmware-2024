@@ -24,6 +24,11 @@ static std::string CELL_OK = "\r\nOK\r\n";
 // private helper methods
 static void cellular_send(std::string* command);
 
+static void cellular_createDummyHFSend(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
+                                       PduStatus *pduStatus, InverterStatus *inverterStatus,
+                                       AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
+                                       ImuData *imuData, GpsData *gpsData);
+
 static bool cellular_receive(std::string& expected, bool care);
 
 static void cellular_receiveAny(int size, std::string& response, int time);
@@ -32,7 +37,7 @@ static void cellular_sendAndExpectOk(std::string* command);
 
 static bool cellular_areParametersUpdated();
 
-static int cellular_Base64encode(char *encoded, const char *string, int len);
+static int cellular_Base64encode(char *encoded, const uint8_t *string, int len);
 
 static void cellular_split8(uint8_t*& arr, uint8_t num);
 
@@ -50,7 +55,7 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                                        PduStatus *pduStatus, InverterStatus *inverterStatus,
                                        AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
-                                       ImuData *imuData, GpsData *gpsData)
+                                       ImuData *imuData, GpsData *gpsData);
 
 static void cellular_disableEcho();
 
