@@ -70,9 +70,17 @@ static void cellular_testConnection();
 
 static void cellular_mqttInit();
 
+static void cellular_registerTMobile();
+
+static void cellular_respondToText(std::string* senderPhoneNumber, std::string* message);
+
 
 // public methods
 void cellular_init();
+
+void cellular_sendText(std::string* phoneNumber, std::string* message);
+
+void cellular_respondToTexts();
 
 void cellular_periodic(VcuParameters *vcuCoreParameters,
                        VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
@@ -82,7 +90,6 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
 
 
 
-void cellular_register_TMobile();
 
 
 

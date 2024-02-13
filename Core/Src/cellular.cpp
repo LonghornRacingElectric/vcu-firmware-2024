@@ -733,29 +733,40 @@ static void cellular_findTMobileHSNCode(std::string& code)
     }
 }
 
-static void cellular_sendText(std::string* phoneNumber, std::string* message) {
-  std::string command;
+
+static void cellular_registerTMobile()
+{
+  volatile int y = 10;
+  std::string command = "AT+COPS?\r";
   std::string response;
-
-  command = "AT+CMGF=1\r";
-  cellular_sendAndExpectOk(&command);
-
-  command = "AT+CMGS=\"" + *phoneNumber + "\"\r";
-  response = "\r\n> ";
   cellular_send(&command);
-  cellular_receive(response, true);
-
-  cellular_send(message);
-
-  command = "\x1A"; // Ctrl+Z character to indicate end of message
-  cellular_send(&command);
-
-  cellular_receiveAny(64, response, 30000);
-  uint8_t index = response.size() - 6;
-  const char* okBegin = response.c_str() + index;
-  if(strcmp(okBegin, "\r\nOK\r\n") != 0) {
-    Error_Handler();
+  cellular_receiveAny(500, response, 1000);
+  y++;
+  bool has_conn = false;
+  for(int i = 0; i < response.size(); i++)
+  {
+    if (response[i] == 'T')
+    {
+      has_conn = true;
+    }
   }
+  if(not has_conn)
+  {
+    std::string TMobile_HSNCode;
+    cellular_findTMobileHSNCode(TMobile_HSNCode);
+
+    command = "AT+COPS=1,2,\"" + TMobile_HSNCode + "\"" + "\r";
+
+    cellular_send(&command);
+    cellular_receiveAny(500, response, 180000);
+  }
+  y++;
+
+}
+
+static void cellular_respondToText(std::string* senderPhoneNumber, std::string* message) {
+  std::string response = "You said \"" + *message + "\"";
+  cellular_sendText(senderPhoneNumber, &response);
 }
 
 // public methods
@@ -770,10 +781,12 @@ void cellular_init()
     cellular_disableEcho();
     cellular_testConnection();
     x++;
-    cellular_register_TMobile();
+    cellular_registerTMobile();
     x++;
     cellular_mqttInit();
     x++;
+
+    cellular_respondToTexts(); // TODO test
 
     VcuOutput *vcuCoreOutput;
     HvcStatus *hvcStatus;
@@ -812,35 +825,98 @@ void cellular_init()
 }
 
 
+void cellular_sendText(std::string* phoneNumber, std::string* message) {
+  std::string command;
+  std::string response;
 
-void cellular_register_TMobile()
-{
-    volatile int y = 10;
-    std::string command = "AT+COPS?\r";
-    std::string response;
-    cellular_send(&command);
-  cellular_receiveAny(500, response, 1000);
-  y++;
-    bool has_conn = false;
-    for(int i = 0; i < response.size(); i++)
-    {
-        if (response[i] == 'T')
-        {
-            has_conn = true;
+  command = "AT+CMGF=1\r";
+  cellular_sendAndExpectOk(&command);
+
+  command = "AT+CMGS=\"" + *phoneNumber + "\"\r";
+  response = "\r\n> ";
+  cellular_send(&command);
+  cellular_receive(response, true);
+
+  cellular_send(message);
+
+  command = "\x1A"; // Ctrl+Z character to indicate end of message
+  cellular_send(&command);
+
+  cellular_receiveAny(64, response, 30000);
+  uint8_t index = response.size() - 6;
+  const char* okBegin = response.c_str() + index;
+  if(strcmp(okBegin, "\r\nOK\r\n") != 0) {
+    Error_Handler();
+  }
+}
+
+void cellular_respondToTexts() {
+  std::string command;
+  std::string response;
+  std::string sender;
+  std::string message;
+
+  command = "AT+CMGL=\"REC UNREAD\"\r";
+  cellular_send(&command);
+  cellular_receiveAny(2048, response, 1000);
+
+  // delete read messages to save space
+  command = "AT+CMGD=0,3\r";
+  cellular_sendAndExpectOk(&command);
+
+  for(int i = 0; i < response.size();) {
+    i += 2;
+    if(i >= response.size() || (command.at(i) == 'O' && command.at(i+1) == 'K')) {
+      break;
+    }
+    if(command.at(i) != '+') {
+      break;
+    }
+    int commas = 0;
+    for(; i < response.size(); i++) {
+      if(command.at(i) == ',') {
+        commas++;
+        if(commas == 2) {
+          break;
         }
+      }
     }
-    if(not has_conn)
-    {
-        std::string TMobile_HSNCode;
-        cellular_findTMobileHSNCode(TMobile_HSNCode);
-
-        command = "AT+COPS=1,2,\"" + TMobile_HSNCode + "\"" + "\r";
-
-        cellular_send(&command);
-      cellular_receiveAny(500, response, 180000);
+    i += 2;
+    if(i >= response.size()) {
+      break;
     }
-    y++;
+    sender = "";
+    for(; i < response.size(); i++) {
+      if(command.at(i) == ',') {
+        break;
+      }
+      sender += response.at(i);
+    }
+    if(i >= response.size()) {
+      break;
+    }
+    for(; i < response.size(); i++) {
+      if(command.at(i) == '\n') {
+        break;
+      }
+    }
+    i += 1;
+    if(i >= response.size()) {
+      break;
+    }
+    message = "";
+    for(; i < response.size(); i++) {
+      if(command.at(i) == '\r') {
+        break;
+      }
+      message += response.at(i);
+    }
+    if(i >= response.size()) {
+      break;
+    }
 
+    cellular_respondToText(&sender, &message);
+  }
 }
 
 
