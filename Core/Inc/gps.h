@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <unordered_set>
 #include "usart.h"
 #include "adafruit_defines.h"
@@ -32,6 +33,16 @@ typedef enum {
     EXTERNAL = 3
 } AntennaStatus;
 
+typedef struct GpsData {
+    double latitude;
+    double longitude;
+    float speed;
+    float heading;
+    uint8_t hour, minute, seconds, year, month, day;
+    uint16_t millis;
+} GpsData;
+extern GpsData referenceGPSData;
+
 class Adafruit_GPS {
 private:
     UART_HandleTypeDef& uart_handler;
@@ -60,7 +71,7 @@ private:
 public:
 
     uint8_t hour, minute, seconds, year, month, day;
-    float latitude, longitude, geoidheight, altitude;
+    double latitude, longitude, geoidheight, altitude;
     float HDOP, VDOP, PDOP;
     float speed, angle;
     uint8_t satellites;
@@ -68,8 +79,8 @@ public:
     uint8_t fixquality, fixquality_3d;
     AntennaStatus antenna;
 
-    float latitudeDegrees;
-    float longitudeDegrees;
+    double latitudeDegrees;
+    double longitudeDegrees;
 
     int32_t latitude_fixed;
     int32_t longitude_fixed;
@@ -86,9 +97,13 @@ public:
     string lastSource;
     string lastSentence;
 
+    uint32_t count;
+    uint32_t countPerSecond;
+    double lastTimeRecorded;
 
 
-    Adafruit_GPS(UART_HandleTypeDef &hlpuart);
+
+    explicit Adafruit_GPS(UART_HandleTypeDef &uart_handler);
     virtual ~Adafruit_GPS() = default;
     int send_command(const char *cmd);
     int waitForNewMessage();
@@ -107,7 +122,7 @@ public:
      * Returns a copy of the most recent NMEA sentence, used for parsing
      * @return
      */
-    string lastNMEA();
+    int lastNMEA(vector<string> &nmea, int max = 5);
     /**
      * Parses the NMEA sentence and puts the values into the field variables
      * @param nmea the NMEA sentence
@@ -116,15 +131,6 @@ public:
     bool parse(const string& nmea);
     char read_command();
 };
-
-typedef struct GpsData {
-  float latitude;
-  float longitude;
-  float speed;
-  float heading;
-  uint8_t hour, minute, seconds, year, month, day;
-  uint64_t timeMillis;
-} GpsData;
 
 void gps_init();
 

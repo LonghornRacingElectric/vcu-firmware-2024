@@ -56,9 +56,9 @@
 
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc1;
-extern DMA_HandleTypeDef hdma_lpuart1_rx;
-extern DMA_HandleTypeDef hdma_uart7_rx;
 extern SD_HandleTypeDef hsd1;
+extern DMA_HandleTypeDef hdma_usart1_rx;
+extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -223,10 +223,24 @@ void DMA1_Stream1_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
 
   /* USER CODE END DMA1_Stream1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_uart7_rx);
+  HAL_DMA_IRQHandler(&hdma_usart1_rx);
   /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
 
   /* USER CODE END DMA1_Stream1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USART1 global interrupt.
+  */
+void USART1_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART1_IRQn 0 */
+
+  /* USER CODE END USART1_IRQn 0 */
+  HAL_UART_IRQHandler(&huart1);
+  /* USER CODE BEGIN USART1_IRQn 1 */
+
+  /* USER CODE END USART1_IRQn 1 */
 }
 
 /**
@@ -241,20 +255,6 @@ void SDMMC1_IRQHandler(void)
   /* USER CODE BEGIN SDMMC1_IRQn 1 */
 
   /* USER CODE END SDMMC1_IRQn 1 */
-}
-
-/**
-  * @brief This function handles BDMA2 channel0 global interrupt.
-  */
-void BDMA2_Channel0_IRQHandler(void)
-{
-  /* USER CODE BEGIN BDMA2_Channel0_IRQn 0 */
-
-  /* USER CODE END BDMA2_Channel0_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_lpuart1_rx);
-  /* USER CODE BEGIN BDMA2_Channel0_IRQn 1 */
-
-  /* USER CODE END BDMA2_Channel0_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

@@ -19,13 +19,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
-#include "bdma2.h"
 #include "dma.h"
 #include "fatfs.h"
 #include "fdcan.h"
-#include "usart.h"
 #include "sdmmc.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -70,7 +69,6 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void PeriphCommonClock_Config(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -111,9 +109,6 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
-/* Configure the peripherals common clocks */
-  PeriphCommonClock_Config();
-
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -121,17 +116,14 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_BDMA2_Init();
-  MX_LPUART1_UART_Init();
   MX_UART7_Init();
   MX_TIM2_Init();
   MX_ADC1_Init();
   MX_FATFS_Init();
+  MX_FDCAN2_Init();
   MX_SDMMC1_SD_Init();
   MX_TIM5_Init();
-  MX_FDCAN2_Init();
   MX_USART1_UART_Init();
-  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
   led_init();
   clock_init();
@@ -145,7 +137,7 @@ int main(void)
   allImus_init();
   gps_init();
   indicators_init();
-  cellular_init();
+  // cellular_init();
   nvm_init();
 
   /* USER CODE END 2 */
@@ -178,9 +170,9 @@ int main(void)
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
                  &wheelDisplacements, &imuData, &gpsData);
-    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-                      &pduStatus, &inverterStatus, &analogVoltages,
-                      &wheelDisplacements, &imuData, &gpsData);
+//    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+//                      &pduStatus, &inverterStatus, &analogVoltages,
+//                      &wheelDisplacements, &imuData, &gpsData);
     FAULT_CLEARALL(&vcu_fault_vector);
   }
   /* USER CODE END 3 */
@@ -242,34 +234,6 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_6) != HAL_OK)
-  {
-    Error_Handler();
-  }
-}
-
-/**
-  * @brief Peripherals Common Clock Configuration
-  * @retval None
-  */
-void PeriphCommonClock_Config(void)
-{
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-
-  /** Initializes the peripherals clock
-  */
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_UART4
-                              |RCC_PERIPHCLK_LPUART1;
-  PeriphClkInitStruct.PLL2.PLL2M = 10;
-  PeriphClkInitStruct.PLL2.PLL2N = 288;
-  PeriphClkInitStruct.PLL2.PLL2P = 125;
-  PeriphClkInitStruct.PLL2.PLL2Q = 125;
-  PeriphClkInitStruct.PLL2.PLL2R = 2;
-  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_0;
-  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
-  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
-  PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_PLL2;
-  PeriphClkInitStruct.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PLL2;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }

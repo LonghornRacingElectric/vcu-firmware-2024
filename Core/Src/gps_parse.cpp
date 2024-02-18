@@ -258,10 +258,10 @@ bool Adafruit_GPS::check(const string& nmea) {
 */
 /**************************************************************************/
 string Adafruit_GPS::tokenOnList(string& token, const unordered_set<string>& list) {
-    auto it = list.find(token);
-    if(it != list.end())
-        return *it;
-    else
+    for(const auto & it : list) {
+        if (token.find(it) == 0)
+            return it;
+    }
 
     return ""; // couldn't find a match
 }
@@ -311,13 +311,13 @@ bool Adafruit_GPS::onList(string& nmea, const unordered_set<string>& list) {
 bool Adafruit_GPS::parseCoord(string& mag, string& dir) {
     if (!mag.empty() && !dir.empty()) {
         auto e = mag.find('.');
-        if(e == string::npos || e - mag.length() > 6)
+        if(e == string::npos)
             return false;
         auto degreebuff = mag.substr(0, e); //Get DDDMM
         uint16_t dddmm = stoi(degreebuff);
         uint16_t degrees = dddmm / 100;
         uint16_t minutes = dddmm - degrees * 100;
-        float decminutes = stof(mag.substr(e));
+        double decminutes = stof(mag.substr(e));
 
         if(dir.empty())
             return false;
@@ -326,8 +326,8 @@ bool Adafruit_GPS::parseCoord(string& mag, string& dir) {
         // set the various numerical formats to their values
         int32_t fixed = degrees * 10000000 + (uint32_t) ((minutes * 10000000) / 60) +
                      (decminutes * 10000000) / 60;
-        float ang = (float) degrees * 100 + (float) minutes + decminutes;
-        float deg = (float) fixed / (float)10000000.;
+        double ang = (double) degrees * 100 + (double) minutes + decminutes;
+        double deg = (double) fixed / (double)10000000.;
         if (nsew == 'S' || nsew == 'W') { // fixed and deg are signed, but DDDMM.mmmm is not
             fixed = -1 * fixed;
             deg = -1 * deg;
@@ -406,9 +406,8 @@ bool Adafruit_GPS::parseTime(string& p) {
     minute = (time % 10000) / 100;
     seconds = (time % 100);
     auto dec = p.find('.');
-    auto comstar = min(p.find(','), p.find('*'));
-    if(dec != string::npos && comstar != string::npos && dec < comstar)
-        milliseconds = stoi(p.substr(dec + 1, comstar - dec - 1)) * 1000;
+    if(dec != string::npos && (dec < p.length() - 1))
+        milliseconds = stoi(p.substr(dec + 1, p.length() - dec - 1));
     else
         milliseconds = 0;
     return true;

@@ -100,10 +100,6 @@ void Error_Handler(void);
 #define BBSPI_CLK_GPIO_Port GPIOB
 #define SPI_CS_IMU_Pin GPIO_PIN_12
 #define SPI_CS_IMU_GPIO_Port GPIOB
-#define STLINK_TX_Pin GPIO_PIN_14
-#define STLINK_TX_GPIO_Port GPIOB
-#define STLINK_RX_Pin GPIO_PIN_15
-#define STLINK_RX_GPIO_Port GPIOB
 #define CAN_Term_Pin GPIO_PIN_6
 #define CAN_Term_GPIO_Port GPIOC
 #define IMD_LED_Pin GPIO_PIN_7
@@ -122,22 +118,14 @@ void Error_Handler(void);
 #define JTMS_GPIO_Port GPIOA
 #define JTCK_Pin GPIO_PIN_14
 #define JTCK_GPIO_Port GPIOA
-#define CELL_PWR_Pin GPIO_PIN_15
-#define CELL_PWR_GPIO_Port GPIOA
-#define SD_DETECT_Pin GPIO_PIN_3
-#define SD_DETECT_GPIO_Port GPIOB
 #define CELL_UART_TX_Pin GPIO_PIN_4
 #define CELL_UART_TX_GPIO_Port GPIOB
 #define CAN_RX_Pin GPIO_PIN_5
 #define CAN_RX_GPIO_Port GPIOB
 #define CAN_TX_Pin GPIO_PIN_6
 #define CAN_TX_GPIO_Port GPIOB
-#define SHDN_IN_Pin GPIO_PIN_7
-#define SHDN_IN_GPIO_Port GPIOB
-#define SHDN_OUT_Pin GPIO_PIN_8
-#define SHDN_OUT_GPIO_Port GPIOB
-#define GPS_RTK_TX_Pin GPIO_PIN_9
-#define GPS_RTK_TX_GPIO_Port GPIOB
+#define SD_DETECT_Pin GPIO_PIN_9
+#define SD_DETECT_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
