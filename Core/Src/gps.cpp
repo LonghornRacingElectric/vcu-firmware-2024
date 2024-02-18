@@ -86,6 +86,16 @@ int Adafruit_GPS::waitForNewMessage() {
   return error;
 }
 
+bool Adafruit_GPS::checkTimeout(){
+  if(clock_getTime() - gps.lastTimeRecorded > 2.0f){
+    gps.countPerSecond = gps.count;
+    gps.count = 0;
+    gps.lastTimeRecorded = clock_getTime();
+    if(gps.countPerSecond == 0) return true;
+  }
+  return false;
+}
+
 void gps_init() {
     gps.waitForNewMessage();
     // Baud rate is hard-coded to 115200 bps
@@ -113,17 +123,11 @@ void gps_init() {
 
 void gps_periodic(GpsData* gpsData) {
     // Checks for timeout, if it has been a second without receiving data, then restart DMA
-    if(clock_getTime() - gps.lastTimeRecorded > 1.0f){
-      gps.countPerSecond = gps.count;
-      gps.count = 0;
-      gps.lastTimeRecorded = clock_getTime();
-      if(gps.countPerSecond == 0){
+    if(gps.checkTimeout()){
         HAL_UART_DMAStop(&huart1);
         gps.waitForNewMessage();
         return;
-      }
     }
-
     gps.read_command();
     if(gps.newNMEAreceived()){
         vector<string> new_lines;

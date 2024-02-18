@@ -58,6 +58,15 @@ private:
     const unordered_set<string> sentences_known = {"DBT", "HDM", "HDT",
                                       "ZZZ"}; ///< known, but not parseable
 
+    uint32_t countPerSecond;
+    double lastTimeRecorded;
+
+    int thisCheck = 0; //<the results of the check on the current sentence
+    string thisSource;
+    string thisSentence;
+    string lastSource;
+    string lastSentence;
+
     bool check(const string& nmea);
     static string tokenOnList(string& token, const unordered_set<string>& list);
     bool onList(string& nmea, const unordered_set<string>&list);
@@ -91,17 +100,7 @@ public:
 
     string last_line;
 
-    int thisCheck = 0; //<the results of the check on the current sentence
-    string thisSource;
-    string thisSentence;
-    string lastSource;
-    string lastSentence;
-
     uint32_t count;
-    uint32_t countPerSecond;
-    double lastTimeRecorded;
-
-
 
     explicit Adafruit_GPS(UART_HandleTypeDef &uart_handler);
     virtual ~Adafruit_GPS() = default;
@@ -129,6 +128,15 @@ public:
      * @return true if the sentence was parsed successfully, false if not
      */
     bool parse(const string& nmea);
+    /**
+     * Checks if there hasnt been any new NMEA sentences in the last 5 seconds
+     * @return true or false for timeout
+     */
+    bool checkTimeout();
+    /**
+     * Reads the next NMEA sentence from the GPS module.
+     * @return
+     */
     char read_command();
 };
 
