@@ -16,7 +16,7 @@ void pdu_init() {
 
   can_addOutbox(VCU_PDU_BRAKELIGHT, 0.01f, &brakeLightOutbox);
   can_addOutbox(VCU_PDU_BUZZER, 0.01f, &buzzerOutbox);
-  can_addOutbox(VCU_PDU_COOLING, 0.25f, &coolingOutbox);
+  can_addOutbox(VCU_PDU_COOLING, 0.1f, &coolingOutbox);
 }
 
 static void pdu_updateBrakeLight(float brightnessLeft, float brightnessRight) {

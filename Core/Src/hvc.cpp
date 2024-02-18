@@ -18,7 +18,7 @@ void hvc_init() {
   can_addInbox(HVC_VCU_AMS_IMD, &amsImdInbox);
   can_addInbox(HVC_VCU_CONTACTOR_STATUS, &contactorStatusInbox);
 
-  can_addOutbox(VCU_HVC_COOLING, 0.25f, &coolingOutbox);
+  can_addOutbox(VCU_HVC_COOLING, 0.1f, &coolingOutbox);
 }
 
 void hvc_updateCooling(uint16_t battFanRpm, uint16_t battUniqueSegRpm) {
