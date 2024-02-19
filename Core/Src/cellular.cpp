@@ -90,8 +90,8 @@ static void cellular_receiveAny(int size, std::string &response, int time) {
     memset(buffer, 0, sizeof(buffer));
     uint16_t rxAmount = 0;
     HAL_UARTEx_ReceiveToIdle(&huart7, (uint8_t *) buffer, 2, &rxAmount, time); // \r\n
-    HAL_UARTEx_ReceiveToIdle(&huart7, (uint8_t *) buffer, size, &rxAmount, time);
-    response = "\r\n" + std::string(buffer);
+    HAL_UARTEx_ReceiveToIdle(&huart7, (uint8_t *) (buffer+2), size-2, &rxAmount, time);
+    response = std::string(buffer);
 }
 
 static void cellular_sendAndExpectOk(std::string *command) {
@@ -346,7 +346,9 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
         std::string command = "AT+UMQTTC=2,0,0,\"/h\",\"" + dataToEncode + "\"\r";
         std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
         cellular_send(&command);
+        volatile int z = 0;
         cellular_receive(response, false);
+        z++;
 
    }
 
@@ -653,12 +655,12 @@ static void cellular_mqttInit() {
   cellular_send(&command);
   cellular_receive(response, true);
     y++;
-  command = "AT+UMQTT=2,\"ec2-3-144-165-211.us-east-2.compute.amazonaws.com\",1883\r";
+  command = "AT+UMQTT=2,\"ec2-18-222-107-189.us-east-2.compute.amazonaws.com\",1883\r";
   response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
   cellular_send(&command);
   cellular_receive(response, true);
     y++;
-  command = "AT+UMQTT=10,60\r";
+  command = "AT+UMQTT=10,3600\r";
   response = "\r\r\n+UMQTT: 10,1\r\r\n\r\nOK\r\n";
   cellular_send(&command);
   cellular_receive(response, true);
@@ -764,6 +766,44 @@ static void cellular_registerTMobile()
 
 }
 
+static void cellular_subscribe()
+{
+    std::string command = "AT+UMQTTC=4,0,\"#\"\r";
+
+    volatile int y = 0;
+    cellular_send(&command);
+    uint8_t buffer[256];
+    memset(buffer, 0, 256);
+    HAL_UART_Receive(&huart7, (uint8_t *) buffer, 256, 5000);
+//    cellular_receiveAny(500, response, 10000);
+    y++;
+
+}
+
+
+static void cellular_poll()
+{
+    volatile int x = 99;
+    std::string command = "AT+UMQTTC=6\r";
+    std::string response;
+    cellular_send(&command);
+    uint8_t buffer[256];
+    memset(buffer, 0, 256);
+    HAL_UART_Receive(&huart7, (uint8_t *) buffer, 256, 500);
+    std::string num_response = "";
+    x++;
+    for(int i = 0; i < 256; i++)
+    {
+
+        uint8_t current = buffer[i];
+        if (current == uint8_t ('h'))
+        {
+            x++;
+            x*=x;
+        }
+    }
+}
+
 static void cellular_respondToText(std::string* senderPhoneNumber, std::string* message) {
   std::string response = "You said \"" + *message + "\"";
   cellular_sendText(senderPhoneNumber, &response);
@@ -786,22 +826,30 @@ void cellular_init()
     cellular_mqttInit();
     x++;
 
-    cellular_respondToTexts(); // TODO test
+  //  cellular_respondToTexts(); // TODO test
 
-    VcuOutput *vcuCoreOutput;
-    HvcStatus *hvcStatus;
-    PduStatus *pduStatus;
-    InverterStatus *inverterStatus;
-    AnalogVoltages *analogVoltages;
-    WheelDisplacements *wheelDisplacements;
-    ImuData *imuData;
-    GpsData *gpsData;
+    VcuOutput vcuCoreOutput;
+    HvcStatus hvcStatus;
+    PduStatus pduStatus;
+    InverterStatus inverterStatus;
+    AnalogVoltages analogVoltages;
+    WheelDisplacements wheelDisplacements;
+    ImuData imuData;
+    GpsData gpsData;
     x++;
-    cellular_createDummyHFSend(vcuCoreOutput, hvcStatus, pduStatus, inverterStatus, analogVoltages, wheelDisplacements, imuData, gpsData);
+    cellular_createDummyHFSend(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
     x++;
-    cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus, pduStatus, inverterStatus, analogVoltages, wheelDisplacements, imuData, gpsData);
+    cellular_sendTelemetryHigh(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
 
     x++;
+    cellular_subscribe();
+    x++;
+    while(1)
+    {
+        cellular_poll();
+        x++;
+    }
+
 
 
 

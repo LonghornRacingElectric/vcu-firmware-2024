@@ -24,6 +24,11 @@ static std::string CELL_OK = "\r\nOK\r\n";
 // private helper methods
 static void cellular_send(std::string* command);
 
+static void cellular_subscribe();
+
+static void cellular_poll();
+
+
 static void cellular_createDummyHFSend(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                                        PduStatus *pduStatus, InverterStatus *inverterStatus,
                                        AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
