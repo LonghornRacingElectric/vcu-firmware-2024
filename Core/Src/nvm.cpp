@@ -4,36 +4,30 @@
 #include <sstream>
 
 static void nvm_loadParameters(VcuParameters* vcuParameters) {
-    FATFS fs;
     FRESULT res;
     FIL fsrc;
     UINT br;
     BYTE buffer[4096];
 
-    // mount work area
-    f_mount(&fs, "", 1);
-
     // open source file (drive 1)
     res = f_open(
             &fsrc,
-            "1:srcfile.dat",
+            "VcuParams.dat",
             FA_OPEN_EXISTING | FA_READ
             );
 
     if (res) exit(res);
 
     // copy source to destination
-        res = f_read(
-                &fsrc,
-                buffer,
-                sizeof buffer,
-                &br
-        );
-        if(res || br == 0) {
+    res = f_read(
+            &fsrc,
+            buffer,
+            sizeof buffer,
+            &br );
 
-        } else {
-            vcuParameters = (VcuParameters *) res;
-        }
+    if(res) {
+        vcuParameters = (VcuParameters*)res;
+    }
 
     // close open files
     f_close(&fsrc);
@@ -41,18 +35,14 @@ static void nvm_loadParameters(VcuParameters* vcuParameters) {
 }
 
 static void nvm_saveParameters(VcuParameters* vcuParameters) {
-    FATFS fs;
     FRESULT res;
     FIL fdst;
     UINT bw;
 
-    // mount work area
-    f_mount(&fs, "", 0);
-
     // create destination file (drive 0)
     res = f_open(
             &fdst,
-            "0:dstfile.dat",
+            "VcuParams.dat",
             FA_OPEN_EXISTING | FA_WRITE
     );
 
@@ -63,7 +53,7 @@ static void nvm_saveParameters(VcuParameters* vcuParameters) {
         res = f_write(
                 &fdst,
                 vcuParameters,
-                sizeof vcuParameters,
+                sizeof (vcuParameters),
                 &bw
         );
         if(res || bw < sizeof vcuParameters) {
@@ -77,19 +67,16 @@ static void nvm_saveParameters(VcuParameters* vcuParameters) {
 }
 
 static void nvm_beginTelemetry(uint64_t timestamp) {
-    FATFS fs;
     FRESULT res;
     FIL fcsv;
-
-    // mount work area
-    f_mount(&fs, "", 0);
 
     // convert timestamp to string for file name
     std::stringstream ss;
     ss << timestamp;
     std::string time = ss.str();
+    time += ".csv";
 
-    // create new csv file (drive 0)
+    // create new csv file and leave open to write telemetry
     res = f_open(
             &fcsv,
             time.c_str(),
@@ -98,39 +85,25 @@ static void nvm_beginTelemetry(uint64_t timestamp) {
 
     if (res) exit(res);
 
-    // close open files
-    f_close(&fcsv);
 }
 
 static void nvm_writeTelemetry(TelemetryRow* telemetryRow) {
-    FATFS fs;
     FRESULT res;
     FIL fdst;
-    BYTE buffer[4096];
     UINT bw;
-
-    // mount work area
-    f_mount(&fs, "", 0);
-
-    // open source file (drive 1)
-    res = f_open(
-            &fdst,
-            "0:dstfile.csv",
-            FA_OPEN_EXISTING | FA_WRITE
-    );
 
     // write row of data into file
     if (res) {
         f_write(
                 &fdst,
                 telemetryRow,
-                sizeof telemetryRow,
+                sizeof (telemetryRow),
                 &bw
         );
     }
 }
 
-void nvm_init() {
+void nvm_init(VcuParameters* vcuParameters) {
   FATFS fs;
   FRESULT res;
 
@@ -138,10 +111,11 @@ void nvm_init() {
   f_mount(&fs, "", 0);
 
   // load vcu parameters
-  nvm_loadParameters();
+  nvm_loadParameters(vcuParameters);
 
   // create telemetry csv file
-  nvm_beginTelemetry(clock_getDeltaTime());
+  // placeholder for timestamp but should get time from gps clock
+  nvm_beginTelemetry(2023-11-02);
 
 }
 
@@ -150,9 +124,11 @@ void nvm_periodic(VcuParameters* vcuParameters, VcuOutput *vcuCoreOutput,
                   AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
                   ImuData *imuData, GpsData *gpsData) {
 
-    // save vcu parameters
+    // save vcu parameters if changed
     nvm_saveParameters(vcuParameters);
 
-    // write row of telemetry data to file
+    // create telemetry row and write into csv file
+    //TelemetryRow telemetryRow;
+    //nvm_writeTelemetry(&telemetryRow);
 
 }
