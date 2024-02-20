@@ -1,8 +1,10 @@
 #include "gps.h"
 #include "faults.h"
+#include "clock.h"
 #include <cstring>
 
-Adafruit_GPS gps(hlpuart1);
+Adafruit_GPS gps(huart1);
+GpsData referenceGPSData;
 
 Adafruit_GPS::Adafruit_GPS(UART_HandleTypeDef &hlpuart) : uart_handler(hlpuart) {
     this->uart_handler = hlpuart;
@@ -15,21 +17,25 @@ Adafruit_GPS::Adafruit_GPS(UART_HandleTypeDef &hlpuart) : uart_handler(hlpuart) 
     antenna = UNKNOWN;
 
     has_fix = false;
-    is_ready = false;
     milliseconds = 0;
 
     latitudeDegrees = longitudeDegrees = 0.0;
     latitude_fixed = longitude_fixed = 0;
+
+    count = 0;
+  countPerSecond = 0;
+    lastTimeRecorded = 0;
 
     last_line.reserve(MAX_GPS_LINE_SIZE);
 }
 
 int Adafruit_GPS::send_command(const char *cmd) {
     std::string cmd_str = cmd;
+    cmd_str.append("\r\n");
     if((cmd_str.substr(0, 5) != "$PMTK") && (cmd_str.substr(0, 4) != "$PGC")) {
         return 1;
     }
-    return HAL_UART_Transmit(&uart_handler, (uint8_t *) cmd, strlen(cmd), HAL_MAX_DELAY);
+    return HAL_UART_Transmit(&uart_handler, (uint8_t *) cmd_str.c_str(), cmd_str.size(), HAL_MAX_DELAY);
 }
 
 char Adafruit_GPS::read_command(){
@@ -56,17 +62,38 @@ bool Adafruit_GPS::pause(bool p) {
     return paused;
 }
 
-string Adafruit_GPS::lastNMEA() {
+int Adafruit_GPS::lastNMEA(vector<string>& nmea, int max) {
     received = false;
-    return last_line;
+    if(max < 2) return -1;
+    size_t start = 0, end = 0;
+    for(int i = 1; i <= max; i++){
+        end = last_line.find("\r\n", start);
+        if(end == string::npos){
+            return i;
+        }
+        nmea.push_back(last_line.substr(start, end - start));
+        start = end + 2;
+
+    }
+    return 0;
 }
 
 int Adafruit_GPS::waitForNewMessage() {
-  auto error = HAL_UARTEx_ReceiveToIdle_DMA(&uart_handler, (uint8_t *) gps_currLine, MAX_GPS_LINE_SIZE);
+  auto error = HAL_UARTEx_ReceiveToIdle_DMA(&uart_handler, (uint8_t *) gps_tempLine, MAX_GPS_LINE_SIZE);
   if (error != HAL_OK) {
     FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS);
   }
   return error;
+}
+
+bool Adafruit_GPS::checkTimeout(){
+  if(clock_getTime() - gps.lastTimeRecorded > 2.0f){
+    gps.countPerSecond = gps.count;
+    gps.count = 0;
+    gps.lastTimeRecorded = clock_getTime();
+    if(gps.countPerSecond == 0) return true;
+  }
+  return false;
 }
 
 void gps_init() {
@@ -75,32 +102,42 @@ void gps_init() {
     // Note: we may have to connect an arduino to the GPS module to change the baud rate
     auto status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_BAUD_115200));
     if(status != HAL_OK) {
-        return;
+      Error_Handler();
     }
     //sends both GGA and RMC data
     status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_OUTPUT_RMCGGA));
     if(status != HAL_OK) {
-        return;
+      Error_Handler();
     }
     //sets the update rate to 1 Hz
     status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_UPDATE_10HZ));
     if(status != HAL_OK) {
-        return;
+      Error_Handler();
     }
     //requests the antenna status
     status = static_cast<HAL_StatusTypeDef>(gps.send_command(PGCMD_ANTENNA));
     if(status != HAL_OK) {
-        return;
+      Error_Handler();
     }
-    gps.is_ready = true;
 }
 
 void gps_periodic(GpsData* gpsData) {
+    // Checks for timeout, if it has been a second without receiving data, then restart DMA
+    if(gps.checkTimeout()){
+        HAL_UART_DMAStop(&huart1);
+        gps.waitForNewMessage();
+        return;
+    }
     gps.read_command();
     if(gps.newNMEAreceived()){
-        if(!gps.parse(gps.lastNMEA())){
+        vector<string> new_lines;
+        int error = gps.lastNMEA(new_lines, 2);
+        for(const auto& new_line : new_lines) {
+          if (!gps.parse(new_line) || error != 0) {
             return;
+          }
         }
+        gps.count++;
         if(gps.has_fix){
             gpsData->latitude = gps.latitudeDegrees;
             gpsData->longitude = gps.longitudeDegrees;
@@ -112,8 +149,12 @@ void gps_periodic(GpsData* gpsData) {
             gpsData->year = gps.year;
             gpsData->month = gps.month;
             gpsData->day = gps.day;
-            gpsData->timeMillis = HAL_GetTick() - gps.milliseconds;
-            gps.milliseconds = HAL_GetTick();
+            gpsData->millis = gps.milliseconds;
+
+            /* Set the reference GPS data if it has not been set yet */
+            if(referenceGPSData.year == 0 && referenceGPSData.month == 0 && referenceGPSData.day == 0){
+                referenceGPSData = *gpsData;
+            }
         }
     }
 }

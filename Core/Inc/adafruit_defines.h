@@ -32,7 +32,7 @@
 ///< GPGLL sentence
 #define PMTK_SET_NMEA_OUTPUT_RMCONLY                                           \
   "$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29" ///< turn on only the
-///< GPRMC sentence
+///< GPRMC sentenc
 #define PMTK_SET_NMEA_OUTPUT_VTGONLY                                           \
   "$PMTK314,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29" ///< turn on only the
 ///< GPVTG
