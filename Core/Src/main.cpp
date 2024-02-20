@@ -37,11 +37,13 @@
 #include "pdu.h"
 #include "hvc.h"
 #include "dash.h"
+#include "drive_switch.h"
 #include "indicators.h"
 #include "gps.h"
 #include "all_imus.h"
 #include "wheelspeeds.h"
 #include "nvm.h"
+#include "vcu.h"
 
 /* USER CODE END Includes */
 
@@ -77,10 +79,11 @@ void PeriphCommonClock_Config(void);
 /* USER CODE BEGIN 0 */
 VcuParameters vcuCoreParameters;
 VcuOutput vcuCoreOutput;
+AnalogVoltages analogVoltages;
+DriveSwitchState driveSwitchState;
 HvcStatus hvcStatus;
 PduStatus pduStatus;
 InverterStatus inverterStatus;
-AnalogVoltages analogVoltages;
 WheelDisplacements wheelDisplacements;
 ImuData imuData;
 GpsData gpsData;
@@ -155,13 +158,15 @@ int main(void)
     led_rainbow(deltaTime);
 
     adc_periodic(&analogVoltages);
+    driveSwitch_periodic(&driveSwitchState);
     hvc_periodic(&hvcStatus, &vcuCoreOutput);
     pdu_periodic(&pduStatus, &vcuCoreOutput);
     wheelspeeds_periodic(&wheelDisplacements);
     allImus_periodic(&imuData);
     gps_periodic(&gpsData);
 
-    // TODO vcu core
+    vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
+                wheelDisplacements,imuData,gpsData, vcuCoreOutput, deltaTime);
 
     inverter_periodic(&inverterStatus, &vcuCoreOutput);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
