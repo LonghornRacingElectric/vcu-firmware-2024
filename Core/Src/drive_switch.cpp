@@ -1,6 +1,6 @@
 #include "drive_switch.h"
+#include "main.h"
 
-bool driveSwitch_get() {
-    // TODO implement
-    return false;
+void driveSwitch_periodic(DriveSwitchState* driveSwitchState) {
+    *driveSwitchState =  static_cast<bool>(HAL_GPIO_ReadPin(DriveSwitch_GPIO_Port, DriveSwitch_Pin));
 }
