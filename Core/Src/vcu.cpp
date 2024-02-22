@@ -41,12 +41,12 @@ void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchSt
     gpsData.speed,
     gpsData.heading,
 
-    imuData.accel1,
-    imuData.accel2,
-    imuData.accel3,
-    imuData.gyro1,
-    imuData.gyro2,
-    imuData.gyro3,
+    imuData.accelVcu,
+    imuData.accelHvc,
+    imuData.accelPdu,
+    imuData.gyroVcu,
+    imuData.gyroHvc,
+    imuData.gyroPdu,
   };
 
   vcuModel.evaluate(&vcuInput, &vcuOutput, deltaTime);

@@ -85,7 +85,7 @@ static void inverter_getStatus(InverterStatus *status) {
   }
 
   if (inverterFaultInbox.isRecent) {
-    status->faultVector = can_readBytes(inverterFaultInbox.data, 0, 1);
+    status->faultVector = can_readBytes(inverterFaultInbox.data, 0, 7);
     inverterFaultInbox.isRecent = false;
     status->isRecent = true;
   }
@@ -101,6 +101,9 @@ static void inverter_getStatus(InverterStatus *status) {
     auto data = (uint16_t) can_readBytes(paramsResponseInbox.data, 4, 5);
     if (paramsResponseInbox.data[2] == 0) {
       FAULT_SET(&vcu_fault_vector, FAULT_VCU_INVPARAMS);
+    }
+    else{
+      status->newData = data;
     }
     paramsResponseInbox.isRecent = false;
   }
