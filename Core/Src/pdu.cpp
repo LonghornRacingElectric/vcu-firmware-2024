@@ -3,8 +3,7 @@
 #include "faults.h"
 
 static CanInbox lvbattStatusInbox;
-static CanInbox waterStatusInbox;
-static CanInbox airStatusInbox; // TODO unused
+static CanInbox thermalStatusInbox;
 
 static CanOutbox brakeLightOutbox;
 static CanOutbox buzzerOutbox;
@@ -12,17 +11,16 @@ static CanOutbox coolingOutbox;
 
 void pdu_init() {
   can_addInbox(PDU_VCU_LVBAT, &lvbattStatusInbox);
-  can_addInbox(PDU_VCU_THERMAL, &waterStatusInbox);
+  can_addInbox(PDU_VCU_THERMAL, &thermalStatusInbox);
 
   can_addOutbox(VCU_PDU_BRAKELIGHT, 0.01f, &brakeLightOutbox);
   can_addOutbox(VCU_PDU_BUZZER, 0.01f, &buzzerOutbox);
   can_addOutbox(VCU_PDU_COOLING, 0.1f, &coolingOutbox);
 }
 
-static void pdu_updateBrakeLight(float brightnessLeft, float brightnessRight) {
-  brakeLightOutbox.dlc = 2;
-  brakeLightOutbox.data[0] = (uint8_t) (brightnessLeft * 255.0f);
-  brakeLightOutbox.data[1] = (uint8_t) (brightnessRight * 255.0f);
+static void pdu_updateBrakeLight(float brightness) {
+  brakeLightOutbox.dlc = 1;
+  brakeLightOutbox.data[0] = (uint8_t) (brightness * 100.0f);
   brakeLightOutbox.isRecent = true;
 }
 
@@ -32,22 +30,23 @@ static void pdu_updateBuzzer(BuzzerType buzzerType) {
   buzzerOutbox.isRecent = true;
 }
 
-static void pdu_updateCoolingOutput(float radiatorFanRpm, float pumpPercentage) {
-  coolingOutbox.dlc = 3;
-  can_writeBytes(coolingOutbox.data, 0, 1, (uint16_t) radiatorFanRpm); // max will occur at 8300 rpm, but higher will just be ignored
-  coolingOutbox.data[2] = (uint8_t) pumpPercentage;
+static void pdu_updateCoolingOutput(float radiatorFanRpmPercentage, float pumpPercentage) {
+  coolingOutbox.dlc = 2;
+  coolingOutbox.data[0] = (uint8_t) (radiatorFanRpmPercentage * 100.0f); // max will occur at 8300 rpm (100%), but higher will just be ignored
+  coolingOutbox.data[1] = (uint8_t) (pumpPercentage * 100.0f);
   coolingOutbox.isRecent = true;
 }
 
 void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
 
-  // TODO update vcu core to output brake lights
-  // TODO pdu_sendBrakeLight(vcuOutput->brakeLightLeft)
+  // At the moment, vcuCore only outputs a boolean for on and off in general.
+  pdu_updateBrakeLight((float) vcuOutput->brakeLight);
 
   pdu_updateBuzzer(vcuOutput->r2dBuzzer ? BUZZER_BUZZ : BUZZER_SILENT);
 
-  // TODO update vcu core to output cooling percentages
-  // TODO pdu_sendCoolingOutput(vcuOutput->radiatorFanRpm, vcuOutput->pumpPercentage);
+  // At the moment, they are only set to max values by vcuCore
+  // They are percentages, so they will be sent as floats between 0 and 1.
+  pdu_updateCoolingOutput(vcuOutput->radiatorOutput, vcuOutput->pumpOutput);
 
   if (lvbattStatusInbox.isRecent) {
     lvbattStatusInbox.isRecent = false;
@@ -58,14 +57,14 @@ void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
         (float) can_readBytes(lvbattStatusInbox.data, 4, 5) / 100.0f; // in 0.01A units, range is 0.00 - 100.00A
     status->isRecent = true;
   }
-  if (waterStatusInbox.isRecent) {
-    waterStatusInbox.isRecent = false;
-    status->volumetricFlowRate = (float) waterStatusInbox.data[0] / 10.0f; // range from 0.0 to 25.5 L/min
-    status->waterTempMotor = (float) waterStatusInbox.data[1]; // degrees C
-    status->waterTempInverter = (float) waterStatusInbox.data[2]; // degrees C
-    status->waterTempRadiator = (float) waterStatusInbox.data[3]; // degrees C
-    status->radiatorFanRpm =
-        (float) can_readBytes(airStatusInbox.data, 0, 1) / 10.0f; // TODO this needs to be looked at
+  if (thermalStatusInbox.isRecent) {
+    thermalStatusInbox.isRecent = false;
+    status->volumetricFlowRate = (float) thermalStatusInbox.data[0] / 10.0f; // range from 0.0 to 25.5 L/min
+    status->waterTempMotor = (float) thermalStatusInbox.data[1]; // degrees C
+    status->waterTempInverter = (float) thermalStatusInbox.data[2]; // degrees C
+    status->waterTempRadiator = (float) thermalStatusInbox.data[3]; // degrees C
+    status->radiatorFanRpmPercentage =
+        (float) thermalStatusInbox.data[4] / 100.0f; // range from 0 to 100, but will be sent as a float between 0 and 1
     status->isRecent = true;
   }
 }

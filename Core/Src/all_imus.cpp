@@ -80,10 +80,8 @@ static void externalImus_getGyros(xyz* gyroHvc, xyz* gyroPdu) {
 
 void allImus_periodic(ImuData *imuData) {
 
-  // Maybe check if IMU is ready before reading from it?
-  // There are functions within imu.c in LL that function like this
-  if accel_ready() imu_getAccel(&imuData->accelVcu);
-  if gyro_ready() imu_getGyro(&imuData->gyroVcu);
+//  if accel_ready() imu_getAccel(&imuData->accelVcu);
+//  if gyro_ready() imu_getGyro(&imuData->gyroVcu);
 
   externalImus_getAccels(&imuData->accelHvc, &imuData->accelPdu, &imuData->accelFl, &imuData->accelFr, &imuData->accelBl, &imuData->accelBr);
   externalImus_getGyros(&imuData->gyroHvc, &imuData->gyroPdu);
