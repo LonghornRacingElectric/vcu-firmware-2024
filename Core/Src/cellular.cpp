@@ -70,10 +70,10 @@ static int cellular_Base64encode(char *encoded, const uint8_t *string, int len)
 
 
 
-static bool cellular_receive(std::string &expected, bool care) {
+static bool cellular_receive(std::string &expected, bool care, uint32_t timeout) {
   static char buffer[512];
   memset(buffer, 0, sizeof(buffer));
-  HAL_UART_Receive(&huart7, (uint8_t *) buffer, expected.size(), 30000);
+  HAL_UART_Receive(&huart7, (uint8_t *) buffer, expected.size(), timeout);
   auto str = new std::string(buffer);
   if (*str != expected) {
       if(care) {
@@ -96,7 +96,7 @@ static void cellular_receiveAny(int size, std::string &response, int time) {
 
 static void cellular_sendAndExpectOk(std::string *command) {
   cellular_send(command);
-  cellular_receive(CELL_OK, true);
+  cellular_receive(CELL_OK, true, 500);
 }
 
 static bool cellular_areParametersUpdated() {
@@ -347,7 +347,7 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
         std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
         cellular_send(&command);
         volatile int z = 0;
-        cellular_receive(response, false);
+        cellular_receive(response, false, 1000);
         z++;
 
    }
@@ -604,7 +604,7 @@ static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcSt
     std::string command = "AT+UMQTTC=2,0,0,\"/l\",\"" + dataToEncode + "\"\r";
     std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
     cellular_send(&command);
-    cellular_receive(response, false);
+    cellular_receive(response, false, 1000);
 
 }
 
@@ -618,7 +618,7 @@ static void cellular_disableEcho() {
 
   command = "ATE0\r";
   cellular_send(&command); // TODO this will fail first time because it echoes the first time lol
-  cellular_receive(CELL_OK, false);
+  cellular_receive(CELL_OK, false, 500);
 }
 
 static void cellular_setBaudRate() {
@@ -634,7 +634,7 @@ static void cellular_testConnection() {
   command = "AT\r";
 //  cellular_sendAndExpectOk(&command); // TODO don't fail, try again
     cellular_send(&command);
-    cellular_receive(CELL_OK, false);
+    cellular_receive(CELL_OK, false, 500);
 }
 
 static void cellular_mqttInit() {
@@ -644,7 +644,7 @@ static void cellular_mqttInit() {
   command = "AT+UMQTT=0,\"Car\"\r";
   response = "\r\r\n+UMQTT: 0,1\r\r\n\r\nOK\r\n";
   cellular_send(&command);
-  bool success = cellular_receive(response, false);
+  bool success = cellular_receive(response, false, 1000);
   if (!success)
   {
       return;
@@ -653,27 +653,27 @@ static void cellular_mqttInit() {
   command = "AT+UMQTT=1,1883\r";
   response = "\r\r\n+UMQTT: 1,1\r\r\n\r\nOK\r\n";
   cellular_send(&command);
-  cellular_receive(response, true);
+  cellular_receive(response, true, 1000);
     y++;
   command = "AT+UMQTT=2,\"ec2-18-222-107-189.us-east-2.compute.amazonaws.com\",1883\r";
   response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
   cellular_send(&command);
-  cellular_receive(response, true);
+  cellular_receive(response, true, 1000);
     y++;
   command = "AT+UMQTT=10,3600\r";
   response = "\r\r\n+UMQTT: 10,1\r\r\n\r\nOK\r\n";
   cellular_send(&command);
-  cellular_receive(response, true);
+  cellular_receive(response, true, 1000);
     y++;
   command = "AT+UMQTT=12,1\r";
   response = "\r\r\n+UMQTT: 12,1\r\r\n\r\nOK\r\n";
   cellular_send(&command);
-  cellular_receive(response, true);
+  cellular_receive(response, true, 1000);
     y++;
   command = "AT+UMQTTC=1\r";
   response = "\r\r\n+UMQTTC: 1,1\r\r\n\r\nOK\r\n\r\r\n+UUMQTTC: 1,0\r\r\n";
   cellular_send(&command);
-  cellular_receive(response, true);
+  cellular_receive(response, true, 5000);
     y++;
 }
 
@@ -804,8 +804,13 @@ static void cellular_poll()
     }
 }
 
+extern VcuOutput vcuCoreOutput;
+
 static void cellular_respondToText(std::string* senderPhoneNumber, std::string* message) {
-  std::string response = "You said \"" + *message + "\"";
+  std::string response = "What's up? I'm parked.";
+  if(vcuCoreOutput.prndlState) {
+    response = "I'm driving right now. Talk to you later.";
+  }
   cellular_sendText(senderPhoneNumber, &response);
 }
 
@@ -823,32 +828,31 @@ void cellular_init()
     x++;
     cellular_registerTMobile();
     x++;
-    cellular_mqttInit();
+//    cellular_mqttInit();
     x++;
 
-  //  cellular_respondToTexts(); // TODO test
 
-    VcuOutput vcuCoreOutput;
-    HvcStatus hvcStatus;
-    PduStatus pduStatus;
-    InverterStatus inverterStatus;
-    AnalogVoltages analogVoltages;
-    WheelDisplacements wheelDisplacements;
-    ImuData imuData;
-    GpsData gpsData;
-    x++;
-    cellular_createDummyHFSend(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
-    x++;
-    cellular_sendTelemetryHigh(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
-
-    x++;
-    cellular_subscribe();
-    x++;
-    while(1)
-    {
-        cellular_poll();
-        x++;
-    }
+//    VcuOutput vcuCoreOutput;
+//    HvcStatus hvcStatus;
+//    PduStatus pduStatus;
+//    InverterStatus inverterStatus;
+//    AnalogVoltages analogVoltages;
+//    WheelDisplacements wheelDisplacements;
+//    ImuData imuData;
+//    GpsData gpsData;
+//    x++;
+//    cellular_createDummyHFSend(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
+//    x++;
+//    cellular_sendTelemetryHigh(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
+//
+//    x++;
+//    cellular_subscribe();
+//    x++;
+//    while(1)
+//    {
+//        cellular_poll();
+//        x++;
+//    }
 
 
 
@@ -860,7 +864,7 @@ void cellular_init()
 //    std::string command = "AT+UMQTTC=2,0,0,\"/data/dynamics\",\"{'time': " + std::to_string(1706483160 + i) + ", 'torque_command': " + std::to_string(i) + "}\"\r";
 //    std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
 //    cellular_send(&command);
-//    cellular_receive(response, false);
+//    cellular_receive(response, false, 1000);
 //    HAL_Delay(5000);
 //
 //}
@@ -883,7 +887,7 @@ void cellular_sendText(std::string* phoneNumber, std::string* message) {
   command = "AT+CMGS=\"" + *phoneNumber + "\"\r";
   response = "\r\n> ";
   cellular_send(&command);
-  cellular_receive(response, true);
+  cellular_receive(response, true, 5000);
 
   cellular_send(message);
 
@@ -904,7 +908,10 @@ void cellular_respondToTexts() {
   std::string sender;
   std::string message;
 
-  command = "AT+CMGL=\"REC UNREAD\"\r";
+  command = "AT+CMGF=1\r";
+  cellular_sendAndExpectOk(&command);
+
+  command = "AT+CMGL\r";
   cellular_send(&command);
   cellular_receiveAny(2048, response, 1000);
 
@@ -914,15 +921,15 @@ void cellular_respondToTexts() {
 
   for(int i = 0; i < response.size();) {
     i += 2;
-    if(i >= response.size() || (command.at(i) == 'O' && command.at(i+1) == 'K')) {
+    if(i >= response.size() || (response.at(i) == 'O' && response.at(i+1) == 'K')) {
       break;
     }
-    if(command.at(i) != '+') {
+    if(response.at(i) != '+') {
       break;
     }
     int commas = 0;
     for(; i < response.size(); i++) {
-      if(command.at(i) == ',') {
+      if(response.at(i) == ',') {
         commas++;
         if(commas == 2) {
           break;
@@ -935,7 +942,7 @@ void cellular_respondToTexts() {
     }
     sender = "";
     for(; i < response.size(); i++) {
-      if(command.at(i) == ',') {
+      if(response.at(i) == '\"') {
         break;
       }
       sender += response.at(i);
@@ -944,7 +951,7 @@ void cellular_respondToTexts() {
       break;
     }
     for(; i < response.size(); i++) {
-      if(command.at(i) == '\n') {
+      if(response.at(i) == '\n') {
         break;
       }
     }
@@ -954,7 +961,7 @@ void cellular_respondToTexts() {
     }
     message = "";
     for(; i < response.size(); i++) {
-      if(command.at(i) == '\r') {
+      if(response.at(i) == '\r') {
         break;
       }
       message += response.at(i);
@@ -974,14 +981,12 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
                        AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
                        ImuData *imuData, GpsData *gpsData) {
 
-  if (cellular_areParametersUpdated()) {
-    cellular_updateParameters(vcuCoreParameters);
-  }
+//  if (cellular_areParametersUpdated()) {
+//    cellular_updateParameters(vcuCoreParameters);
+//  }
 
-    cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus,
-                            pduStatus, inverterStatus,
-                            analogVoltages, wheelDisplacements,
-                           imuData, gpsData);
-
-  // TODO implement AT command stuff
+//    cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus,
+//                            pduStatus, inverterStatus,
+//                            analogVoltages, wheelDisplacements,
+//                           imuData, gpsData);
 }
