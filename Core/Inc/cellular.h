@@ -12,6 +12,7 @@
 #include "wheelspeeds.h"
 #include "all_imus.h"
 #include "gps.h"
+#include "clock.h"
 
 
 extern UART_HandleTypeDef huart7;

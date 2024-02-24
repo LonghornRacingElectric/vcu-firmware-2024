@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="OCD vcu-firmware-2024" type="com.jetbrains.cidr.embedded.openocd.conf.type" factoryName="com.jetbrains.cidr.embedded.openocd.conf.factory" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="vcu-firmware-2024" TARGET_NAME="vcu-firmware-2024.elf" CONFIG_NAME="Debug" version="1" RUN_TARGET_PROJECT_NAME="vcu-firmware-2024" RUN_TARGET_NAME="vcu-firmware-2024.elf">
-    <openocd version="1" gdb-port="3333" telnet-port="4444" board-config="C:\Users\rovez\Documents\LHRe\Software2024\vcu-firmware-2024\Run.cfg" reset-type="INIT" download-type="UPDATED_ONLY">
+    <openocd version="1" gdb-port="3333" telnet-port="4444" board-config="C:\Users\Matthew\Desktop\Creative\Groups\LHR\vcu-firmware-2024\Run.cfg" reset-type="INIT" download-type="UPDATED_ONLY">
       <debugger kind="GDB" isBundled="true" />
     </openocd>
     <method v="2">

@@ -11,8 +11,8 @@ static CanInbox imu_unsSfl_inbox;
 static CanInbox imu_unsSbr_inbox;
 static CanInbox imu_unsSbl_inbox;
 
-void allImus_init() {
-    imu_init();
+void allImus_init(SPI_HandleTypeDef *hspi_ptr) {
+    imu_init(hspi_ptr);
     can_addInbox(HVC_VCU_IMU_ACCEL, &imu_hvcaccel_inbox);
     can_addInbox(HVC_VCU_IMU_GYRO, &imu_hvcgyro_inbox);
     can_addInbox(PDU_VCU_IMU_ACCEL, &imu_pduaccel_inbox);
@@ -82,8 +82,8 @@ void allImus_periodic(ImuData *imuData) {
 
   // Maybe check if IMU is ready before reading from it?
   // There are functions within imu.c in LL that function like this
-  if accel_ready() imu_getAccel(&imuData->accelVcu);
-  if gyro_ready() imu_getGyro(&imuData->gyroVcu);
+//  if accel_ready() imu_getAccel(&imuData->accelVcu);
+//  if gyro_ready() imu_getGyro(&imuData->gyroVcu);
 
   externalImus_getAccels(&imuData->accelHvc, &imuData->accelPdu, &imuData->accelFl, &imuData->accelFr, &imuData->accelBl, &imuData->accelBr);
   externalImus_getGyros(&imuData->gyroHvc, &imuData->gyroPdu);

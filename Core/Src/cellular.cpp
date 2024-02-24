@@ -244,23 +244,23 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 
 
         // IMU Acceleration (x,y,z): accel1, accel2, accel3, Fl, Fr, Bl, Br
-        twoBytes = (int16_t)(imuData->accel1.x / 0.001f);
+        twoBytes = (int16_t)(imuData->accelVcu.x / 0.001f);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->accel1.y / 0.001f);
+        twoBytes = (int16_t)(imuData->accelVcu.y / 0.001f);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->accel1.z / 0.001f);
+        twoBytes = (int16_t)(imuData->accelVcu.z / 0.001f);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->accel2.x / 0.001f);
+        twoBytes = (int16_t)(imuData->accelHvc.x / 0.001f);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->accel2.y / 0.001f);
+        twoBytes = (int16_t)(imuData->accelHvc.y / 0.001f);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->accel2.z / 0.001f);
+        twoBytes = (int16_t)(imuData->accelHvc.z / 0.001f);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->accel3.x / 0.001f);
+        twoBytes = (int16_t)(imuData->accelPdu.x / 0.001f);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->accel3.y / 0.001f);
+        twoBytes = (int16_t)(imuData->accelPdu.y / 0.001f);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->accel3.z / 0.001f);
+        twoBytes = (int16_t)(imuData->accelPdu.z / 0.001f);
         cellular_split16(ptr, twoBytes);
         twoBytes = (int16_t)(imuData->accelFl.x / 0.001f);
         cellular_split16(ptr, twoBytes);
@@ -289,23 +289,23 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 
 
         // IMU Gyro (x,y,z): gyro1, gyro2, gyro3
-        twoBytes = (int16_t)(imuData->gyro1.x / 1);
+        twoBytes = (int16_t)(imuData->gyroVcu.x / 1);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->gyro1.y / 1);
+        twoBytes = (int16_t)(imuData->gyroVcu.y / 1);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->gyro1.z / 1);
+        twoBytes = (int16_t)(imuData->gyroVcu.z / 1);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->gyro2.x / 1);
+        twoBytes = (int16_t)(imuData->gyroHvc.x / 1);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->gyro2.y / 1);
+        twoBytes = (int16_t)(imuData->gyroHvc.y / 1);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->gyro2.z / 1);
+        twoBytes = (int16_t)(imuData->gyroHvc.z / 1);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->gyro3.x / 1);
+        twoBytes = (int16_t)(imuData->gyroPdu.x / 1);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->gyro3.y / 1);
+        twoBytes = (int16_t)(imuData->gyroPdu.y / 1);
         cellular_split16(ptr, twoBytes);
-        twoBytes = (int16_t)(imuData->gyro3.z / 1);
+        twoBytes = (int16_t)(imuData->gyroPdu.z / 1);
         cellular_split16(ptr, twoBytes);
 
 
@@ -450,15 +450,15 @@ static void cellular_createDummyHFSend(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 
 
     // IMU Acceleration (x,y,z): accel1, accel2, accel3, Fl, Fr, Bl, Br
-    imuData->accel1.x = 0.546f;
-    imuData->accel1. y= 0.546f;
-    imuData->accel1.z = 0.546f;
-    imuData->accel2.x = 0.546f;
-    imuData->accel2.y = 0.546f;
-    imuData->accel2.z = 0.546f;
-    imuData->accel3.x = 0.546f;
-    imuData->accel3.y = 0.546f;
-    imuData->accel3.z = 0.546f;
+    imuData->accelVcu.x = 0.546f;
+    imuData->accelVcu. y= 0.546f;
+    imuData->accelVcu.z = 0.546f;
+    imuData->accelHvc.x = 0.546f;
+    imuData->accelHvc.y = 0.546f;
+    imuData->accelHvc.z = 0.546f;
+    imuData->accelPdu.x = 0.546f;
+    imuData->accelPdu.y = 0.546f;
+    imuData->accelPdu.z = 0.546f;
     imuData->accelFl.x = 0.546f;
     imuData->accelFl.y = 0.546f;
     imuData->accelFl.z = 0.546f;
@@ -474,15 +474,15 @@ static void cellular_createDummyHFSend(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 
 
     // IMU Gyro (x,y,z): gyro1, gyro2, gyro3
-    imuData->gyro1.x = 34;
-    imuData->gyro1.y = 34;
-    imuData->gyro1.z = 34;
-    imuData->gyro2.x = 34;
-    imuData->gyro2.y = 34;
-    imuData->gyro2.z = 34;
-    imuData->gyro3.x = 34;
-    imuData->gyro3.y = 34;
-    imuData->gyro3.z = 34;
+    imuData->gyroVcu.x = 34;
+    imuData->gyroVcu.y = 34;
+    imuData->gyroVcu.z = 34;
+    imuData->gyroHvc.x = 34;
+    imuData->gyroHvc.y = 34;
+    imuData->gyroHvc.z = 34;
+    imuData->gyroPdu.x = 34;
+    imuData->gyroPdu.y = 34;
+    imuData->gyroPdu.z = 34;
 
 
     // Wheel Speed: fl, fr, bl, br
@@ -805,9 +805,28 @@ static void cellular_poll()
 }
 
 extern VcuOutput vcuCoreOutput;
+extern GpsData gpsData;
 
 static void cellular_respondToText(std::string* senderPhoneNumber, std::string* message) {
-  std::string response = "What's up? I'm parked.";
+  std::string latString;
+  if(gpsData.latitude > 0) {
+    latString = std::to_string(gpsData.latitude);
+    latString += " N";
+  } else {
+    latString = std::to_string(-gpsData.latitude);
+    latString += " S";
+  }
+
+  std::string longString;
+  if(gpsData.longitude > 0) {
+    longString = std::to_string(gpsData.longitude);
+    longString += " E";
+  } else {
+    longString = std::to_string(-gpsData.longitude);
+    longString += " W";
+  }
+
+  std::string response = "I'm parked at " + latString + ", " + longString + "." ;
   if(vcuCoreOutput.prndlState) {
     response = "I'm driving right now. Talk to you later.";
   }
@@ -989,4 +1008,13 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
 //                            pduStatus, inverterStatus,
 //                            analogVoltages, wheelDisplacements,
 //                           imuData, gpsData);
+
+
+  // check and respond to text messages once per second
+  static float lastTime = 0;
+  float nowTime = clock_getTime();
+  if(nowTime - lastTime > 1.0f) {
+    lastTime = nowTime;
+    cellular_respondToTexts();
+  }
 }
