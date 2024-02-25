@@ -141,7 +141,7 @@ int main(void)
   gps_init();
   indicators_init();
   cellular_init();
-  //nvm_init(&vcuCoreParameters);
+  nvm_init(&vcuCoreParameters);
 
   /* USER CODE END 2 */
 
@@ -149,12 +149,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1) {
     /* USER CODE END WHILE */
-
-    // tester code for nvm
-    VcuParameters test;
-    test.appsLowPassFilterTimeConstant = 0.123456789;
-    nvm_saveParameters(&test);
-    nvm_beginTelemetry(12);
 
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
@@ -174,9 +168,9 @@ int main(void)
     dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
     can_periodic(deltaTime);
 
-    //nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-                // &pduStatus, &inverterStatus, &analogVoltages,
-               //  &wheelDisplacements, &imuData, &gpsData);
+    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+                &pduStatus, &inverterStatus, &analogVoltages,
+               &wheelDisplacements, &imuData, &gpsData);
     cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                       &pduStatus, &inverterStatus, &analogVoltages,
                       &wheelDisplacements, &imuData, &gpsData);

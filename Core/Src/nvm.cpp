@@ -3,11 +3,14 @@
 #include "clock.h"
 #include <sstream>
 
+FIL telemfile;
+FATFS fs;
+
 static void nvm_loadParameters(VcuParameters* vcuParameters) {
     FRESULT res;
     FIL fsrc;
     UINT br;
-    BYTE buffer[4096];
+    BYTE buffer[sizeof(VcuParameters)];
 
     // open source file (drive 1)
     res = f_open(
@@ -16,7 +19,9 @@ static void nvm_loadParameters(VcuParameters* vcuParameters) {
             FA_OPEN_EXISTING | FA_READ
             );
 
-    if (res) exit(res);
+    if (res) {
+        return;
+    }
 
     // copy source to destination
     res = f_read(
@@ -25,8 +30,8 @@ static void nvm_loadParameters(VcuParameters* vcuParameters) {
             sizeof buffer,
             &br );
 
-    if(res) {
-        vcuParameters = (VcuParameters*)res;
+    if(!res) {
+        vcuParameters = (VcuParameters*)buffer;
     }
 
     // close open files
@@ -66,20 +71,16 @@ static void nvm_saveParameters(VcuParameters* vcuParameters) {
 
 }
 
-static void nvm_beginTelemetry(uint64_t timestamp) {
+static void nvm_beginTelemetry(std::string timestamp) {
     FRESULT res;
-    FIL fcsv;
 
     // convert timestamp to string for file name
-    std::stringstream ss;
-    ss << timestamp;
-    std::string time = ss.str();
-    time += ".csv";
+    timestamp += ".csv";
 
     // create new csv file and leave open to write telemetry
     res = f_open(
-            &fcsv,
-            time.c_str(),
+            &telemfile,
+            timestamp.c_str(),
             FA_CREATE_ALWAYS
     );
 
@@ -88,23 +89,18 @@ static void nvm_beginTelemetry(uint64_t timestamp) {
 }
 
 static void nvm_writeTelemetry(TelemetryRow* telemetryRow) {
-    FRESULT res;
-    FIL fdst;
     UINT bw;
 
     // write row of data into file
-    if (res) {
-        f_write(
-                &fdst,
-                telemetryRow,
-                sizeof (telemetryRow),
-                &bw
-        );
-    }
+    f_write(
+            &telemfile,
+            telemetryRow,
+            sizeof (telemetryRow),
+            &bw
+    );
 }
 
 void nvm_init(VcuParameters* vcuParameters) {
-  FATFS fs;
   FRESULT res;
 
   //mount default drive
@@ -115,7 +111,7 @@ void nvm_init(VcuParameters* vcuParameters) {
 
   // create telemetry csv file
   // placeholder for timestamp but should get time from gps clock
-  nvm_beginTelemetry(2023-11-02);
+  nvm_beginTelemetry("2023-11-02");
 
 }
 
@@ -124,11 +120,11 @@ void nvm_periodic(VcuParameters* vcuParameters, VcuOutput *vcuCoreOutput,
                   AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
                   ImuData *imuData, GpsData *gpsData) {
 
-    // save vcu parameters if changed
-    nvm_saveParameters(vcuParameters);
-
-    // create telemetry row and write into csv file
-    //TelemetryRow telemetryRow;
-    //nvm_writeTelemetry(&telemetryRow);
-
+    // save vcu parameters once a second
+    static float time = 0;
+    if(clock_getTime() >= time + 1) {
+        nvm_saveParameters(vcuParameters);
+        time = clock_getTime();
+    }
+    //nvm_writeTelemetry()
 }
