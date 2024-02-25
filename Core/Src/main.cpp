@@ -140,7 +140,7 @@ int main(void)
   allImus_init();
   gps_init();
   indicators_init();
-  cellular_init();
+  //cellular_init();
   nvm_init(&vcuCoreParameters);
 
   /* USER CODE END 2 */
@@ -171,9 +171,9 @@ int main(void)
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                 &pduStatus, &inverterStatus, &analogVoltages,
                &wheelDisplacements, &imuData, &gpsData);
-    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-                      &pduStatus, &inverterStatus, &analogVoltages,
-                      &wheelDisplacements, &imuData, &gpsData);
+//    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+//                      &pduStatus, &inverterStatus, &analogVoltages,
+//                      &wheelDisplacements, &imuData, &gpsData);
   }
   /* USER CODE END 3 */
 }
