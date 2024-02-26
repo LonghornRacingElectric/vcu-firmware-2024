@@ -31,7 +31,8 @@ typedef struct InverterStatus {
 
   uint64_t faultVector;
   uint64_t stateVector;
-  // ...
+
+  uint32_t newData; // Comes from params in inverter.
 } InverterStatus;
 
 /**

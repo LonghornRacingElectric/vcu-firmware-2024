@@ -2,16 +2,28 @@
 #define VCU_FIRMWARE_2024_VCU_H
 
 #include "VcuModel.h"
+#include "adc.h"
+#include "hvc.h"
+#include "pdu.h"
+#include "inverter.h"
+#include "wheelspeeds.h"
+#include "all_imus.h"
+#include "gps.h"
+#include "drive_switch.h"
 
-VcuParameters vcuParameters;
-VcuInput vcuInput;
-VcuOutput vcuOutput;
-VcuModel vcuModel;
+static VcuInput vcuInput;
+static VcuModel vcuModel;
 
+/**
+ * Executes VCU Core.
+ */
+void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchState, HvcStatus &hvcStatus,
+                 PduStatus &pduStatus, InverterStatus &inverterStatus, WheelDisplacements &wheelDisplacements,
+                 ImuData &imuData, GpsData &gpsData, VcuOutput &output, float deltaTime);
 
-// interface with VCU core
-// TODO wip
-void vcu_execute(...);
-
+/**
+ * Update parameters. Do not do this during normal operation; only do this while in park!
+ */
+void vcu_updateParameters(VcuParameters &params);
 
 #endif //VCU_FIRMWARE_2024_VCU_H
