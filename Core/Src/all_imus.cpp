@@ -12,7 +12,7 @@ static CanInbox imu_unsSbr_inbox;
 static CanInbox imu_unsSbl_inbox;
 
 void allImus_init() {
-    imu_init();
+//    imu_init();
     can_addInbox(HVC_VCU_IMU_ACCEL, &imu_hvcaccel_inbox);
     can_addInbox(HVC_VCU_IMU_GYRO, &imu_hvcgyro_inbox);
     can_addInbox(PDU_VCU_IMU_ACCEL, &imu_pduaccel_inbox);
