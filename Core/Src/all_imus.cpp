@@ -10,18 +10,18 @@ static CanInbox imu_unsSfr_inbox;
 static CanInbox imu_unsSfl_inbox;
 static CanInbox imu_unsSbr_inbox;
 static CanInbox imu_unsSbl_inbox;
-
-void allImus_init(SPI_HandleTypeDef *hspi_ptr) {
-    imu_init(hspi_ptr);
-    can_addInbox(HVC_VCU_IMU_ACCEL, &imu_hvcaccel_inbox);
-    can_addInbox(HVC_VCU_IMU_GYRO, &imu_hvcgyro_inbox);
-    can_addInbox(PDU_VCU_IMU_ACCEL, &imu_pduaccel_inbox);
-    can_addInbox(PDU_VCU_IMU_GYRO, &imu_pdugyro_inbox);
-    can_addInbox(UNSFR_VCU_IMU, &imu_unsSfr_inbox);
-    can_addInbox(UNSFL_VCU_IMU, &imu_unsSfl_inbox);
-    can_addInbox(UNSBR_VCU_IMU, &imu_unsSbr_inbox);
-    can_addInbox(UNSBL_VCU_IMU, &imu_unsSbl_inbox);
-}
+//
+//void allImus_init(SPI_HandleTypeDef *hspi_ptr) {
+//    imu_init(hspi_ptr);
+//    can_addInbox(HVC_VCU_IMU_ACCEL, &imu_hvcaccel_inbox);
+//    can_addInbox(HVC_VCU_IMU_GYRO, &imu_hvcgyro_inbox);
+//    can_addInbox(PDU_VCU_IMU_ACCEL, &imu_pduaccel_inbox);
+//    can_addInbox(PDU_VCU_IMU_GYRO, &imu_pdugyro_inbox);
+//    can_addInbox(UNSFR_VCU_IMU, &imu_unsSfr_inbox);
+//    can_addInbox(UNSFL_VCU_IMU, &imu_unsSfl_inbox);
+//    can_addInbox(UNSBR_VCU_IMU, &imu_unsSbr_inbox);
+//    can_addInbox(UNSBL_VCU_IMU, &imu_unsSbl_inbox);
+//}
 
 static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, xyz* accelFr, xyz* accelBl, xyz* accelBr) {
   if(imu_hvcaccel_inbox.isRecent) {

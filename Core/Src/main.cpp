@@ -143,7 +143,7 @@ int main(void)
   hvc_init();
   pdu_init();
   wheelspeeds_init();
-  allImus_init(&hspi2);
+  // allImus_init(&hspi2);
   gps_init();
   indicators_init();
    cellular_init();

@@ -3,6 +3,7 @@
 
 #include "imu.h"
 
+
 typedef struct ImuData {
   xyz accelVcu;
   xyz accelHvc;
@@ -19,7 +20,7 @@ typedef struct ImuData {
 /**
  * Initialize by subscribing to certain CAN IDs for example.
  */
-void allImus_init(SPI_HandleTypeDef *hspi_ptr);
+void allImus_init();
 
 /**
  * Get latest IMU data from both local and external IMUs.

@@ -31,9 +31,9 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
 
-#define BUF_SIZE 1024
-#define MAX_GPS_LINE_SIZE 256 ///< how long are max NMEA lines to parse?
-#define MAX_CELL_LINE_SIZE 512 ///< how long are max AT lines to parse?
+#define BUF_SIZE 4096
+#define MAX_GPS_LINE_SIZE 4096 ///< how long are max NMEA lines to parse?
+#define MAX_CELL_LINE_SIZE 4096 ///< how long are max AT lines to parse?
 extern bool gps_completeLine;
 extern char gps_currLine[MAX_GPS_LINE_SIZE];
 extern char gps_tempLine[BUF_SIZE];
@@ -41,7 +41,7 @@ extern uint16_t gps_currLineSize;
 extern bool cell_completeLine;
 extern char cell_currLine[MAX_CELL_LINE_SIZE];
 extern uint16_t cell_currLineSize;
-
+extern char cell_tempLine[BUF_SIZE];
 
 
 /* USER CODE END Includes */
