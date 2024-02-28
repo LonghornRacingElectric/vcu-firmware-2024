@@ -1,6 +1,7 @@
 #include "all_imus.h"
 #include "angel_can_ids.h"
 #include "angel_can.h"
+#include "imu.h"
 
 static CanInbox imu_hvcaccel_inbox;
 static CanInbox imu_hvcgyro_inbox;
@@ -11,8 +12,8 @@ static CanInbox imu_unsSfl_inbox;
 static CanInbox imu_unsSbr_inbox;
 static CanInbox imu_unsSbl_inbox;
 
-void allImus_init() {
-//    imu_init();
+void allImus_init(SPI_HandleTypeDef *hspi) {
+    imu_init(hspi);
     can_addInbox(HVC_VCU_IMU_ACCEL, &imu_hvcaccel_inbox);
     can_addInbox(HVC_VCU_IMU_GYRO, &imu_hvcgyro_inbox);
     can_addInbox(PDU_VCU_IMU_ACCEL, &imu_pduaccel_inbox);
@@ -80,8 +81,8 @@ static void externalImus_getGyros(xyz* gyroHvc, xyz* gyroPdu) {
 
 void allImus_periodic(ImuData *imuData) {
 
-//  if accel_ready() imu_getAccel(&imuData->accelVcu);
-//  if gyro_ready() imu_getGyro(&imuData->gyroVcu);
+  if (imu_isAccelReady()) imu_getAccel(&imuData->accelVcu);
+  if (imu_isGyroReady()) imu_getGyro(&imuData->gyroVcu);
 
   externalImus_getAccels(&imuData->accelHvc, &imuData->accelPdu, &imuData->accelFl, &imuData->accelFr, &imuData->accelBl, &imuData->accelBr);
   externalImus_getGyros(&imuData->gyroHvc, &imuData->gyroPdu);

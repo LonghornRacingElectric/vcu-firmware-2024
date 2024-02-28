@@ -7,7 +7,7 @@
 static void cellular_send(std::string *command) {
   auto bytes = reinterpret_cast<const uint8_t *>(command->c_str());
   volatile int x = 0;
-  uint32_t error = HAL_UART_Transmit(&huart7, bytes, command->size(), HAL_MAX_DELAY);
+  volatile uint32_t error = HAL_UART_Transmit(&huart7, bytes, command->size(), HAL_MAX_DELAY);
   if (error != HAL_OK) {
     Error_Handler();
   }
@@ -953,7 +953,7 @@ void cellular_init()
     x++;
     cellular_registerTMobile();
     x++;
-    cellular_mqttInit();
+//    cellular_mqttInit();
     x++;
 
 
@@ -1038,9 +1038,11 @@ void cellular_respondToTexts() {
   std::string sender;
   std::string message;
 
-    HAL_UART_DMAPause(&huart7);
+  HAL_UART_DMAStop(&huart7);
+
   command = "AT+CMGF=1\r";
-  cellular_sendAndExpectOk(&command);
+  cellular_send(&command);
+  cellular_receiveAny(100, response, 500);
 
   command = "AT+CMGL\r";
   cellular_send(&command);
@@ -1102,8 +1104,9 @@ void cellular_respondToTexts() {
     }
 
     cellular_respondToText(&sender, &message);
-      HAL_UART_DMAResume(&huart7);
   }
+
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
 }
 
 
