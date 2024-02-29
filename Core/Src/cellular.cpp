@@ -31,7 +31,7 @@ static bool cellular_areParametersUpdated() {
 
 static void cellular_sendTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                                    PduStatus *pduStatus, InverterStatus *inverterStatus,
-                                   AnalogVoltages *analogVoltages, WheelMagnetValues *wheelDisplacements,
+                                   AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues,
                                    ImuData *imuData, GpsData *gpsData) {
 
 }

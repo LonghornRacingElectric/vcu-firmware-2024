@@ -14,7 +14,7 @@ typedef struct WheelMagnetValues { // Unit is milliTeslas
 void wheelspeeds_init();
 
 /**
- * Get latest wheel displacements from CAN.
+ * Get latest wheel magnetic field values from CAN.
  */
 void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues);
 
