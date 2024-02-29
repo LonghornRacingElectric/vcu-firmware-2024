@@ -22,6 +22,16 @@ typedef struct PduStatus {
     float lvSoC;
     float lvCurrent;
 
+    // Currents, need more info on this
+    float treetrunk;
+    float radfan;
+    float battfan;
+    float pump1;
+    float pump2;
+    float glv;
+    float shdn;
+    float bl;
+
     bool isRecent = false;
 } PduStatus;
 

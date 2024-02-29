@@ -4,6 +4,8 @@
 
 static CanInbox lvbattStatusInbox;
 static CanInbox thermalStatusInbox;
+static CanInbox lvCurrents1Inbox;
+static CanInbox lvCurrents2Inbox;
 
 static CanOutbox brakeLightOutbox;
 static CanOutbox buzzerOutbox;
@@ -12,6 +14,8 @@ static CanOutbox coolingOutbox;
 void pdu_init() {
   can_addInbox(PDU_VCU_LVBAT, &lvbattStatusInbox);
   can_addInbox(PDU_VCU_THERMAL, &thermalStatusInbox);
+  can_addInbox(PDU_VCU_LV_CURRENTS_1, &lvCurrents1Inbox);
+  can_addInbox(PDU_VCU_LV_CURRENTS_2, &lvCurrents2Inbox);
 
   can_addOutbox(VCU_PDU_BRAKELIGHT, 0.01f, &brakeLightOutbox);
   can_addOutbox(VCU_PDU_BUZZER, 0.01f, &buzzerOutbox);
@@ -50,21 +54,36 @@ void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
 
   if (lvbattStatusInbox.isRecent) {
     lvbattStatusInbox.isRecent = false;
-    status->lvVoltage =
-        (float) can_readBytes(lvbattStatusInbox.data, 0, 1) / 10.0f; // in 0.1V units, range is 0.0 - 28.0V
-    status->lvSoC = (float) can_readBytes(lvbattStatusInbox.data, 2, 3) / 10.0f; // in 0.1% units
-    status->lvCurrent =
-        (float) can_readBytes(lvbattStatusInbox.data, 4, 5) / 100.0f; // in 0.01A units, range is 0.00 - 100.00A
+    status->lvVoltage = can_readFloat(int16_t, &lvbattStatusInbox, 0, 0.01f); // in 0.01V units, range is 0.00 - 28.00V
+    status->lvSoC = can_readFloat(uint16_t, &lvbattStatusInbox, 2, 0.01f); // in 0.01% units, range is 0.00 - 100.00%
+    status->lvCurrent = can_readFloat(int16_t, &lvbattStatusInbox, 4, 0.01f); // in 0.01A units, range is 0.00 - 100.00A
     status->isRecent = true;
   }
   if (thermalStatusInbox.isRecent) {
     thermalStatusInbox.isRecent = false;
-    status->volumetricFlowRate = (float) thermalStatusInbox.data[0] / 10.0f; // range from 0.0 to 25.5 L/min
-    status->waterTempMotor = (float) thermalStatusInbox.data[1]; // degrees C
-    status->waterTempInverter = (float) thermalStatusInbox.data[2]; // degrees C
-    status->waterTempRadiator = (float) thermalStatusInbox.data[3]; // degrees C
+    status->volumetricFlowRate = can_readFloat(uint8_t, &thermalStatusInbox, 0, 0.1f); // in 0.1L/min units, range is 0 - 25.5L/min
+    status->waterTempMotor = can_readInt(int8_t, &thermalStatusInbox, 1); // in 0.1C units, range is -40.0 - 215.0C (max is 215C, but higher will just be ignored
+    status->waterTempInverter = can_readInt(int8_t, &thermalStatusInbox, 2); // in 0.1C units, range is -40.0 - 215.0C (max is 215C, but higher will just be ignored
+    status->waterTempRadiator = can_readInt(int8_t, &thermalStatusInbox, 3); // in 0.1C units, range is -40.0 - 215.0C (max is 215C, but higher will just be ignored
     status->radiatorFanRpmPercentage =
-        (float) thermalStatusInbox.data[4] / 100.0f; // range from 0 to 100, but will be sent as a float between 0 and 1
+        can_readInt(uint8_t, &thermalStatusInbox, 4); // in 0.1% units, range is 0.0 - 100.0% (max is 100%, but higher will just be ignored
+    status->isRecent = true;
+  }
+  if(lvCurrents1Inbox.isRecent) {
+    lvCurrents1Inbox.isRecent = false;
+    status->treetrunk = can_readFloat(uint16_t, &lvCurrents1Inbox, 0, 0.01f);
+    status->radfan = can_readFloat(uint16_t, &lvCurrents1Inbox, 2, 0.01f);
+    status->battfan = can_readFloat(uint16_t, &lvCurrents1Inbox, 4, 0.01f);
+    status->pump1 = can_readFloat(uint16_t, &lvCurrents1Inbox, 6, 0.01f);
+    status->isRecent = true;
+  }
+
+  if(lvCurrents2Inbox.isRecent) {
+    lvCurrents2Inbox.isRecent = false;
+    status->pump2 = can_readFloat(uint16_t, &lvCurrents2Inbox, 0, 0.01f);
+    status->glv = can_readFloat(uint16_t, &lvCurrents2Inbox, 2, 0.01f);
+    status->shdn = can_readFloat(uint16_t, &lvCurrents2Inbox, 4, 0.01f);
+    status->bl = can_readFloat(uint16_t, &lvCurrents2Inbox, 6, 0.01f);
     status->isRecent = true;
   }
 }

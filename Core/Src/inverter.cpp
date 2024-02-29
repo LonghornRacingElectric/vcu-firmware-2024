@@ -18,6 +18,7 @@ static CanInbox highSpeedInbox;
 static CanInbox paramsResponseInbox;
 
 static CanOutbox torqueCommandOutbox;
+static CanOutbox paramsRequestOutbox;
 
 void inverter_init() {
   can_addInbox(INV_VOLTAGE, &voltageInbox);
@@ -32,73 +33,74 @@ void inverter_init() {
   can_addInbox(INV_VCU_PARAMS_RESPONSE, &paramsResponseInbox);
 
   can_addOutbox(VCU_INV_COMMAND, 0.003f, &torqueCommandOutbox);
+  can_addOutbox(VCU_INV_PARAMS_REQUEST, 1.0f, &paramsRequestOutbox);
 }
 
 static void inverter_getStatus(InverterStatus *status) {
 
   if (inverterTempInbox.isRecent) {
-    auto temp = can_readBytes(inverterTempInbox.data, 0, 1) +
-                can_readBytes(inverterTempInbox.data, 2, 3) +
-                can_readBytes(inverterTempInbox.data, 4, 5);
-    status->inverterTemp = (float) temp / 30.0f;
+    auto temp = can_readFloat(int16_t, &inverterTempInbox, 0, 0.1f) +
+                can_readFloat(int16_t, &inverterTempInbox, 2, 0.1f) +
+                can_readFloat(int16_t, &inverterTempInbox, 4, 0.1f);
+    status->inverterTemp = temp / 3.0f;
     inverterTempInbox.isRecent = false;
     status->isRecent = true;
   }
 
   if (motorTempInbox.isRecent) {
-    status->motorTemp = (float) can_readBytes(motorTempInbox.data, 4, 5) / 10.0f;
+    status->motorTemp = can_readFloat(int16_t, &motorTempInbox, 4, 0.1f);
     motorTempInbox.isRecent = false;
     status->isRecent = true;
   }
 
   if (motorPosInbox.isRecent) {
-    status->motorAngle = (float) can_readBytes(motorPosInbox.data, 0, 1) / 10.0f;
-    status->rpm = (float) can_readBytes(motorPosInbox.data, 2, 3); //Out of all of these, idk why this isnt shifted
-    status->inverterFrequency = (float) can_readBytes(motorPosInbox.data, 4, 5) / 10.0f;
-    status->resolverAngle = (float) can_readBytes(motorPosInbox.data, 6, 7) / 10.0f;
+    status->motorAngle = can_readFloat(int16_t, &motorPosInbox, 0, 0.1f);
+    status->rpm = can_readInt(int16_t, &motorPosInbox, 2); //Out of all of these, idk why this isnt shifted
+    status->inverterFrequency = can_readFloat(int16_t, &motorPosInbox, 4, 0.1f);
+    status->resolverAngle = can_readFloat(int16_t, &motorPosInbox, 6, 0.1f);
     motorPosInbox.isRecent = false;
     status->isRecent = true;
   }
 
   if (voltageInbox.isRecent) {
-    status->voltage = (float) can_readBytes(voltageInbox.data, 0, 1) / 10.0f;
-    status->outputVoltage = (float) can_readBytes(voltageInbox.data, 2, 3) / 10.0f;
-    status->ABVoltage = (float) can_readBytes(voltageInbox.data, 4, 5) / 10.0f;
-    status->BCVoltage = (float) can_readBytes(voltageInbox.data, 6, 7) / 10.0f;
+    status->voltage = can_readFloat(int16_t, &voltageInbox, 0, 0.1f);
+    status->outputVoltage = can_readFloat(int16_t, &voltageInbox, 2, 0.1f);
+    status->ABVoltage = can_readFloat(int16_t, &voltageInbox, 4, 0.1f);
+    status->BCVoltage = can_readFloat(int16_t, &voltageInbox, 6, 0.1f);
     voltageInbox.isRecent = false;
     status->isRecent = true;
   }
 
   if (currentInbox.isRecent) {
-    status->phaseACurrent = (float) can_readBytes(currentInbox.data, 0, 1) / 10.0f;
-    status->phaseBCurrent = (float) can_readBytes(currentInbox.data, 2, 3) / 10.0f;
-    status->phaseCCurrent = (float) can_readBytes(currentInbox.data, 4, 5) / 10.0f;
-    status->current = (float) can_readBytes(currentInbox.data, 6, 7) / 10.0f;
+    status->phaseACurrent = can_readFloat(int16_t, &currentInbox, 0, 0.1f);
+    status->phaseBCurrent = can_readFloat(int16_t, &currentInbox, 2, 0.1f);
+    status->phaseCCurrent = can_readFloat(int16_t, &currentInbox, 4, 0.1f);
+    status->current = can_readFloat(int16_t, &currentInbox, 6, 0.1f);
     currentInbox.isRecent = false;
     status->isRecent = true;
   }
 
   if (inverterStateInbox.isRecent) {
-    status->stateVector = can_readBytes(inverterStateInbox.data, 0, 7);
+    status->stateVector = can_readInt(uint64_t, &inverterStateInbox, 0);
     inverterStateInbox.isRecent = false;
     status->isRecent = true;
   }
 
   if (inverterFaultInbox.isRecent) {
-    status->faultVector = can_readBytes(inverterFaultInbox.data, 0, 7);
+    status->faultVector = can_readInt(uint64_t, &inverterFaultInbox, 0);
     inverterFaultInbox.isRecent = false;
     status->isRecent = true;
   }
 
   if (torqueInfoInbox.isRecent) {
-    status->torqueActual = (float) can_readBytes(torqueInfoInbox.data, 0, 1) / 10.0f;
-    status->torqueCommand = (float) can_readBytes(torqueInfoInbox.data, 2, 3) / 10.0f;
+    status->torqueCommand = can_readFloat(int16_t, &torqueInfoInbox, 0, 0.1f);
+    status->torqueActual = can_readFloat(int16_t, &torqueInfoInbox, 2, 0.1f);
     torqueInfoInbox.isRecent = false;
     status->isRecent = true;
   }
 
   if (paramsResponseInbox.isRecent) {
-    auto data = (uint16_t) can_readBytes(paramsResponseInbox.data, 4, 5);
+    auto data = can_readInt(uint16_t, &paramsResponseInbox, 4);
     if (paramsResponseInbox.data[2] == 0) {
       FAULT_SET(&vcu_fault_vector, FAULT_VCU_INVPARAMS);
     }
@@ -111,10 +113,8 @@ static void inverter_getStatus(InverterStatus *status) {
 
 
 static void inverter_updateTorqueCommand(float torque, float rpm, bool enable_inverter) {
-  auto tc = (int16_t) (torque * 10.0f);
-  auto sc = (int16_t) rpm;
-  can_writeBytes(torqueCommandOutbox.data, 0, 1, tc);
-  can_writeBytes(torqueCommandOutbox.data, 2, 3, sc);
+  can_writeFloat(int16_t, &torqueCommandOutbox, 0, torque, 0.1f);
+  can_writeFloat(int16_t, &torqueCommandOutbox, 2, rpm, 1.0f);
   torqueCommandOutbox.data[5] = (uint8_t) enable_inverter; // Enable
   torqueCommandOutbox.isRecent = true;
 }
@@ -126,12 +126,11 @@ unsigned int inverter_resetFaults() {
 
 unsigned int inverter_paramsIO(uint16_t param_addr, uint16_t param_value, bool write) {
   // send a can message telling the inverter to set params
-  static uint8_t set_params[8];
-  can_writeBytes(set_params, 0, 1, param_addr); //param addr
-  can_writeBytes(set_params, 4, 5, param_value);  //param value
-  set_params[2] = (uint8_t) write; //sets to write mode
-
-  return can_send(VCU_INV_PARAMS_REQUEST, 8, set_params);
+  can_writeInt(uint16_t, &paramsRequestOutbox, 0, param_addr); //param addr
+  can_writeInt(uint8_t, &paramsRequestOutbox, 2, write); //param value (dummy value)
+  can_writeInt(uint16_t, &paramsRequestOutbox, 4, param_value); //param value
+  paramsRequestOutbox.isRecent = true;
+  return 0;
 }
 
 void inverter_periodic(InverterStatus *status, VcuOutput* vcuCoreOutput) {
