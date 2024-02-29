@@ -39,8 +39,8 @@ typedef struct HvcStatus {
     } contactorStatus;
 
     // TODO cell voltages and temps
-    float cellVoltages[4*VOLTS_MAILBOXES_NUM];
-    float cellTemps[4*TEMPS_MAILBOXES_NUM];
+    float cellVoltages[4*VOLTS_MAILBOXES_NUM] = {0};
+    float cellTemps[4*TEMPS_MAILBOXES_NUM] = {0};
 } HvcStatus;
 
 /**

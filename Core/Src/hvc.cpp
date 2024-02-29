@@ -24,30 +24,31 @@ void hvc_updateCooling(float battFanRpmPercentage, float battUniqueSegRpmPercent
   coolingOutbox.isRecent = true;
 }
 
-float hvc_updateMean(const float oldData[], const float newData[4], float oldMean, size_t index, size_t numData) {
-  float sum = oldMean * numData;
-  for(int i = 0; i < 4; i++) { // Out with the old, in with the new
-    if(numData < 4*index + i) {
-      return oldMean; // This should never happen
-    }
-    sum -= oldData[4*index + i];
+float hvc_updateMean(const float* newData, size_t numData) {
+  float sum = 0;
+  for(int i = 0; i < numData; i++) {
+    if(newData[i] == 0) continue;
     sum += newData[i];
   }
-  return sum / numData;
+  return sum / (float) numData;
 }
 
-float hvc_findMin(const float newData[4], float prevMin) {
-  for(int i = 0; i < 4; i++) {
-    if(newData[i] < prevMin) return newData[i];
+float hvc_findMin(const float* newData, size_t numData) {
+  float newMin = 0;
+  for(int i = 0; i < numData; i++) {
+    if(newData[i] == 0) continue;
+    if(newData[i] < newMin) newMin = newData[i];
   }
-  return prevMin;
+  return newMin;
 }
 
-float hvc_findMax(const float newData[4], float prevMax) {
-  for(int i = 0; i < 4; i++) {
-    if(newData[i] > prevMax) return newData[i];
+float hvc_findMax(const float* newData, size_t numData) {
+  float newMax = 0;
+  for(int i = 0; i < numData; i++) {
+    if(newData[i] == 0) continue;
+    if(newData[i] > newMax) newMax = newData[i];
   }
-  return prevMax;
+  return newMax;
 }
 
 float hvc_findRange(float min, float max) {
@@ -67,9 +68,9 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
   }
   if (packStatusInbox.isRecent) {
     packStatusInbox.isRecent = false;
-    status->packVoltage = can_readFloat(uint16_t, &packStatusInbox, 0, 0.01f); // (float) can_readBytes(packStatusInbox.data, 0, 1) / 10.0f; (old code)
-    status->packCurrent = can_readFloat(int16_t, &packStatusInbox, 2, 0.01f); // (float) can_readBytes(packStatusInbox.data, 2, 3) / 10.0f; (old code
-    status->stateOfCharge = can_readFloat(uint16_t, &packStatusInbox, 4, 0.01f); // (float) can_readBytes(packStatusInbox.data, 4, 5) / 10.0f; (old code)
+    status->packVoltage = can_readFloat(uint16_t, &packStatusInbox, 0, 0.01f);
+    status->packCurrent = can_readFloat(int16_t, &packStatusInbox, 2, 0.01f);
+    status->stateOfCharge = can_readFloat(uint16_t, &packStatusInbox, 4, 0.01f);
     status->packTempMax = can_readInt(uint8_t, &packStatusInbox, 6);
     status->packTempMin = can_readInt(uint8_t, &packStatusInbox, 7);
     status->isRecent = true;
@@ -80,27 +81,24 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
     status->isRecent = true;
   }
 
-
   // Ok so this will be more efficient only if hvc_periodic() is called faster than every 100 us (it takes about 100us for new voltage data to come in)
   for(int i = 0; i < VOLTS_MAILBOXES_NUM; i++) {
     auto voltageInbox = voltageInboxes[i];
     if(voltageInbox.isRecent) {
       voltageInbox.isRecent = false;
-      float newVoltages[4] = {
-        can_readFloat(uint16_t, &voltageInbox, 0, 0.0001f),
-        can_readFloat(uint16_t, &voltageInbox, 2, 0.0001f),
-        can_readFloat(uint16_t, &voltageInbox, 4, 0.0001f),
-        can_readFloat(uint16_t, &voltageInbox, 6, 0.0001f)
-      };
 
-      status->packVoltageMean = hvc_updateMean(status->cellVoltages, newVoltages, status->packVoltageMean, i, 4*VOLTS_MAILBOXES_NUM);
-      status->packVoltageRange = hvc_findRange(status->packVoltageMin, status->packVoltageMax);
-
-      status->cellVoltages[4*i] = newVoltages[0];
-      status->cellVoltages[4*i + 1] = newVoltages[1];
-      status->cellVoltages[4*i + 2] = newVoltages[2];
-      status->cellVoltages[4*i + 3] = newVoltages[3];
+      status->cellVoltages[4*i] = can_readFloat(uint16_t, &voltageInbox, 0, 0.0001f);
+      status->cellVoltages[4*i + 1] = can_readFloat(uint16_t, &voltageInbox, 2, 0.0001f);
+      status->cellVoltages[4*i + 2] = can_readFloat(uint16_t, &voltageInbox, 4, 0.0001f);
+      status->cellVoltages[4*i + 3] = can_readFloat(uint16_t, &voltageInbox, 6, 0.0001f);
       status->isRecent = true;
+
+      if(i == VOLTS_MAILBOXES_NUM - 1){ // If this is the last voltage inbox
+        status->packVoltageMean = hvc_updateMean(status->cellVoltages, VOLTS_MAILBOXES_NUM*4);
+        status->packVoltageMin = hvc_findMin(status->cellVoltages, VOLTS_MAILBOXES_NUM*4);
+        status->packVoltageMax = hvc_findMax(status->cellVoltages, VOLTS_MAILBOXES_NUM*4);
+        status->packVoltageRange = hvc_findRange(status->packVoltageMin, status->packVoltageMax);
+      }
     }
   }
 
@@ -108,23 +106,18 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
     auto tempInbox = tempInboxes[i];
     if(tempInbox.isRecent) {
       tempInbox.isRecent = false;
-      float newTemps[4] = {
-              can_readFloat(uint16_t, &tempInbox, 0, 0.1f),
-              can_readFloat(uint16_t, &tempInbox, 2, 0.1f),
-              can_readFloat(uint16_t, &tempInbox, 4, 0.1f),
-              can_readFloat(uint16_t, &tempInbox, 6, 0.1f)
-      };
 
-      status->packTempMean = hvc_updateMean(status->cellTemps, newTemps, status->packTempMean, i, 4*TEMPS_MAILBOXES_NUM);
-      status->packTempMin = hvc_findMin(newTemps, status->packTempMin);
-      status->packTempMax = hvc_findMax(newTemps, status->packTempMax);
-      status->packTempRange = hvc_findRange(status->packTempMin, status->packTempMax);
-
-      status->cellTemps[4*i] = newTemps[0];
-      status->cellTemps[4*i + 1] = newTemps[1];
-      status->cellTemps[4*i + 2] = newTemps[2];
-      status->cellTemps[4*i + 3] = newTemps[3];
+      status->cellTemps[4*i] = can_readFloat(uint16_t, &tempInbox, 0, 0.1f);
+      status->cellTemps[4*i + 1] = can_readFloat(uint16_t, &tempInbox, 2, 0.1f);
+      status->cellTemps[4*i + 2] = can_readFloat(uint16_t, &tempInbox, 4, 0.1f);
+      status->cellTemps[4*i + 3] = can_readFloat(uint16_t, &tempInbox, 6, 0.1f);
       status->isRecent = true;
+
+      if(i == TEMPS_MAILBOXES_NUM - 1){ // If this is the last temp inbox
+        status->packTempMean = hvc_updateMean(status->cellTemps, TEMPS_MAILBOXES_NUM*4);
+        // PackTemp Min and Max were already sent through CAN
+        status->packTempRange = hvc_findRange(status->packTempMin, status->packTempMax);
+      }
     }
   }
 
