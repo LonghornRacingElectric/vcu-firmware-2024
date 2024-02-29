@@ -19,7 +19,7 @@ typedef struct ImuData {
 /**
  * Initialize by subscribing to certain CAN IDs for example.
  */
-void allImus_init();
+void allImus_init(SPI_HandleTypeDef* hspi_ptr);
 
 /**
  * Get latest IMU data from both local and external IMUs.

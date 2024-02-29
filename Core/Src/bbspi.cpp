@@ -14,15 +14,15 @@ static void bbspi_setPinCsEeprom(bool on) {
 }
 
 static void bbspi_setPinSdo(bool on) {
-  HAL_GPIO_WritePin(BBSPI_SDO_GPIO_Port, BBSPI_SDO_Pin, (GPIO_PinState) on);
+  HAL_GPIO_WritePin(IMU_SPI_MISO_GPIO_Port, IMU_SPI_MISO_Pin, (GPIO_PinState) on);
 }
 
 static void bbspi_setPinClk(bool on) {
-  HAL_GPIO_WritePin(BBSPI_CLK_GPIO_Port, BBSPI_CLK_Pin, (GPIO_PinState) on);
+  HAL_GPIO_WritePin(IMU_SPI_CLK_GPIO_Port, IMU_SPI_CLK_Pin, (GPIO_PinState) on);
 }
 
 static bool bbspi_getPinSdi() {
-  return (bool) HAL_GPIO_ReadPin(BBSPI_SDI_GPIO_Port, BBSPI_SDI_Pin);
+  return (bool) HAL_GPIO_ReadPin(IMU_SPI_MOSI_GPIO_Port, IMU_SPI_MOSI_Pin);
 }
 
 static void bbspi_delay() {
