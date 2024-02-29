@@ -61,15 +61,17 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
 
   if (amsImdInbox.isRecent) {
     amsImdInbox.isRecent = false;
-    status->imd = (bool) can_readBytes(amsImdInbox.data, 0, 0);
-    status->ams = (bool) can_readBytes(amsImdInbox.data, 1, 1);
+    status->imd = (bool) amsImdInbox.data[0];
+    status->ams = (bool) amsImdInbox.data[1];
     status->isRecent = true;
   }
   if (packStatusInbox.isRecent) {
     packStatusInbox.isRecent = false;
-    status->packVoltage = (float) can_readBytes(packStatusInbox.data, 0, 1) / 10.0f;
-    status->packCurrent = (float) can_readBytes(packStatusInbox.data, 2, 3) / 10.0f;
-    status->stateOfCharge = (float) can_readBytes(packStatusInbox.data, 4, 5) / 10.0f;
+    status->packVoltage = can_readFloat(uint16_t, &packStatusInbox, 0, 0.01f); // (float) can_readBytes(packStatusInbox.data, 0, 1) / 10.0f; (old code)
+    status->packCurrent = can_readFloat(int16_t, &packStatusInbox, 2, 0.01f); // (float) can_readBytes(packStatusInbox.data, 2, 3) / 10.0f; (old code
+    status->stateOfCharge = can_readFloat(uint16_t, &packStatusInbox, 4, 0.01f); // (float) can_readBytes(packStatusInbox.data, 4, 5) / 10.0f; (old code)
+    status->packTempMax = can_readInt(uint8_t, &packStatusInbox, 6);
+    status->packTempMin = can_readInt(uint8_t, &packStatusInbox, 7);
     status->isRecent = true;
   }
   if (contactorStatusInbox.isRecent) {
@@ -85,15 +87,13 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
     if(voltageInbox.isRecent) {
       voltageInbox.isRecent = false;
       float newVoltages[4] = {
-        (float) can_readBytes(voltageInbox.data, 0, 1) / 10.0f,
-        (float) can_readBytes(voltageInbox.data, 2, 3) / 10.0f,
-        (float) can_readBytes(voltageInbox.data, 4, 5) / 10.0f,
-        (float) can_readBytes(voltageInbox.data, 6, 7) / 10.0f
+        can_readFloat(uint16_t, &voltageInbox, 0, 0.0001f),
+        can_readFloat(uint16_t, &voltageInbox, 2, 0.0001f),
+        can_readFloat(uint16_t, &voltageInbox, 4, 0.0001f),
+        can_readFloat(uint16_t, &voltageInbox, 6, 0.0001f)
       };
 
       status->packVoltageMean = hvc_updateMean(status->cellVoltages, newVoltages, status->packVoltageMean, i, 4*VOLTS_MAILBOXES_NUM);
-      status->packVoltageMin = hvc_findMin(newVoltages, status->packVoltageMin);
-      status->packVoltageMax = hvc_findMax(newVoltages, status->packVoltageMax);
       status->packVoltageRange = hvc_findRange(status->packVoltageMin, status->packVoltageMax);
 
       status->cellVoltages[4*i] = newVoltages[0];
@@ -109,10 +109,10 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
     if(tempInbox.isRecent) {
       tempInbox.isRecent = false;
       float newTemps[4] = {
-              (float) can_readBytes(tempInbox.data, 0, 1) / 10.0f,
-              (float) can_readBytes(tempInbox.data, 2, 3) / 10.0f,
-              (float) can_readBytes(tempInbox.data, 4, 5) / 10.0f,
-              (float) can_readBytes(tempInbox.data, 6, 7) / 10.0f
+              can_readFloat(uint16_t, &tempInbox, 0, 0.1f),
+              can_readFloat(uint16_t, &tempInbox, 2, 0.1f),
+              can_readFloat(uint16_t, &tempInbox, 4, 0.1f),
+              can_readFloat(uint16_t, &tempInbox, 6, 0.1f)
       };
 
       status->packTempMean = hvc_updateMean(status->cellTemps, newTemps, status->packTempMean, i, 4*TEMPS_MAILBOXES_NUM);

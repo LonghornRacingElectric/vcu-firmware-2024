@@ -25,39 +25,39 @@ void allImus_init() {
 
 static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, xyz* accelFr, xyz* accelBl, xyz* accelBr) {
   if(imu_hvcaccel_inbox.isRecent) {
-    accelHvc->x = (float) can_readBytes(imu_hvcaccel_inbox.data, 0, 1) / 100.0f;
-    accelHvc->y = (float) can_readBytes(imu_hvcaccel_inbox.data, 2, 3) / 100.0f;
-    accelHvc->z = (float) can_readBytes(imu_hvcaccel_inbox.data, 4, 5) / 100.0f;
+    accelHvc->x = can_readFloat(int16_t, &imu_hvcaccel_inbox, 0, 0.01f);
+    accelHvc->y = can_readFloat(int16_t, &imu_hvcaccel_inbox, 2, 0.01f);
+    accelHvc->z = can_readFloat(int16_t, &imu_hvcaccel_inbox, 4, 0.01f);
     imu_hvcaccel_inbox.isRecent = false;
   }
   if(imu_pduaccel_inbox.isRecent) {
-    accelPdu->x = (float) can_readBytes(imu_pduaccel_inbox.data, 0, 1) / 100.0f;
-    accelPdu->y = (float) can_readBytes(imu_pduaccel_inbox.data, 2, 3) / 100.0f;
-    accelPdu->z = (float) can_readBytes(imu_pduaccel_inbox.data, 4, 5) / 100.0f;
+    accelPdu->x = can_readFloat(int16_t, &imu_pduaccel_inbox, 0, 0.01f);
+    accelPdu->y = can_readFloat(int16_t, &imu_pduaccel_inbox, 2, 0.01f);
+    accelPdu->z = can_readFloat(int16_t, &imu_pduaccel_inbox, 4, 0.01f);
     imu_pduaccel_inbox.isRecent = false;
   }
   if(imu_unsSfl_inbox.isRecent) {
-    accelFl->x = (float) can_readBytes(imu_unsSfl_inbox.data, 0, 1) / 100.0f;
-    accelFl->y = (float) can_readBytes(imu_unsSfl_inbox.data, 2, 3) / 100.0f;
-    accelFl->z = (float) can_readBytes(imu_unsSfl_inbox.data, 4, 5) / 100.0f;
+    accelFl->x = can_readFloat(int16_t, &imu_unsSfl_inbox, 0, 0.01f);
+    accelFl->y = can_readFloat(int16_t, &imu_unsSfl_inbox, 2, 0.01f);
+    accelFl->z = can_readFloat(int16_t, &imu_unsSfl_inbox, 4, 0.01f);
     imu_unsSfl_inbox.isRecent = false;
   }
   if(imu_unsSfr_inbox.isRecent) {
-    accelFr->x = (float) can_readBytes(imu_unsSfr_inbox.data, 0, 1) / 100.0f;
-    accelFr->y = (float) can_readBytes(imu_unsSfr_inbox.data, 2, 3) / 100.0f;
-    accelFr->z = (float) can_readBytes(imu_unsSfr_inbox.data, 4, 5) / 100.0f;
+    accelFr->x = can_readFloat(int16_t, &imu_unsSfr_inbox, 0, 0.01f);
+    accelFr->y = can_readFloat(int16_t, &imu_unsSfr_inbox, 2, 0.01f);
+    accelFr->z = can_readFloat(int16_t, &imu_unsSfr_inbox, 4, 0.01f);
     imu_unsSfr_inbox.isRecent = false;
   }
   if(imu_unsSbl_inbox.isRecent) {
-    accelBl->x = (float) can_readBytes(imu_unsSbl_inbox.data, 0, 1) / 100.0f;
-    accelBl->y = (float) can_readBytes(imu_unsSbl_inbox.data, 2, 3) / 100.0f;
-    accelBl->z = (float) can_readBytes(imu_unsSbl_inbox.data, 4, 5) / 100.0f;
+    accelBl->x = can_readFloat(int16_t, &imu_unsSbl_inbox, 0, 0.01f);
+    accelBl->y = can_readFloat(int16_t, &imu_unsSbl_inbox, 2, 0.01f);
+    accelBl->z = can_readFloat(int16_t, &imu_unsSbl_inbox, 4, 0.01f);
     imu_unsSbl_inbox.isRecent = false;
   }
   if(imu_unsSbr_inbox.isRecent) {
-    accelBr->x = (float) can_readBytes(imu_unsSbr_inbox.data, 0, 1) / 100.0f;
-    accelBr->y = (float) can_readBytes(imu_unsSbr_inbox.data, 2, 3) / 100.0f;
-    accelBr->z = (float) can_readBytes(imu_unsSbr_inbox.data, 4, 5) / 100.0f;
+    accelBr->x = can_readFloat(int16_t, &imu_unsSbr_inbox, 0, 0.01f);
+    accelBr->y = can_readFloat(int16_t, &imu_unsSbr_inbox, 2, 0.01f);
+    accelBr->z = can_readFloat(int16_t, &imu_unsSbr_inbox, 4, 0.01f);
     imu_unsSbr_inbox.isRecent = false;
   }
 
@@ -65,15 +65,15 @@ static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, x
 
 static void externalImus_getGyros(xyz* gyroHvc, xyz* gyroPdu) {
   if(imu_hvcgyro_inbox.isRecent) {
-    gyroHvc->x = (float) can_readBytes(imu_hvcgyro_inbox.data, 0, 1) / 100.0f;
-    gyroHvc->y = (float) can_readBytes(imu_hvcgyro_inbox.data, 2, 3) / 100.0f;
-    gyroHvc->z = (float) can_readBytes(imu_hvcgyro_inbox.data, 4, 5) / 100.0f;
+    gyroHvc->x = can_readFloat(int16_t, &imu_hvcgyro_inbox, 0, 0.01f);
+    gyroHvc->y = can_readFloat(int16_t, &imu_hvcgyro_inbox, 2, 0.01f);
+    gyroHvc->z = can_readFloat(int16_t, &imu_hvcgyro_inbox, 4, 0.01f);
     imu_hvcgyro_inbox.isRecent = false;
   }
   if(imu_pdugyro_inbox.isRecent) {
-    gyroPdu->x = (float) can_readBytes(imu_pdugyro_inbox.data, 0, 1) / 100.0f;
-    gyroPdu->y = (float) can_readBytes(imu_pdugyro_inbox.data, 2, 3) / 100.0f;
-    gyroPdu->z = (float) can_readBytes(imu_pdugyro_inbox.data, 4, 5) / 100.0f;
+    gyroPdu->x = can_readFloat(int16_t, &imu_pdugyro_inbox, 0, 0.01f);
+    gyroPdu->y = can_readFloat(int16_t, &imu_pdugyro_inbox, 2, 0.01f);
+    gyroPdu->z = can_readFloat(int16_t, &imu_pdugyro_inbox, 4, 0.01f);
     imu_pdugyro_inbox.isRecent = false;
   }
 }
