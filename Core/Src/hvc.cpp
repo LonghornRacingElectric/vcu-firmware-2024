@@ -26,11 +26,15 @@ void hvc_updateCooling(float battFanRpmPercentage, float battUniqueSegRpmPercent
 
 float hvc_updateMean(const float* newData, size_t numData) {
   float sum = 0;
+  size_t removed = 0;
   for(int i = 0; i < numData; i++) {
-    if(newData[i] == 0) continue;
+    if(newData[i] == 0){
+      removed++;
+      continue;
+    }
     sum += newData[i];
   }
-  return sum / (float) numData;
+  return sum / (float) (numData - removed);
 }
 
 float hvc_findMin(const float* newData, size_t numData) {
