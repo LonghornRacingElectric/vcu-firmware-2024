@@ -84,7 +84,7 @@ DriveSwitchState driveSwitchState;
 HvcStatus hvcStatus;
 PduStatus pduStatus;
 InverterStatus inverterStatus;
-WheelDisplacements wheelDisplacements;
+WheelMagnetValues wheelMagnetValues;
 ImuData imuData;
 GpsData gpsData;
 
@@ -160,12 +160,12 @@ int main(void)
     driveSwitch_periodic(&driveSwitchState);
     hvc_periodic(&hvcStatus, &vcuCoreOutput);
     pdu_periodic(&pduStatus, &vcuCoreOutput);
-    wheelspeeds_periodic(&wheelDisplacements);
+    wheelspeeds_periodic(&wheelMagnetValues);
     allImus_periodic(&imuData);
     gps_periodic(&gpsData);
 
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
-                wheelDisplacements,imuData,gpsData, vcuCoreOutput, deltaTime);
+                wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
     inverter_periodic(&inverterStatus, &vcuCoreOutput);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
@@ -174,10 +174,10 @@ int main(void)
 
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
-                 &wheelDisplacements, &imuData, &gpsData);
+                 &wheelMagnetValues, &imuData, &gpsData);
 //    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
 //                      &pduStatus, &inverterStatus, &analogVoltages,
-//                      &wheelDisplacements, &imuData, &gpsData);
+//                      &wheelMagnetValues, &imuData, &gpsData);
     FAULT_CLEARALL(&vcu_fault_vector);
   }
   /* USER CODE END 3 */

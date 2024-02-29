@@ -42,7 +42,7 @@ void nvm_init();
  */
 void nvm_periodic(VcuParameters* vcuParameters, VcuOutput *vcuCoreOutput,
                   HvcStatus *hvcStatus, PduStatus *pduStatus, InverterStatus *inverterStatus,
-                  AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
+                  AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues,
                   ImuData *imuData, GpsData *gpsData);
 
 #endif //VCU_FIRMWARE_2024_NVM_H

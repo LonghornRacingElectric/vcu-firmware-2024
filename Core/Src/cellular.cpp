@@ -31,7 +31,7 @@ static bool cellular_areParametersUpdated() {
 
 static void cellular_sendTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                                    PduStatus *pduStatus, InverterStatus *inverterStatus,
-                                   AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
+                                   AnalogVoltages *analogVoltages, WheelMagnetValues *wheelDisplacements,
                                    ImuData *imuData, GpsData *gpsData) {
 
 }
@@ -112,7 +112,7 @@ void cellular_init() {
 void cellular_periodic(VcuParameters *vcuCoreParameters,
                        VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                        PduStatus *pduStatus, InverterStatus *inverterStatus,
-                       AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
+                       AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues,
                        ImuData *imuData, GpsData *gpsData) {
 
   if (cellular_areParametersUpdated()) {

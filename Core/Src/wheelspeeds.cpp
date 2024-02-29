@@ -14,24 +14,24 @@ void wheelspeeds_init() {
     can_addInbox(UNSBL_VCU_DISP, &whs_bl_inbox);
 }
 
-void wheelspeeds_periodic(WheelDisplacements* wheelDisplacements) {
+void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues) {
     if(whs_fr_inbox.isRecent) {
-        wheelDisplacements->fr = can_readFloat(uint32_t, &whs_fr_inbox, 0, 0.001f);
+      wheelMagnetValues->fr = can_readFloat(int32_t, &whs_fr_inbox, 0, 0.00714f);
         whs_fr_inbox.isRecent = false;
     }
 
     if(whs_fl_inbox.isRecent) {
-        wheelDisplacements->fl = can_readFloat(uint32_t, &whs_fl_inbox, 0, 0.001f);
+      wheelMagnetValues->fl = can_readFloat(int32_t, &whs_fl_inbox, 0, 0.00714f);
         whs_fl_inbox.isRecent = false;
     }
 
     if(whs_br_inbox.isRecent) {
-        wheelDisplacements->br = can_readFloat(uint32_t, &whs_br_inbox, 0, 0.001f);
+      wheelMagnetValues->br = can_readFloat(int32_t, &whs_br_inbox, 0, 0.00714f);
         whs_br_inbox.isRecent = false;
     }
 
     if(whs_bl_inbox.isRecent) {
-        wheelDisplacements->bl = can_readFloat(uint32_t, &whs_bl_inbox, 0, 0.001f);
+      wheelMagnetValues->bl = can_readFloat(int32_t, &whs_bl_inbox, 0, 0.00714f);
         whs_bl_inbox.isRecent = false;
     }
 }

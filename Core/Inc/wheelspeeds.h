@@ -1,12 +1,12 @@
 #ifndef VCU_FIRMWARE_2024_WHEELSPEEDS_H
 #define VCU_FIRMWARE_2024_WHEELSPEEDS_H
 
-typedef struct WheelDisplacements { // radians
+typedef struct WheelMagnetValues { // Unit is milliTeslas
     float fl;
     float fr;
     float bl;
     float br;
-} WheelDisplacements;
+} WheelMagnetValues;
 
 /**
  * Subscribe to CAN messages.
@@ -16,6 +16,6 @@ void wheelspeeds_init();
 /**
  * Get latest wheel displacements from CAN.
  */
-void wheelspeeds_periodic(WheelDisplacements* wheelDisplacements);
+void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues);
 
 #endif //VCU_FIRMWARE_2024_WHEELSPEEDS_H
