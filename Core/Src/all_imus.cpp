@@ -11,8 +11,8 @@ static CanInbox imu_unsSfl_inbox;
 static CanInbox imu_unsSbr_inbox;
 static CanInbox imu_unsSbl_inbox;
 
-void allImus_init() {
-    imu_init();
+void allImus_init(SPI_HandleTypeDef* hspi_ptr) {
+    imu_init(hspi_ptr);
     can_addInbox(HVC_VCU_IMU_ACCEL, &imu_hvcaccel_inbox);
     can_addInbox(HVC_VCU_IMU_GYRO, &imu_hvcgyro_inbox);
     can_addInbox(PDU_VCU_IMU_ACCEL, &imu_pduaccel_inbox);
