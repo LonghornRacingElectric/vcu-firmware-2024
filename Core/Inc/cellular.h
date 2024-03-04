@@ -52,7 +52,7 @@ void cellular_init();
 void cellular_periodic(VcuParameters *vcuCoreParameters,
                        VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                        PduStatus *pduStatus, InverterStatus *inverterStatus,
-                       AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
+                       AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues,
                        ImuData *imuData, GpsData *gpsData);
 
 #endif //VCU_FIRMWARE_2024_CELLULAR_H

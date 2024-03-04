@@ -18,7 +18,7 @@ static VcuModel vcuModel;
  * Executes VCU Core.
  */
 void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchState, HvcStatus &hvcStatus,
-                 PduStatus &pduStatus, InverterStatus &inverterStatus, WheelDisplacements &wheelDisplacements,
+                 PduStatus &pduStatus, InverterStatus &inverterStatus, WheelMagnetValues &wheelMagnetValues,
                  ImuData &imuData, GpsData &gpsData, VcuOutput &output, float deltaTime);
 
 /**
