@@ -134,7 +134,8 @@ static bool cellular_areParametersUpdated() {
   return false;
 }
 
-static bool startTimeSent = false;
+static bool hasConnection = false;
+static bool sendStartTime = false;
 
 static void cellular_sendStartTime(GpsData *gpsData)
 {
@@ -142,7 +143,6 @@ static void cellular_sendStartTime(GpsData *gpsData)
     {
         return;
     }
-    startTimeSent = true;
     int data = gpsData->month;
     std::string date;
     if(data < 10)
@@ -200,7 +200,34 @@ static void cellular_sendStartTime(GpsData *gpsData)
     std::string command = "AT+UMQTTC=2,0,0,\"/config/car\",\"" + time + "\"\r";
     volatile int r = 1100;
     cellular_send(&command);
+    sendStartTime = true;
+    r++;
 }
+
+
+static uint32_t cellular_calculateTimeDiff(GpsData *now)
+{
+
+    // first in days
+    int totalTime = 0;
+    totalTime = (365) * (now->year - referenceGPSData.year);
+    totalTime = totalTime + ((30) * (now->month - referenceGPSData.month));
+    totalTime = totalTime + (now->day - referenceGPSData.day);
+    // now hours
+    totalTime = totalTime * 24;
+    totalTime = totalTime + now->hour - referenceGPSData.hour;
+    // now seconds
+    totalTime = totalTime * 360;
+    totalTime = totalTime + now->seconds - referenceGPSData.seconds + ((60) * (now->minute - referenceGPSData.minute));
+    // now milli
+    uint32_t millis = totalTime * 1000;
+    millis = millis + now->millis - referenceGPSData.millis;
+    return millis;
+
+}
+
+// change
+static int time = 0;
 
 static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                                    PduStatus *pduStatus, InverterStatus *inverterStatus,
@@ -222,16 +249,18 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
         cellular_split8(ptr, oneByteU);
 
         // Real Time Clock
-        uint32_t fourBytesU = 0; // I do not know where to get this data
+
+        uint32_t fourBytesU = cellular_calculateTimeDiff(gpsData); // I do not know where to get this data
         cellular_split32(ptr, fourBytesU);
+
 
         // VCU TorqueRequest
         int16_t twoBytes = (int16_t)(vcuCoreOutput->inverterTorqueRequest / 0.1f);
         cellular_split16(ptr, twoBytes);
 
         // vcu flag
-        uint16_t twoByesU = 0; // I do not know where to get this data
-        cellular_split16(ptr, twoBytes);
+        uint16_t twoBytesU = 190; // I do not know where to get this data
+        cellular_split16(ptr, twoBytesU);
 
         // vcu displacement x y z
         twoBytes = (int16_t)(vcuCoreOutput->vehicleDisplacement.x / 0.1f);
@@ -264,21 +293,23 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
         cellular_split16(ptr, twoBytes);
 
 
-        // HV Pack voltage
-        twoByesU = (uint16_t)(hvcStatus->packVoltage / 0.01f);
-        cellular_split16(ptr, twoByesU);
+        // HV Pack voltage TEMPORARY CHANGED
+       twoBytesU = (uint16_t)(hvcStatus->packVoltage / 0.01f);
+        cellular_split16(ptr, twoBytesU);
 
+
+        ///////////
         // HV Tractive Voltage
-        twoByesU = (uint16_t)(0.01); // Dont know :(
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(0.01); // Dont know :(
+        cellular_split16(ptr, twoBytesU);
 
         // HV Current
         twoBytes = (int16_t)(hvcStatus->packCurrent / 0.01f);
         cellular_split16(ptr, twoBytes);
 
         // LV Voltage
-        twoByesU = (uint16_t)(pduStatus->lvVoltage / 0.01f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(pduStatus->lvVoltage / 0.01f);
+        cellular_split16(ptr, twoBytesU);
 
         // LV Current
         twoBytes = (int16_t)(pduStatus->lvCurrent / 0.01f);
@@ -289,56 +320,56 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
         cellular_split8(ptr, oneByteU);
 
         // average cell voltage
-        twoByesU = 0; // dont know
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = 0; // dont know
+        cellular_split16(ptr, twoBytesU);
 
         // average Cell Temp
         oneByteU = (uint8_t)(hvcStatus->packTempMean);
         cellular_split8(ptr, oneByteU);
 
         // apps 1
-        twoByesU = (uint16_t)(analogVoltages->apps1 / 0.001f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(analogVoltages->apps1 / 0.001f);
+        cellular_split16(ptr, twoBytesU);
 
         // apps 2
-        twoByesU = (uint16_t)(analogVoltages->apps2 / 0.001f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(analogVoltages->apps2 / 0.001f);
+        cellular_split16(ptr, twoBytesU);
 
         // bse1
-        twoByesU = (uint16_t)(analogVoltages->bse1 / 0.001f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(analogVoltages->bse1 / 0.001f);
+        cellular_split16(ptr, twoBytesU);
 
         // bse 2
-        twoByesU = (uint16_t)(analogVoltages->bse2 / 0.001f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(analogVoltages->bse2 / 0.001f);
+        cellular_split16(ptr, twoBytesU);
 
         // sus 1
-        twoByesU = (uint16_t)(analogVoltages->sus1 / 0.001f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(analogVoltages->sus1 / 0.001f);
+        cellular_split16(ptr, twoBytesU);
 
         // sus 2
-        twoByesU = (uint16_t)(analogVoltages->sus2 / 0.001f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(analogVoltages->sus2 / 0.001f);
+        cellular_split16(ptr, twoBytesU);
 
         // steer
-        twoByesU = (uint16_t)(analogVoltages->steer / 0.001f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(analogVoltages->steer / 0.001f);
+        cellular_split16(ptr, twoBytesU);
 
         // gps Latitude
-        int32_t fourBytes = (int32_t)(gpsData->latitude / 0.0001f);
+        int32_t fourBytes = (int32_t)((gpsData->latitude / 0.0001f) * 60);
         cellular_split32(ptr, fourBytes);
 
         // gps longitude
-        fourBytes = (int32_t)(gpsData->longitude / 0.0001f);
+        fourBytes = (int32_t)((gpsData->longitude / 0.0001f) * 60);
         cellular_split32(ptr, fourBytes);
 
         // gps speed
-        twoByesU = (uint16_t)(gpsData->speed / 0.01f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(gpsData->speed / 0.01f);
+        cellular_split16(ptr, twoBytesU);
 
         // gps heading
-        twoByesU = (uint16_t)(gpsData->heading / 0.01f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(gpsData->heading / 0.01f);
+        cellular_split16(ptr, twoBytesU);
 
 
 
@@ -419,16 +450,16 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
         cellular_split16(ptr, twoBytes);
 
         // inverter Voltage
-        twoByesU = (uint16_t)(inverterStatus->voltage / 0.01f);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(inverterStatus->voltage / 0.01f);
+        cellular_split16(ptr, twoBytesU);
 
         // inverter current
         int16_t inverterCurrent = (int16_t)(inverterStatus->current / 0.01f);
         cellular_split16(ptr, inverterCurrent);
 
         // inverter RPM
-        twoByesU = (uint16_t)(inverterStatus->rpm / 1);
-        cellular_split16(ptr, twoByesU);
+       twoBytesU = (uint16_t)(inverterStatus->rpm / 1);
+        cellular_split16(ptr, twoBytesU);
 
         // inverter Torque
         twoBytes = (int16_t)(inverterStatus->torqueActual / 0.1f);
@@ -606,54 +637,43 @@ static void cellular_createDummyHFSend(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
     inverterStatus->torqueActual = 9.3f;
 }
 
+
 static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                                        PduStatus *pduStatus, InverterStatus *inverterStatus,
                                        AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
                                        ImuData *imuData, GpsData *gpsData)
 {
     std::string dataToEncode = "";
-    uint8_t arr[406];
+    uint8_t arr[404];
     uint8_t *ptr = arr;
     // Where do I get this data?
 
-    std::string gps_stuff;
-
-
-    uint16_t year = 2024;
-    cellular_split16(ptr, year);
-
-    uint8_t month = 2;
-    cellular_split8(ptr, month);
-
-    uint8_t day = 2;
-    cellular_split8(ptr, day);
-
-    uint8_t hour = 2;
-    cellular_split8(ptr, hour);
-
-    uint8_t minute = 2;
-    cellular_split8(ptr, minute);
-
-    uint16_t seconds = (uint16_t)(2 / 0.001f);
-    cellular_split16(ptr, seconds);
-
     // Where do I get this?
-    uint32_t currentErrors = 1;
-    cellular_split32(ptr, currentErrors);
+    // Getting millis :)
 
-    uint32_t latchingFaults = 1;
-    cellular_split32(ptr, latchingFaults);
+    uint8_t oneByteU = 1;
+    cellular_split8(ptr, oneByteU);
+    uint32_t uint32 = cellular_calculateTimeDiff(gpsData);
+    cellular_split32(ptr, uint32);
+
+    uint32 = 1;
+    cellular_split32(ptr, uint32);
+
+    uint32 = 1;
+    cellular_split32(ptr, uint32);
 
     uint16_t cellVoltages[140];
     uint8_t cellTemperature[90];
 
     for(int i = 0; i < 140; i++)
     {
+        cellVoltages[i] = 4;
         cellular_split16(ptr, cellVoltages[i]);
     }
 
     for(int i = 0; i < 90; i++)
     {
+        cellTemperature[i] = 5;
         cellular_split8(ptr, cellTemperature[i]);
     }
 
@@ -699,12 +719,13 @@ static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcSt
 
 
 
-    char encoded[532];
-    cellular_Base64encode(encoded, arr, 406);
-    for(int i = 0; i < 532; i++)
+    char encoded[540];
+    cellular_Base64encode(encoded, arr, 404);
+    for(int i = 0; i < 540; i++)
     {
         dataToEncode = dataToEncode + encoded[i];
     }
+    volatile int op = 100;
     std::string command = "AT+UMQTTC=2,0,0,\"/l\",\"" + dataToEncode + "\"\r";
     std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
     cellular_sendNonBlocking(command);
@@ -759,7 +780,7 @@ static void cellular_mqttInit() {
   cellular_send(&command);
   cellular_receive(response, true, 1000);
     y++;
-  command = "AT+UMQTT=2,\"ec2-52-14-184-219.us-east-2.compute.amazonaws.com\",1883\r";
+  command = "AT+UMQTT=2,\"ec2-3-129-72-135.us-east-2.compute.amazonaws.com\",1883\r";
   response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
   cellular_send(&command);
   cellular_receive(response, true, 1000);
@@ -781,7 +802,7 @@ static void cellular_mqttInit() {
     y++;
 }
 
-static void cellular_findTMobileHSNCode(std::string& code)
+static void cellular_findTMobileHSNCode(std::string& code, std::string& response)
 {
 
     /*
@@ -794,10 +815,6 @@ static void cellular_findTMobileHSNCode(std::string& code)
 
 
 
-    std::string command = "AT+COPS=?\r";
-    cellular_send(&command);
-    std::string response;
-  cellular_receiveAny(500, response, 180000);
     for(int i = 0; i < response.size(); i++)
     {
         char currentChar = response[i];
@@ -848,25 +865,21 @@ static void cellular_registerTMobile()
   cellular_send(&command);
   cellular_receiveAny(500, response, 5000);
   y++;
-  bool has_conn = false;
   for(int i = 0; i < response.size(); i++)
   {
     if (response[i] == 'T')
     {
-      has_conn = true;
+      hasConnection = true;
+      return;
     }
   }
-  if(not has_conn)
+  if(!hasConnection)
   {
-    std::string TMobile_HSNCode;
-    cellular_findTMobileHSNCode(TMobile_HSNCode);
-
-    command = "AT+COPS=1,2,\"" + TMobile_HSNCode + "\"" + "\r";
-
-    cellular_send(&command);
-    cellular_receiveAny(500, response, 180000);
+      volatile int l = 99;
+      std::string command = "AT+COPS=?\r";
+      cellular_sendNonBlocking(command);
+      l++;
   }
-  y++;
 
 }
 
@@ -950,13 +963,14 @@ void cellular_init()
     cellular_disableEcho();
     cellular_disableEcho();
     cellular_testConnection();
-    x++;
     cellular_registerTMobile();
-    x++;
-    cellular_mqttInit();
-    x++;
+    if(hasConnection)
+    {
+        cellular_mqttInit();
+    }
 
 
+//    x++;
 //    VcuOutput vcuCoreOutput;
 //    HvcStatus hvcStatus;
 //    PduStatus pduStatus;
@@ -965,14 +979,12 @@ void cellular_init()
 //    WheelDisplacements wheelDisplacements;
 //    ImuData imuData;
 //    GpsData gpsData;
-    x++;
-    uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
-    x += error;
 //    cellular_createDummyHFSend(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
 //    x++;
 //    cellular_sendTelemetryHigh(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
+    x++;
+    uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
 
-//    x++;
 //    cellular_subscribe();
 //    x++;
 //    while(1)
@@ -1114,36 +1126,99 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
                        AnalogVoltages *analogVoltages, WheelDisplacements *wheelDisplacements,
                        ImuData *imuData, GpsData *gpsData) {
 
-    if (cellular_areParametersUpdated()) {
-    cellular_updateParameters(vcuCoreParameters);
-    }
-    if(!startTimeSent)
-    {
-        cellular_sendStartTime(gpsData);
+    /*
+     * if(not_connected) {
+     * if(cell_complete_line) string urmom = cell_currline;
+     * else return;
+     * TMOBILE_idx = urmom.contains(TMOBILE)
+     * if(TMOBILE_idx != npos) {
+     * val_we_want urmom.substr(TMOBILE_idx, 10)
+     * not_connected = true;
+     * }
+     * else return;
+     * }
+     */
 
+    if(!hasConnection)
+    {
+        if (cell_completeLine)
+        {
+
+            volatile int u = 19;
+            std::string availableConns = cell_currLine;
+            std::string TMobile_HSNCode = "0";
+            cellular_findTMobileHSNCode(TMobile_HSNCode, availableConns);
+            u++;
+            if (TMobile_HSNCode != "0") {
+                volatile int o = 99;
+                std::string command = "AT+COPS=1,2,\"" + TMobile_HSNCode + "\"" + "\r";
+                cellular_send(&command);
+                cellular_mqttInit();
+                hasConnection = true;
+                o++;
+            }
+
+        }
+        static float lastSearchingTime = 0;
+        float currentSearchingTime = clock_getTime();
+        if (currentSearchingTime - lastSearchingTime > 180.0f)
+        {
+            lastSearchingTime = currentSearchingTime;
+            std::string command = "AT+COPS=?\r";
+            cellular_sendNonBlocking(command);
+
+        }
     }
     else
     {
-        static float lastTime = 0;
-        float nowTime = clock_getTime();
-        if(nowTime - lastTime > 0.05f) {
-            lastTime = nowTime;
-            cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus,
-                                       pduStatus, inverterStatus,
-                                       analogVoltages, wheelDisplacements,
-                                       imuData, gpsData);
+        if(!sendStartTime)
+        {
+            cellular_sendStartTime(gpsData);
         }
+        else
+        {
+            if (cellular_areParametersUpdated()) {
+                cellular_updateParameters(vcuCoreParameters);
+            } else {
+                static float lastHFTime = 0;
+                float nowHFTime = clock_getTime();
+                // should be 0.05
+                if (nowHFTime - lastHFTime > 0.05f) {
+                    lastHFTime = nowHFTime;
+                    cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus,
+                                               pduStatus, inverterStatus,
+                                               analogVoltages, wheelDisplacements,
+                                               imuData, gpsData);
+                }
+                static float lastLFTime = 0;
+                float nowLFTime = clock_getTime();
+                if (nowLFTime - lastLFTime > 1.0f) {
+                    lastLFTime = nowLFTime;
+                    cellular_sendTelemetryLow(vcuCoreOutput, hvcStatus,
+                                              pduStatus, inverterStatus,
+                                              analogVoltages, wheelDisplacements,
+                                              imuData, gpsData);
+                    time++;
+                }
+//                static float lastSeconds = 0;
+//                float nowSeconds = clock_getTime();
+//                if (nowSeconds - lastSeconds > 1.0f) {
+//                    lastSeconds = nowSeconds;
+//                    time++;
+//                }
 
+            }
+
+
+
+
+            // check and respond to text messages once per second
+//            static float lastTextTime = 0;
+//            float nowTextTime = clock_getTime();
+//            if (nowTextTime - lastTextTime > 1.0f) {
+//                lastTextTime = nowTextTime;
+//                cellular_respondToTexts();
+//            }
+        }
     }
-
-
-
-
-  // check and respond to text messages once per second
-  static float lastTextTime = 0;
-  float nowTextTime = clock_getTime();
-  if(nowTextTime - lastTextTime > 1.0f) {
-      lastTextTime = nowTextTime;
-    cellular_respondToTexts();
-  }
 }
