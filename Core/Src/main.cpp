@@ -22,9 +22,10 @@
 #include "dma.h"
 #include "fatfs.h"
 #include "fdcan.h"
-#include "sdmmc.h"
-#include "tim.h"
 #include "usart.h"
+#include "sdmmc.h"
+#include "spi.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -71,6 +72,7 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void PeriphCommonClock_Config(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -84,7 +86,7 @@ DriveSwitchState driveSwitchState;
 HvcStatus hvcStatus;
 PduStatus pduStatus;
 InverterStatus inverterStatus;
-WheelDisplacements wheelDisplacements;
+WheelMagnetValues wheelMagnetValues;
 ImuData imuData;
 GpsData gpsData;
 
@@ -112,6 +114,9 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+/* Configure the peripherals common clocks */
+  PeriphCommonClock_Config();
+
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -127,6 +132,9 @@ int main(void)
   MX_SDMMC1_SD_Init();
   MX_TIM5_Init();
   MX_USART1_UART_Init();
+  MX_UART4_Init();
+  MX_LPUART1_UART_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   led_init();
   clock_init();
@@ -137,7 +145,7 @@ int main(void)
   hvc_init();
   pdu_init();
   wheelspeeds_init();
-  allImus_init();
+  allImus_init(&hspi2);
   gps_init();
   indicators_init();
   // cellular_init();
@@ -160,12 +168,12 @@ int main(void)
     driveSwitch_periodic(&driveSwitchState);
     hvc_periodic(&hvcStatus, &vcuCoreOutput);
     pdu_periodic(&pduStatus, &vcuCoreOutput);
-    wheelspeeds_periodic(&wheelDisplacements);
+    wheelspeeds_periodic(&wheelMagnetValues);
     allImus_periodic(&imuData);
     gps_periodic(&gpsData);
 
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
-                wheelDisplacements,imuData,gpsData, vcuCoreOutput, deltaTime);
+                wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
     inverter_periodic(&inverterStatus, &vcuCoreOutput);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
@@ -174,10 +182,10 @@ int main(void)
 
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
-                 &wheelDisplacements, &imuData, &gpsData);
+                 &wheelMagnetValues, &imuData, &gpsData);
 //    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
 //                      &pduStatus, &inverterStatus, &analogVoltages,
-//                      &wheelDisplacements, &imuData, &gpsData);
+//                      &wheelMagnetValues, &imuData, &gpsData);
     FAULT_CLEARALL(&vcu_fault_vector);
   }
   /* USER CODE END 3 */
@@ -239,6 +247,45 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/**
+  * @brief Peripherals Common Clock Configuration
+  * @retval None
+  */
+void PeriphCommonClock_Config(void)
+{
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  /** Initializes the peripherals clock
+  */
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_SPI2
+                              |RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_UART4
+                              |RCC_PERIPHCLK_LPUART1;
+  PeriphClkInitStruct.PLL2.PLL2M = 10;
+  PeriphClkInitStruct.PLL2.PLL2N = 288;
+  PeriphClkInitStruct.PLL2.PLL2P = 125;
+  PeriphClkInitStruct.PLL2.PLL2Q = 125;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_0;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;
+  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
+  PeriphClkInitStruct.PLL3.PLL3M = 1;
+  PeriphClkInitStruct.PLL3.PLL3N = 8;
+  PeriphClkInitStruct.PLL3.PLL3P = 2;
+  PeriphClkInitStruct.PLL3.PLL3Q = 2;
+  PeriphClkInitStruct.PLL3.PLL3R = 4;
+  PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_3;
+  PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;
+  PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
+  PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL3;
+  PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_PLL2;
+  PeriphClkInitStruct.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PLL2;
+  PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL3;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();
   }

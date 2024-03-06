@@ -2,51 +2,51 @@
 #include "VcuModel.h"
 
 void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchState, HvcStatus &hvcStatus,
-                 PduStatus &pduStatus, InverterStatus &inverterStatus, WheelDisplacements &wheelDisplacements,
+                 PduStatus &pduStatus, InverterStatus &inverterStatus, WheelMagnetValues &wheelMagnetValues,
                  ImuData &imuData, GpsData &gpsData, VcuOutput &vcuOutput, float deltaTime) {
 
   bool inverterReady = (!hvcStatus.ams) && (!hvcStatus.imd);
 
   vcuInput = {
-    analogVoltages.apps1,
-    analogVoltages.apps2,
+          analogVoltages.apps1,
+          analogVoltages.apps2,
 
-    analogVoltages.bse1,
-    analogVoltages.bse2,
+          analogVoltages.bse1,
+          analogVoltages.bse2,
 
-    analogVoltages.steer,
+          analogVoltages.steer,
 
-    wheelDisplacements.fl,
-    wheelDisplacements.fr,
-    wheelDisplacements.bl,
-    wheelDisplacements.br,
+          wheelMagnetValues.fl,
+          wheelMagnetValues.fr,
+          wheelMagnetValues.bl,
+          wheelMagnetValues.br,
 
-    inverterStatus.motorTemp,
-    inverterStatus.inverterTemp,
-    hvcStatus.packTempMean,
+          inverterStatus.motorTemp,
+          inverterStatus.inverterTemp,
+          hvcStatus.packTempMean,
 
-    hvcStatus.stateOfCharge,
-    inverterReady,
+          hvcStatus.stateOfCharge,
+          inverterReady,
 
-    hvcStatus.packVoltage,
-    hvcStatus.packCurrent,
+          hvcStatus.packVoltage,
+          hvcStatus.packCurrent,
 
-    pduStatus.lvVoltage,
-    pduStatus.lvCurrent,
+          pduStatus.lvVoltage,
+          pduStatus.lvCurrent,
 
-    driveSwitchState,
+          driveSwitchState,
 
-    gpsData.latitude,
-    gpsData.longitude,
-    gpsData.speed,
-    gpsData.heading,
+          gpsData.latitude,
+          gpsData.longitude,
+          gpsData.speed,
+          gpsData.heading,
 
-    imuData.accel1,
-    imuData.accel2,
-    imuData.accel3,
-    imuData.gyro1,
-    imuData.gyro2,
-    imuData.gyro3,
+          imuData.accelVcu,
+          imuData.accelHvc,
+          imuData.accelPdu,
+          imuData.gyroVcu,
+          imuData.gyroHvc,
+          imuData.gyroPdu,
   };
 
   vcuModel.evaluate(&vcuInput, &vcuOutput, deltaTime);
