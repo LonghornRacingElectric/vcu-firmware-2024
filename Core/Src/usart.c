@@ -473,34 +473,54 @@ uint16_t gps_tempLineSize = 0;
 bool cell_completeLine = false;
 char cell_currLine[MAX_CELL_LINE_SIZE] = {0};
 uint16_t cell_currLineSize = 0;
+char cell_tempLine[BUF_SIZE] = {0};
+uint16_t cell_tempLineSize = 0;
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
-    if(huart->RxEventType == HAL_UART_RXEVENT_IDLE) { // If the DMA has finished receiving data
+    if(huart->Instance == USART1) { // If the DMA has finished receiving data
       gps_tempLineSize += Size;
       if(gps_tempLineSize >= BUF_SIZE) {
         gps_tempLineSize = 0;
       }
-      if (huart->Instance == USART1) {
-        if(gps_tempLine[gps_tempLineSize - 1] == '\n') {
+      if(gps_tempLine[gps_tempLineSize - 1] == '\n') {
           gps_currLineSize = gps_tempLineSize;
           gps_tempLineSize = 0;
           gps_completeLine = false;
           memcpy(gps_currLine, gps_tempLine, gps_currLineSize);
           gps_completeLine = true;
           HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *) gps_tempLine, MAX_GPS_LINE_SIZE); // Resets index to 0 so that buffer doesn't overflow
-        } else {
+      } else {
           if(gps_currLine[0] == 0) { // Checks if there is a valid NMEA line in the current line buffer
             gps_completeLine = false;
-          }
+            }
           HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *) gps_tempLine + gps_tempLineSize, MAX_GPS_LINE_SIZE);
           // Continue allowing in data;
         }
          // Resets index to 0 so that buffer doesn't overflow
-      } else if (huart->Instance == UART7) {
-        cell_completeLine = true;
-        cell_currLineSize = Size;
-        HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_currLine, MAX_CELL_LINE_SIZE); // Resets index to 0 so that buffer doesn't overflow
-      }
+    }
+    if(huart->Instance == UART7){
+        cell_tempLineSize += Size;
+        if(cell_tempLineSize >= BUF_SIZE){
+            cell_tempLineSize = 0;
+        }
+        if(Size == 2 && cell_tempLine[0] == '\r'){
+            HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine + 2, MAX_CELL_LINE_SIZE);
+        }
+        else if (cell_tempLine[cell_tempLineSize - 1] == '\n'){
+            cell_currLineSize = cell_tempLineSize;
+            cell_tempLineSize = 0;
+            cell_completeLine = false;
+            memcpy(cell_currLine, cell_tempLine, cell_currLineSize);
+            cell_completeLine = true;
+            HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE); // Resets index t
+        }
+        else {
+            cell_completeLine = false;
+        }
+    }
+    else {
+        volatile int x = 0;
+        x++;
     }
 }
 
