@@ -163,18 +163,6 @@ int main(void)
 
     float deltaTime = clock_getDeltaTime();
     led_rainbow(deltaTime);
-//    float f = 9.8f;
-//    float t = 0.05f;
-//    float r = abs(imuData.accelVcu.x) / f;
-//    float g = abs(imuData.accelVcu.y) / f;
-//    float b = abs(imuData.accelVcu.z) / f;
-//    if(r > 1.0f) r = 1.0f;
-//    if(g > 1.0f) g = 1.0f;
-//    if(b > 1.0f) b = 1.0f;
-//    if(r < t) r = 0;
-//    if(g < t) g = 0;
-//    if(b < t) b = 0;
-//    led_set(r, g, b);
 
     adc_periodic(&analogVoltages);
     driveSwitch_periodic(&driveSwitchState);

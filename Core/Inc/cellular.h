@@ -23,7 +23,7 @@ static std::string CELL_OK = "\r\nOK\r\n";
 
 
 // private helper methods
-static void cellular_send(std::string* command);
+static int cellular_send(std::string* command);
 
 static void cellular_subscribe();
 
@@ -39,7 +39,7 @@ static bool cellular_receive(std::string& expected, bool care);
 
 static void cellular_receiveAny(int size, std::string& response, int time);
 
-static void cellular_sendAndExpectOk(std::string* command);
+static int cellular_sendAndExpectOk(std::string* command);
 
 static bool cellular_areParametersUpdated();
 
@@ -84,7 +84,7 @@ static void cellular_respondToText(std::string* senderPhoneNumber, std::string* 
 // public methods
 void cellular_init();
 
-void cellular_sendText(std::string* phoneNumber, std::string* message);
+int cellular_sendText(std::string* phoneNumber, std::string* message);
 
 void cellular_respondToTexts();
 
