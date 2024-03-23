@@ -1,6 +1,7 @@
 #include "all_imus.h"
 #include "angel_can_ids.h"
 #include "angel_can.h"
+#include "imu.h"
 
 static CanInbox imu_hvcaccel_inbox;
 static CanInbox imu_hvcgyro_inbox;
@@ -10,7 +11,6 @@ static CanInbox imu_unsSfr_inbox;
 static CanInbox imu_unsSfl_inbox;
 static CanInbox imu_unsSbr_inbox;
 static CanInbox imu_unsSbl_inbox;
-
 
 void allImus_init(SPI_HandleTypeDef *hspi_ptr) {
     imu_init(hspi_ptr);
@@ -23,7 +23,6 @@ void allImus_init(SPI_HandleTypeDef *hspi_ptr) {
     can_addInbox(UNSBR_VCU_IMU, &imu_unsSbr_inbox);
     can_addInbox(UNSBL_VCU_IMU, &imu_unsSbl_inbox);
 }
-
 
 static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, xyz* accelFr, xyz* accelBl, xyz* accelBr) {
   if(imu_hvcaccel_inbox.isRecent) {

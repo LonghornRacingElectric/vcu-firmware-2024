@@ -7,7 +7,7 @@
 static int cellular_send(std::string *command) {
   auto bytes = reinterpret_cast<const uint8_t *>(command->c_str());
   volatile int x = 0;
-  uint32_t error = HAL_UART_Transmit(&huart7, bytes, command->size(), HAL_MAX_DELAY);
+  volatile uint32_t error = HAL_UART_Transmit(&huart7, bytes, command->size(), HAL_MAX_DELAY);
   if (error != HAL_OK) {
     return error;
   }
@@ -1116,8 +1116,9 @@ void cellular_respondToTexts() {
     }
 
     cellular_respondToText(&sender, &message);
-      HAL_UART_DMAResume(&huart7);
   }
+
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
 }
 
 
