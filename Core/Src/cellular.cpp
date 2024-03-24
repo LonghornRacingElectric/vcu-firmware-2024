@@ -1,5 +1,7 @@
 #include <cstring>
 #include "cellular.h"
+#include <queue>
+#include "faults.h"
 
 
 // private helper methods
@@ -15,6 +17,8 @@ static int cellular_send(std::string *command) {
 
 static char commandBuffer[1024] = {0};
 static bool finished_tx = true;
+// Command queue, true is HF, false is LF, max size 50
+std::queue<std::string> cellular_dataToSend;
 
 static void cellular_sendNonBlocking(std::string &command) {
   if (!finished_tx) return;
@@ -89,8 +93,10 @@ static bool cellular_receive(std::string &expected, bool care, uint32_t timeout)
   static char buffer[512];
   memset(buffer, 0, sizeof(buffer));
   HAL_UART_Receive(&huart7, (uint8_t *) buffer, expected.size(), timeout);
-  auto str = new std::string(buffer);
+  volatile auto str = new std::string(buffer);
   if (*str != expected) {
+      volatile int x = 0;
+      x++;
     return false;
   }
   return true;
@@ -127,8 +133,13 @@ static bool cellular_areParametersUpdated() {
   return false;
 }
 
-static bool hasConnection = false;
-static bool sendStartTime = false;
+// 0 = Did not Power On,
+// 1 = Powered On but no connection
+// 2 = Need to search for TMOBILE
+// 3 = Connect to TMOBILE but not server
+// 4 = Connected to server but did not send handshake
+// 5 = sent handshake, running as normal
+static uint8_t cellular_systemState = 0;
 
 static void cellular_sendStartTime(GpsData *gpsData) {
   if (gpsData->year == 0) {
@@ -175,7 +186,7 @@ static void cellular_sendStartTime(GpsData *gpsData) {
   time = time + date + "." + std::to_string(data);
   std::string command = "AT+UMQTTC=2,0,0,\"/config/car\",\"" + time + "\"\r";
   cellular_send(&command);
-  sendStartTime = true;
+  cellular_systemState = 5;
 }
 
 
@@ -444,165 +455,15 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
     dataToEncode = dataToEncode + encoded[i];
   }
   std::string command = "AT+UMQTTC=2,0,0,\"/h\",\"" + dataToEncode + "\"\r";
-  std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";\
-        std::string actual;
-  cellular_sendNonBlocking(command);
+    cellular_dataToSend.push(command);
+//  std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";\
+//  std::string actual;
+//  cellular_sendNonBlocking(command);
   // cellular_send(&command);
   // cellular_receiveAny(500, response, 10000);
 
 }
 
-static void cellular_createDummyHFSend(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
-                                       PduStatus *pduStatus, InverterStatus *inverterStatus,
-                                       AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues,
-                                       ImuData *imuData, GpsData *gpsData) {
-  // For HF
-
-
-
-  // VCU TorqueRequest
-  vcuCoreOutput->inverterTorqueRequest = 19;
-
-  vcuCoreOutput->vehicleDisplacement.x = 10;
-
-  vcuCoreOutput->vehicleDisplacement.y = 9;
-
-  vcuCoreOutput->vehicleDisplacement.z = -8;
-
-  // VCU Velocity x y z
-  vcuCoreOutput->vehicleVelocity.x = -31;
-
-
-  vcuCoreOutput->vehicleVelocity.y = 91;
-
-  vcuCoreOutput->vehicleVelocity.z = -19;
-
-  // VCU Acceleration
-  vcuCoreOutput->vehicleAcceleration.x = 1;
-
-
-  vcuCoreOutput->vehicleAcceleration.y = 0.2f;
-
-  vcuCoreOutput->vehicleAcceleration.z = 0.045f;
-
-
-
-  // HV Pack voltage
-  hvcStatus->packVoltage = 0.1f;
-
-
-  // HV Current
-  hvcStatus->packCurrent = 0.1f;
-
-  // LV Voltage
-  pduStatus->lvVoltage = 0.78f;
-
-  // LV Current
-  pduStatus->lvCurrent = -3.25f;
-
-
-  // contactor state
-  hvcStatus->contactorStatus = HvcStatus::FULLY_OPEN;
-
-
-  // average Cell Temp
-  hvcStatus->packTempMean = 0.1f;
-
-
-  // apps 1
-  analogVoltages->apps1 = 0.04f;
-
-  // apps 2
-  analogVoltages->apps2 = 1.2f;
-
-  // bse1
-  analogVoltages->bse1 = 3.2f;
-
-
-  // bse 2
-  analogVoltages->bse2 = 0.045f;
-
-  // sus 1
-  analogVoltages->sus1 = 0.03f;
-
-
-  // sus 2
-  analogVoltages->sus2 = 0.05f;
-
-
-  // steer
-  analogVoltages->steer = 0.45f;
-
-  // gpd Latitude
-  gpsData->latitude = -0.0543f;
-
-  // gps longitude
-  gpsData->longitude = 0.00456f;
-
-  // gps speed
-  gpsData->speed = 0.34f;
-
-  // gps heading
-  gpsData->heading = 1;
-
-
-
-
-  // IMU Acceleration (x,y,z): accel1, accel2, accel3, Fl, Fr, Bl, Br
-  imuData->accelVcu.x = 0.546f;
-  imuData->accelVcu.y = 0.546f;
-  imuData->accelVcu.z = 0.546f;
-  imuData->accelHvc.x = 0.546f;
-  imuData->accelHvc.y = 0.546f;
-  imuData->accelHvc.z = 0.546f;
-  imuData->accelPdu.x = 0.546f;
-  imuData->accelPdu.y = 0.546f;
-  imuData->accelPdu.z = 0.546f;
-  imuData->accelFl.x = 0.546f;
-  imuData->accelFl.y = 0.546f;
-  imuData->accelFl.z = 0.546f;
-  imuData->accelFr.x = 0.546f;
-  imuData->accelFr.y = 0.546f;
-  imuData->accelFr.z = 0.546f;
-  imuData->accelBl.x = 0.546f;
-  imuData->accelBl.y = 0.546f;
-  imuData->accelBl.z = 0.546f;
-  imuData->accelBr.x = 0.546f;
-  imuData->accelBr.y = 0.546f;
-  imuData->accelBr.z = 0.546f;
-
-
-  // IMU Gyro (x,y,z): gyro1, gyro2, gyro3
-  imuData->gyroVcu.x = 34;
-  imuData->gyroVcu.y = 34;
-  imuData->gyroVcu.z = 34;
-  imuData->gyroHvc.x = 34;
-  imuData->gyroHvc.y = 34;
-  imuData->gyroHvc.z = 34;
-  imuData->gyroPdu.x = 34;
-  imuData->gyroPdu.y = 34;
-  imuData->gyroPdu.z = 34;
-
-
-  // Wheel Speed: fl, fr, bl, br
-  wheelMagnetValues->fl = 4.5f;
-  wheelMagnetValues->fr = 4.5f;
-  wheelMagnetValues->bl = 4.5f;
-  wheelMagnetValues->br = 4.5f;
-
-  // inverter Voltage
-  inverterStatus->voltage = 0.39f;
-
-  // inverter current
-  inverterStatus->current = 0.39f;
-
-
-  // inverter RPM
-  inverterStatus->rpm = 67;
-
-  // inverter Torque
-  inverterStatus->torqueActual = 9.3f;
-}
 
 
 static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
@@ -688,8 +549,9 @@ static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcSt
     dataToEncode = dataToEncode + encoded[i];
   }
   std::string command = "AT+UMQTTC=2,0,0,\"/l\",\"" + dataToEncode + "\"\r";
-  std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
-  cellular_sendNonBlocking(command);
+//  std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
+//  cellular_sendNonBlocking(command);
+    cellular_dataToSend.push(command);
   // cellular_receive(response, false, 1000);
 
 }
@@ -728,7 +590,12 @@ static void cellular_mqttInit() {
   std::string response;
   command = "AT+UMQTT=0,\"Car\"\r";
   response = "\r\r\n+UMQTT: 0,1\r\r\n\r\nOK\r\n";
-  cellular_send(&command);
+  int error = 0;
+    error = cellular_send(&command);
+  if (error != 0)
+  {
+      return;
+  }
   cellular_receiveAny(64, response, 1000);
   if (response.size() > 23) {
     return;
@@ -736,28 +603,54 @@ static void cellular_mqttInit() {
 
   command = "AT+UMQTT=1,1883\r";
   response = "\r\r\n+UMQTT: 1,1\r\r\n\r\nOK\r\n";
-  cellular_send(&command);
+    error = cellular_send(&command);
+    if (error != 0)
+    {
+        return;
+    }
   cellular_receive(response, true, 1000);
 
-  command = "AT+UMQTT=2,\"ec2-3-129-72-135.us-east-2.compute.amazonaws.com\",1883\r";
+  command = "AT+UMQTT=2,\"ec2-3-22-208-58.us-east-2.compute.amazonaws.com/\",1883\r";
   response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
-  cellular_send(&command);
+    error = cellular_send(&command);
+    if (error != 0)
+    {
+        return;
+    }
   cellular_receive(response, true, 1000);
 
   command = "AT+UMQTT=10,3600\r";
   response = "\r\r\n+UMQTT: 10,1\r\r\n\r\nOK\r\n";
-  cellular_send(&command);
+    error = cellular_send(&command);
+    if (error != 0)
+    {
+        return;
+    }
   cellular_receive(response, true, 1000);
 
   command = "AT+UMQTT=12,1\r";
   response = "\r\r\n+UMQTT: 12,1\r\r\n\r\nOK\r\n";
-  cellular_send(&command);
+    error = cellular_send(&command);
+    if (error != 0)
+    {
+        return;
+    }
   cellular_receive(response, true, 1000);
 
   command = "AT+UMQTTC=1\r";
   response = "\r\r\n+UMQTTC: 1,1\r\r\n\r\nOK\r\n\r\r\n+UUMQTTC: 1,0\r\r\n";
-  cellular_send(&command);
-  cellular_receive(response, true, 5000);
+    error = cellular_send(&command);
+    if (error != 0)
+    {
+        return;
+    }
+  bool good = cellular_receive(response, true, 5000);
+    if(!good) {
+        volatile int x = 0;
+        x++;
+        return;
+    }
+  cellular_systemState = 4;
 }
 
 static void cellular_findTMobileHSNCode(std::string &code, std::string &response) {
@@ -815,11 +708,11 @@ static void cellular_registerTMobile() {
   cellular_receiveAny(500, response, 5000);
   for (int i = 0; i < response.size(); i++) {
     if (response[i] == 'T') {
-      hasConnection = true;
+        cellular_systemState = 3;
       return;
     }
   }
-  if (!hasConnection) {
+  if (cellular_systemState == 2) {
     std::string command = "AT+COPS=?\r";
     cellular_sendNonBlocking(command);
   }
@@ -833,6 +726,7 @@ static void cellular_subscribe() {
   uint8_t buffer[256];
   memset(buffer, 0, 256);
   HAL_UART_Receive(&huart7, (uint8_t *) buffer, 256, 5000);
+
 //    cellular_receiveAny(500, response, 10000);
 
 }
@@ -888,20 +782,19 @@ static void cellular_respondToText(std::string *senderPhoneNumber, std::string *
 uint8_t rxbuffer[1024];
 
 void cellular_init() {
-//  HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_RESET);
-//  HAL_Delay(500);
-//  HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_SET);
-//  HAL_Delay(8000);
-  cellular_disableEcho();
-  cellular_testConnection();
-  cellular_disableEcho();
-  cellular_disableEcho();
-  cellular_disableEcho();
-  cellular_testConnection();
-  cellular_registerTMobile();
-  if (hasConnection) {
-//        cellular_mqttInit();
-  }
+  HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_RESET);
+  HAL_Delay(500);
+  HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_SET);
+//    cellular_disableEcho();
+//    cellular_testConnection();
+//    cellular_disableEcho();
+//    cellular_disableEcho();
+//    cellular_disableEcho();
+//    cellular_testConnection();
+//  cellular_registerTMobile();
+//  if (cellular_systemState == 2) {
+////        cellular_mqttInit();
+//  }
 
 
 //    x++;
@@ -916,8 +809,8 @@ void cellular_init() {
 //    cellular_createDummyHFSend(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
 //    x++;
 //    cellular_sendTelemetryHigh(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
-  volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
-  error = error + 0;
+//  volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+//  error = error + 0;
 //    cellular_subscribe();
 //    x++;
 //    while(1)
@@ -1054,6 +947,9 @@ void cellular_respondToTexts() {
 }
 
 
+
+
+
 void cellular_periodic(VcuParameters *vcuCoreParameters,
                        VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                        PduStatus *pduStatus, InverterStatus *inverterStatus,
@@ -1073,74 +969,172 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
    * }
    */
 
-  if (!hasConnection) {
-    if (cell_completeLine) {
+  // did not power on!
+  if(cellular_systemState == 0)
+  {
+      float timeSinceStart = clock_getTime();
+      if (timeSinceStart < 12.0f)
+      {
+          return;
+      }
+      else
+      {
+          // Powered ON! Now Starting up cellular
+          cellular_disableEcho();
+          cellular_testConnection();
+          cellular_disableEcho();
+          cellular_disableEcho();
+          cellular_disableEcho();
+          cellular_testConnection();
+          volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+          error = error + 0;
+          cellular_systemState = 1;
+          // requesting current connection information
+          std::string command = "AT+COPS?\r";
+          cellular_send(&command);
 
+      }
+  }
+  // waiting to check current connection info
+  else if (cellular_systemState == 1)
+  {
+      if (cell_completeLine)
+      {
+          std::string response = cell_currLine;
+          for (int i = 0; i < response.size(); i++) {
+              if (response[i] == 'T') {
+                  cellular_systemState = 3;
+                  return;
+              }
+          }
+          if(cellular_systemState == 1)
+          {
+              cellular_systemState = 2;
+              std::string command = "AT+COPS=?\r";
+              cellular_sendNonBlocking(command);
+          }
+      }
+
+  }
+  // powered on but no connection
+  else if (cellular_systemState == 2)
+  {
+    if (cell_completeLine)
+    {
       std::string availableConns = cell_currLine;
       std::string TMobile_HSNCode = "0";
       cellular_findTMobileHSNCode(TMobile_HSNCode, availableConns);
-      if (TMobile_HSNCode != "0") {
+      if (TMobile_HSNCode != "0")
+      {
         std::string command = "AT+COPS=1,2,\"" + TMobile_HSNCode + "\"" + "\r";
         cellular_send(&command);
-//                cellular_mqttInit();
-        hasConnection = true;
+        cellular_systemState = 3;
       }
-
     }
     static float lastSearchingTime = 0;
     float currentSearchingTime = clock_getTime();
-    if (currentSearchingTime - lastSearchingTime > 5.0f) {
+    if (currentSearchingTime - lastSearchingTime > 180.0f) {
       lastSearchingTime = currentSearchingTime;
       std::string command = "AT+COPS=?\r";
       cellular_sendNonBlocking(command);
 
     }
-  } else {
-    if (!sendStartTime) {
-      cellular_sendStartTime(gpsData);
-    } else {
-      if (cellular_areParametersUpdated()) {
-        cellular_updateParameters(vcuCoreParameters);
-      } else {
-//                static float lastHFTime = 0;
-//                float nowHFTime = clock_getTime();
-//                // should be 0.05
-//                if (nowHFTime - lastHFTime > 0.05f) {
-//                    lastHFTime = nowHFTime;
-//                    cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus,
-//                                               pduStatus, inverterStatus,
-//                                               analogVoltages, wheelMagnetValues,
-//                                               imuData, gpsData);
-//                }
-//                static float lastLFTime = 0;
-//                float nowLFTime = clock_getTime();
-//                if (nowLFTime - lastLFTime > 1.0f) {
-//                    lastLFTime = nowLFTime;
-//                    cellular_sendTelemetryLow(vcuCoreOutput, hvcStatus,
-//                                              pduStatus, inverterStatus,
-//                                              analogVoltages, wheelMagnetValues,
-//                                              imuData, gpsData);
-//                    time++;
-//                }
-//                static float lastSeconds = 0;
-//                float nowSeconds = clock_getTime();
-//                if (nowSeconds - lastSeconds > 1.0f) {
-//                    lastSeconds = nowSeconds;
-//                    time++;
-//                }
+  }
+  // has connection but no server = 3
+  else if (cellular_systemState == 3)
+  {
+      cellular_mqttInit();
+  }
+  else
+  {
+      // when we are in Park
+      if(!vcuCoreOutput->prndlState == false)
+      {
+          cellular_systemState = 4;
+          cellular_subscribe();
+            while(vcuCoreOutput->prndlState == false)
+            {
+                cellular_poll();
+            }
+      }
+      // when we are driving
+      else
+      {
+          // Check if we made the handshake
+          // State = 4
+          if (cellular_systemState == 4)
+          {
+              cellular_sendStartTime(gpsData);
+          }
+          // if handshake has been made
+          // State = 5
+          else
+          {
+              if (cellular_areParametersUpdated())
+              {
+                  cellular_updateParameters(vcuCoreParameters);
+              }
+              // send H/L freq messages
+              else
+              {
+                  static float lastHFTime = 0;
+                  float nowHFTime = clock_getTime();
+                  // should be 0.05
+                  if (nowHFTime - lastHFTime > 0.05f) {
+                      lastHFTime = nowHFTime;
+                      if (cellular_dataToSend.size() < 10)
+                      {
+                          cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus,
+                                                    pduStatus, inverterStatus,
+                                                    analogVoltages, wheelMagnetValues,
+                                                    imuData, gpsData);
+                      }
+                      else
+                      {
+                          FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELLULAR_QUEUE_OVERFLOW);
 
+                      }
+                  }
+                  static float lastLFTime = 0;
+                  float nowLFTime = clock_getTime();
+                  if (nowLFTime - lastLFTime > 1.0f) {
+                      lastLFTime = nowLFTime;
+                      if (cellular_dataToSend.size() < 10)
+                      {
+                          cellular_sendTelemetryLow(vcuCoreOutput, hvcStatus,
+                                                    pduStatus, inverterStatus,
+                                                    analogVoltages, wheelMagnetValues,
+                                                    imuData, gpsData);
+                      }
+                      else
+                      {
+                          FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELLULAR_QUEUE_OVERFLOW);
+
+                      }
+                      time++;
+                  }
+                  static float lastSeconds = 0;
+                  float nowSeconds = clock_getTime();
+                  if (nowSeconds - lastSeconds > 1.0f) {
+                      lastSeconds = nowSeconds;
+                      time++;
+                  }
+                  if(finished_tx)
+                  {
+                      std::string command = cellular_dataToSend.front();
+                      cellular_sendNonBlocking(command);
+                      cellular_dataToSend.pop();
+                  }
+              }
+//              // check and respond to text messages once per second
+//              static float lastTextTime = 0;
+//              float nowTextTime = clock_getTime();
+//              if (nowTextTime - lastTextTime > 1.0f) {
+//                  lastTextTime = nowTextTime;
+//                  cellular_respondToTexts();
+//              }
+          }
       }
 
-
-
-
-      // check and respond to text messages once per second
-      static float lastTextTime = 0;
-      float nowTextTime = clock_getTime();
-      if (nowTextTime - lastTextTime > 1.0f) {
-        lastTextTime = nowTextTime;
-        cellular_respondToTexts();
-      }
-    }
   }
 }
