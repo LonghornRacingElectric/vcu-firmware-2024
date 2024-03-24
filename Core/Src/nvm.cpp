@@ -91,46 +91,54 @@ static void nvm_beginTelemetry(std::string timestamp) {
   }
 
   // create headers for data
-  //f_printf(&telemfile, "%s, %s, %s", "Acceleration X", "Acceleration Y", "Acceleration Z");
+  f_printf(
+          &telemfile,
+          "%s,%s,%s,%s\r\n",
+          "Time", "Acceleration X", "Acceleration Y", "Acceleration Z"
+          );
 
   // close file to save
   f_close(&telemfile);
 
 }
 
-static void nvm_writeTelemetry(TelemetryRow *telemetryRow) {
-  UINT bw;
+static void nvm_writeTelemetry(ImuData *imuData) {
   FRESULT res;
   // open telemfile
   res = f_open(
           &telemfile,
           telemfilename.c_str(),
-          FA_OPEN_EXISTING
+          FA_OPEN_EXISTING | FA_WRITE | FA_OPEN_APPEND
           );
   if(res) {
 
   }
   // write row of data into file
-  f_write(
-      &telemfile,
-      telemetryRow,
-      sizeof(telemetryRow),
-      &bw
+  f_printf(
+          &telemfile,
+          "%s,%04d,%04d,%04d\r\n",
+          "Time Data", imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z
   );
+
   // close file to save
   f_close(&telemfile);
 }
 
-void nvm_init(VcuParameters *vcuParameters) {
+void nvm_init(VcuParameters *vcuParameters, GpsData *gpsData) {
   //mount default drive
   f_mount(&fs, "", 0);
 
   // load vcu parameters
   nvm_loadParameters(vcuParameters);
 
-  // create telemetry csv file
-  // placeholder for timestamp but should get time from gps clock
-  nvm_beginTelemetry("2024_03_23");
+  // create telemetry csv file using time from gps clock
+//  char time[20];
+//  sprintf(
+//          time,
+//          "%04d/%02d/%02d %02d:%02d:%02d",
+//          gpsData->year, gpsData->month, gpsData->day, gpsData->hour, gpsData->minute, gpsData->seconds
+//          );
+  nvm_beginTelemetry("2023-03-24");
 
 }
 
@@ -145,6 +153,7 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
     nvm_saveParameters(vcuParameters);
     time = clock_getTime();
   }
-  //nvm_writeTelemetry()
+
+  nvm_writeTelemetry(imuData);
 
 }
