@@ -77,7 +77,7 @@ static void nvm_beginTelemetry(std::string timestamp) {
   FRESULT res;
 
   // add timestamp info to file name
-  telemfilename += timestamp + ".csv";
+  telemfilename = timestamp + ".csv";
 
   // create new csv file and leave open to write telemetry
   res = f_open(
@@ -128,6 +128,21 @@ void nvm_init(VcuParameters *vcuParameters) {
   // create telemetry csv file
   // placeholder for timestamp but should get time from gps clock
   nvm_beginTelemetry("2024_03_23");
+
+  // testing writing
+  UINT bw = 0;
+  res = f_open(
+      &telemfile,
+      telemfilename.c_str(),
+      FA_CREATE_ALWAYS | FA_WRITE
+  );
+  res = f_write(
+      &telemfile,
+      vcuParameters,
+      sizeof(VcuParameters),
+      &bw
+  );
+  f_close(&telemfile);
 }
 
 void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
@@ -143,18 +158,4 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
   }
   //nvm_writeTelemetry()
 
-  // testing writing
-    UINT bw = 0;
-    res = f_open(
-            &telemfile,
-            telemfilename.c_str(),
-            FA_CREATE_ALWAYS | FA_WRITE
-    );
-    res = f_write(
-            &telemfile,
-            vcuParameters,
-            sizeof(VcuParameters),
-            &bw
-    );
-    f_close(&telemfile);
 }
