@@ -5,7 +5,7 @@
 #include "cellular.h"
 
 typedef struct TelemetryRow {
-  // TODO add all telemetry here
+
 } TelemetryRow;
 
 /**
@@ -34,7 +34,7 @@ static void nvm_writeTelemetry(TelemetryRow* telemetryRow);
  * Called once on startup. Load VCU parameters from SD card if they exist.
  * Also open a telemetry CSV file named based on the current timestamp from the GPS real-time clock.
  */
-void nvm_init();
+void nvm_init(VcuParameters* vcuParameters);
 
 /**
  * Called many times per second. Save the VCU Parameters if they've changed and
