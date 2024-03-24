@@ -1,6 +1,7 @@
 #include "nvm.h"
 #include "fatfs.h"
 #include "clock.h"
+#include "usb.h"
 #include <sstream>
 
 FIL telemfile;
@@ -8,6 +9,7 @@ FATFS fs;
 FRESULT res;
 FIL fsrc;
 FIL fdst;
+string telemfilename;
 
 static void nvm_loadParameters(VcuParameters *vcuParameters) {
   UINT br = 0;
@@ -74,13 +76,13 @@ static void nvm_saveParameters(VcuParameters *vcuParameters) {
 static void nvm_beginTelemetry(std::string timestamp) {
   FRESULT res;
 
-  // convert timestamp to string for file name
-  timestamp += ".csv";
+  // add timestamp info to file name
+  telemfilename += timestamp + ".csv";
 
   // create new csv file and leave open to write telemetry
   res = f_open(
       &telemfile,
-      timestamp.c_str(),
+      telemfilename.c_str(),
       FA_CREATE_ALWAYS
   );
 
@@ -88,11 +90,23 @@ static void nvm_beginTelemetry(std::string timestamp) {
     // TODO fault
   }
 
+  // close file to save
+  f_close(&telemfile);
+
 }
 
 static void nvm_writeTelemetry(TelemetryRow *telemetryRow) {
   UINT bw;
+  FRESULT res;
+  // open telemfile
+  res = f_open(
+          &telemfile,
+          telemfilename.c_str(),
+          FA_OPEN_EXISTING
+          );
+  if(res) {
 
+  }
   // write row of data into file
   f_write(
       &telemfile,
@@ -100,6 +114,8 @@ static void nvm_writeTelemetry(TelemetryRow *telemetryRow) {
       sizeof(telemetryRow),
       &bw
   );
+  // close file to save
+  f_close(&telemfile);
 }
 
 void nvm_init(VcuParameters *vcuParameters) {
@@ -112,7 +128,6 @@ void nvm_init(VcuParameters *vcuParameters) {
   // create telemetry csv file
   // placeholder for timestamp but should get time from gps clock
   nvm_beginTelemetry("2024_03_23");
-
 }
 
 void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
@@ -127,4 +142,19 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
     time = clock_getTime();
   }
   //nvm_writeTelemetry()
+
+  // testing writing
+    UINT bw = 0;
+    res = f_open(
+            &telemfile,
+            telemfilename.c_str(),
+            FA_CREATE_ALWAYS | FA_WRITE
+    );
+    res = f_write(
+            &telemfile,
+            vcuParameters,
+            sizeof(VcuParameters),
+            &bw
+    );
+    f_close(&telemfile);
 }

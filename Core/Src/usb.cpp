@@ -16,5 +16,5 @@ void println(std::string& s) {
   size_t size = s.size();
   buffer[size++] = '\n';
   buffer[size] = '\0';
-  HAL_UART_Transmit(&huart4, buffer, size, 100);
+  HAL_UART_Transmit(&hlpuart1, buffer, size, 100);
 }
