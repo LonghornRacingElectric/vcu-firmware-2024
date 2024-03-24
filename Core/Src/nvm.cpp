@@ -83,12 +83,15 @@ static void nvm_beginTelemetry(std::string timestamp) {
   res = f_open(
       &telemfile,
       telemfilename.c_str(),
-      FA_CREATE_ALWAYS
+      FA_CREATE_ALWAYS | FA_WRITE
   );
 
   if (res) {
     // TODO fault
   }
+
+  // create headers for data
+  //f_printf(&telemfile, "%s, %s, %s", "Acceleration X", "Acceleration Y", "Acceleration Z");
 
   // close file to save
   f_close(&telemfile);
@@ -129,20 +132,6 @@ void nvm_init(VcuParameters *vcuParameters) {
   // placeholder for timestamp but should get time from gps clock
   nvm_beginTelemetry("2024_03_23");
 
-  // testing writing
-  UINT bw = 0;
-  res = f_open(
-      &telemfile,
-      telemfilename.c_str(),
-      FA_CREATE_ALWAYS | FA_WRITE
-  );
-  res = f_write(
-      &telemfile,
-      vcuParameters,
-      sizeof(VcuParameters),
-      &bw
-  );
-  f_close(&telemfile);
 }
 
 void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
