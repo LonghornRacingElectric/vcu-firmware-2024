@@ -116,8 +116,8 @@ static void nvm_writeTelemetry(ImuData *imuData) {
   // write row of data into file
   f_printf(
           &telemfile,
-          "%s,%04d,%04d,%04d\r\n",
-          "Time Data", imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z
+          "%f,%f,%f,%f",
+          clock_getTime(), imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z
   );
 
   // close file to save
