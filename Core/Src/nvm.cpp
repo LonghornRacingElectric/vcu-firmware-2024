@@ -111,7 +111,7 @@ void nvm_init(VcuParameters *vcuParameters) {
 
   // create telemetry csv file
   // placeholder for timestamp but should get time from gps clock
-//  nvm_beginTelemetry("2023-11-02");
+  nvm_beginTelemetry("2024_03_23");
 
 }
 
