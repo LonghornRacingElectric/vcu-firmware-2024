@@ -93,7 +93,7 @@ static void nvm_beginTelemetry(std::string timestamp) {
   // create headers for data
   f_printf(
           &telemfile,
-          "%s,%s,%s,%s\r\n",
+          "%s,%s,%s,%s\n",
           "Time", "Acceleration X", "Acceleration Y", "Acceleration Z"
           );
 
@@ -116,7 +116,7 @@ static void nvm_writeTelemetry(ImuData *imuData) {
   // write row of data into file
   f_printf(
           &telemfile,
-          "%f,%f,%f,%f",
+          "%10f,%10f,%10f,%10f\n",
           clock_getTime(), imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z
   );
 
