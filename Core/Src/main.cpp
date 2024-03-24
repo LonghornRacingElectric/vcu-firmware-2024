@@ -159,8 +159,6 @@ nvm_init(&vcuCoreParameters, &gpsData);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    /* Example code for reading the GPS data. This is how the arduino does it */
-
     float deltaTime = clock_getDeltaTime();
     led_rainbow(deltaTime);
 
