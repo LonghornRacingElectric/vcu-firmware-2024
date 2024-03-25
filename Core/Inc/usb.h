@@ -1,6 +1,10 @@
-#ifndef VCU_FIRMWARE_2024_USB_H
-#define VCU_FIRMWARE_2024_USB_H
+#ifndef HVC_FIRMWARE_2024_USB_H
+#define HVC_FIRMWARE_2024_USB_H
 
-// TODO communicate to desktop app over USB
+#include "usart.h"
+#include <string>
 
-#endif //VCU_FIRMWARE_2024_USB_H
+void println(float f);
+void println(std::string& s);
+
+#endif //HVC_FIRMWARE_2024_USB_H

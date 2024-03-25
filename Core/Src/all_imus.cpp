@@ -1,7 +1,6 @@
 #include "all_imus.h"
 #include "angel_can_ids.h"
 #include "angel_can.h"
-#include "imu.h"
 
 static CanInbox imu_hvcaccel_inbox;
 static CanInbox imu_hvcgyro_inbox;

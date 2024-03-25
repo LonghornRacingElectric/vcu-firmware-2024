@@ -1,6 +1,7 @@
 #include "nvm.h"
 #include "fatfs.h"
 #include "clock.h"
+#include "usb.h"
 #include <sstream>
 
 FIL telemfile;
@@ -8,6 +9,7 @@ FATFS fs;
 FRESULT res;
 FIL fsrc;
 FIL fdst;
+string telemfilename;
 
 static void nvm_loadParameters(VcuParameters *vcuParameters) {
   UINT br = 0;
@@ -74,44 +76,67 @@ static void nvm_saveParameters(VcuParameters *vcuParameters) {
 static void nvm_beginTelemetry(std::string timestamp) {
   FRESULT res;
 
-  // convert timestamp to string for file name
-  timestamp += ".csv";
+  // add timestamp info to file name
+  telemfilename = timestamp + ".csv";
 
   // create new csv file and leave open to write telemetry
   res = f_open(
       &telemfile,
-      timestamp.c_str(),
-      FA_CREATE_ALWAYS
+      telemfilename.c_str(),
+      FA_CREATE_ALWAYS | FA_WRITE
   );
 
   if (res) {
     // TODO fault
   }
 
+  // create headers for data
+  f_printf(
+          &telemfile,
+          "%s,%s,%s,%s\n",
+          "Time", "Acceleration X", "Acceleration Y", "Acceleration Z"
+          );
+
+  // close file to save
+  f_close(&telemfile);
+
 }
 
-static void nvm_writeTelemetry(TelemetryRow *telemetryRow) {
-  UINT bw;
+static void nvm_writeTelemetry(ImuData *imuData) {
+  FRESULT res;
+  // open telemfile
+  res = f_open(
+          &telemfile,
+          telemfilename.c_str(),
+          FA_OPEN_EXISTING | FA_WRITE | FA_OPEN_APPEND
+          );
+  if(res) {
 
+  }
   // write row of data into file
-  f_write(
-      &telemfile,
-      telemetryRow,
-      sizeof(telemetryRow),
-      &bw
-  );
+  char data[80];
+  sprintf(data, "%10f,%10f,%10f,%10f\n", clock_getTime(), imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z);
+  f_printf(&telemfile, data);
+
+  // close file to save
+  f_close(&telemfile);
 }
 
-void nvm_init(VcuParameters *vcuParameters) {
+void nvm_init(VcuParameters *vcuParameters, GpsData *gpsData) {
   //mount default drive
   f_mount(&fs, "", 0);
 
   // load vcu parameters
   nvm_loadParameters(vcuParameters);
 
-  // create telemetry csv file
-  // placeholder for timestamp but should get time from gps clock
-//  nvm_beginTelemetry("2023-11-02");
+  // create telemetry csv file using time from gps clock
+  char time[25];
+  sprintf(
+          time,
+          "%04d_%02d_%02d__%02d_%02d_%02d",
+          gpsData->year, gpsData->month, gpsData->day, gpsData->hour, gpsData->minute, gpsData->seconds
+          );
+  nvm_beginTelemetry(time);
 
 }
 
@@ -126,5 +151,7 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
     nvm_saveParameters(vcuParameters);
     time = clock_getTime();
   }
-  //nvm_writeTelemetry()
+
+  nvm_writeTelemetry(imuData);
+
 }
