@@ -3,6 +3,7 @@
 #include "clock.h"
 #include "usb.h"
 #include <sstream>
+#include <iomanip>
 
 FIL telemfile;
 FATFS fs;
@@ -93,8 +94,14 @@ static void nvm_beginTelemetry(std::string timestamp) {
   // create headers for data
   f_printf(
           &telemfile,
-          "%s,%s,%s,%s\n",
-          "Time", "Acceleration X", "Acceleration Y", "Acceleration Z"
+          "%s,%s,%s,%s,%s,%s,%s,%s\n",
+          "Time",
+          "Magnetic Flux FR", "Magnetic Flux FL", "Magnetic Flux BR", "Magnetic Flux BL",
+          "VCU Acceleration X", "VCU Acceleration Y", "VCU Acceleration Z",
+          "FR Acceleration X", "FR Acceleration Y", "FR Acceleration Z",
+          "FL Acceleration X", "FL Acceleration Y", "FL Acceleration Z",
+          "BR Acceleration X", "BR Acceleration Y", "BR Acceleration Z",
+          "BL Acceleration X", "BL Acceleration Y", "BL Acceleration Z"
           );
 
   // close file to save
@@ -102,8 +109,7 @@ static void nvm_beginTelemetry(std::string timestamp) {
 
 }
 
-static void nvm_writeTelemetry(ImuData *imuData) {
-  FRESULT res;
+static void nvm_writeTelemetry(TelemetryRow *telemetryRow) {
   // open telemfile
   res = f_open(
           &telemfile,
@@ -113,10 +119,36 @@ static void nvm_writeTelemetry(ImuData *imuData) {
   if(res) {
 
   }
-  // write row of data into file
-  char data[80];
-  sprintf(data, "%10f,%10f,%10f,%10f\n", clock_getTime(), imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z);
-  f_printf(&telemfile, data);
+  // write row of data into file in fixed point format and 10 char width
+  std::ostringstream newData;
+  newData << std::setw(10) << std::fixed;
+
+  // Write time
+  newData << clock_getTime() << ",";
+
+  // Write wheel magnet values
+  WheelMagnetValues *wheelMagnetValues = telemetryRow->wheelMagnetValues;
+  newData << wheelMagnetValues->fr << "," << wheelMagnetValues->fl << "," << wheelMagnetValues->br << "," << wheelMagnetValues->bl << ",";
+
+  // Write IMU VCU data
+  ImuData *imuData = telemetryRow->imuData;
+  newData << imuData->accelVcu.x << "," << imuData->accelVcu.y << "," << imuData->accelVcu.z << ",";
+
+  // Write IMU wheel data
+  newData << imuData->accelFr.x << "," << imuData->accelFr.y << "," << imuData->accelFr.z << ",";
+  newData << imuData->accelFl.x << "," << imuData->accelFl.y << "," << imuData->accelFl.z << ",";
+  newData << imuData->accelBr.x << "," << imuData->accelBr.y << "," << imuData->accelBr.z << ",";
+  newData << imuData->accelBl.x << "," << imuData->accelBl.y << "," << imuData->accelBl.z << "\n";
+
+  // Write data to file
+  f_printf(&telemfile, newData.str().c_str());
+
+//  char data[256] = {0};
+//  sprintf(data, "%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f\n",
+//          clock_getTime(),
+//          wheelMagnetValues->fr, wheelMagnetValues->fl, wheelMagnetValues->br, wheelMagnetValues->bl,
+//          imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z);
+//  f_printf(&telemfile, data);
 
   // close file to save
   f_close(&telemfile);
@@ -151,7 +183,16 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
     nvm_saveParameters(vcuParameters);
     time = clock_getTime();
   }
-
-  nvm_writeTelemetry(imuData);
+  TelemetryRow telemetryRow = {
+          vcuCoreOutput,
+          hvcStatus,
+          pduStatus,
+          inverterStatus,
+          analogVoltages,
+          wheelMagnetValues,
+          imuData,
+          gpsData
+  };
+  nvm_writeTelemetry(&telemetryRow);
 
 }

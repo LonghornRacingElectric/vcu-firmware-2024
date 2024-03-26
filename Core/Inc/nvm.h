@@ -5,7 +5,14 @@
 #include "cellular.h"
 
 typedef struct TelemetryRow {
-
+    VcuOutput* vcuCoreOutput;
+    HvcStatus* hvcStatus;
+    PduStatus* pduStatus;
+    InverterStatus* inverterStatus;
+    AnalogVoltages* analogVoltages;
+    WheelMagnetValues* wheelMagnetValues;
+    ImuData* imuData;
+    GpsData* gpsData;
 } TelemetryRow;
 
 /**
