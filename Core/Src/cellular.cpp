@@ -624,7 +624,7 @@ static void cellular_mqttInit() {
     }
   cellular_receive(response, true, 1000);
 
-  command = "AT+UMQTT=2,\"ec2-3-22-208-58.us-east-2.compute.amazonaws.com/\",1883\r";
+  command = "AT+UMQTT=2,\"ec2-3-139-74-169.us-east-2.compute.amazonaws.com/\",1883\r";
   response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
     error = cellular_send(&command);
     if (error != 0)
@@ -719,7 +719,7 @@ static void cellular_registerTMobile() {
   std::string command = "AT+COPS?\r";
   std::string response;
   cellular_send(&command);
-  cellular_receiveAny(500, response, 5000);
+  cellular_receiveAny(500, response, 3000);
   for (int i = 0; i < response.size(); i++) {
     if (response[i] == 'T') {
         cellular_systemState = 3;
@@ -803,15 +803,15 @@ void cellular_init() {
   HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_RESET);
   HAL_Delay(500);
   HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_SET);
-    HAL_Delay(8000);
-    cellular_disableEcho();
-    cellular_testConnection();
-    cellular_disableEcho();
-    cellular_disableEcho();
-    cellular_disableEcho();
-    cellular_testConnection();
-    cellular_registerTMobile();
-    cellular_mqttInit();
+//    HAL_Delay(8000);
+//    cellular_disableEcho();
+//    cellular_testConnection();
+//    cellular_disableEcho();
+//    cellular_disableEcho();
+//    cellular_disableEcho();
+//    cellular_testConnection();
+//    cellular_registerTMobile();
+//    cellular_mqttInit();
 //  if (cellular_systemState == 2) {
 ////        cellular_mqttInit();
 //  }
@@ -1006,12 +1006,11 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
           cellular_disableEcho();
           cellular_disableEcho();
           cellular_testConnection();
-          volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
-          error = error + 0;
           cellular_systemState = 1;
           // requesting current connection information
-          std::string command = "AT+COPS?\r";
-          cellular_send(&command);
+          cellular_registerTMobile();
+//          std::string command = "AT+COPS?\r";
+//          cellular_send(&command);
 
       }
   }
@@ -1064,10 +1063,26 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
   // has connection but no server = 3
   else if (cellular_systemState == 3)
   {
-      if(finished_tx)
-      {
-          cellular_mqttInit();
+      static float mqttTimer = clock_getTime();
+      float nowSeconds = clock_getTime();
+      if (nowSeconds - mqttTimer > 5.0f) {
+          mqttTimer = nowSeconds;
+          if(finished_tx)
+          {
+              cellular_disableEcho();
+              cellular_testConnection();
+              cellular_disableEcho();
+              cellular_disableEcho();
+              cellular_disableEcho();
+              cellular_testConnection();
+              cellular_mqttInit();
+              volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+              error = error + 0;
+          }
+
+          time++;
       }
+
   }
   else
   {
