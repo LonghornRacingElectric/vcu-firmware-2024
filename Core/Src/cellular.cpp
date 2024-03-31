@@ -21,6 +21,7 @@ static uint8_t cellular_systemState = STATE_OFF;
 
 static float handshakeTimestamp;
 static bool finished_tx = true;
+static bool dmaDisable = false;
 static std::queue<std::string> cellular_dataToSend;
 
 // private helper methods
@@ -200,7 +201,7 @@ static void cellular_sendStartTime(GpsData *gpsData) {
   data = gpsData->millis;
   time = time + date + "." + std::to_string(data);
   std::string command = "AT+UMQTTC=2,0,0,\"/config/car\",\"" + time + "\"\r";
-  cellular_send(&command);
+  cellular_sendNonBlocking(command);
   cellular_systemState = STATE_OK;
   handshakeTimestamp = clock_getTime();
 }
@@ -579,72 +580,77 @@ static void cellular_testConnection() {
   cellular_receive(CELL_OK, false, 500);
 }
 
+
 static void cellular_mqttInit() {
-  std::string s = "mqtt init";
-  println(s);
+    std::string s = "mqtt init";
+    println(s);
 
-  std::string command;
-  std::string response;
-  command = "AT+UMQTT=0,\"Car\"\r";
-  response = "\r\r\n+UMQTT: 0,1\r\r\n\r\nOK\r\n";
-  int error = 0;
-  error = cellular_send(&command);
-  if (error != 0) {
-    return;
-  }
-  cellular_receiveAny(64, response, 1000);
-  if (response.size() > 23) {
-    return;
-  }
+    std::string command;
+    std::string response;
+    command = "AT+UMQTT=0,\"Car\"\r";
+    response = "\r\r\n+UMQTT: 0,1\r\r\n\r\nOK\r\n";
+    int error = 0;
+    error = cellular_send(&command);
+    if (error != 0) {
+        return;
+    }
+    cellular_receiveAny(64, response, 1000);
+    if (response.size() > 23) {
+        return;
+    }
 
-  println(response);
+    println(response);
 
-  command = "AT+UMQTT=1,1883\r";
-  response = "\r\r\n+UMQTT: 1,1\r\r\n\r\nOK\r\n";
-  error = cellular_send(&command);
-  if (error != 0) {
-    return;
-  }
-  cellular_receive(response, true, 1000);
+    command = "AT+UMQTT=1,1883\r";
+    response = "\r\r\n+UMQTT: 1,1\r\r\n\r\nOK\r\n";
+    error = cellular_send(&command);
+    if (error != 0) {
+        return;
+    }
+    cellular_receive(response, true, 1000);
 
-  command = "AT+UMQTT=2,\"ec2-3-139-74-169.us-east-2.compute.amazonaws.com/\",1883\r";
-  response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
-  error = cellular_send(&command);
-  if (error != 0) {
-    return;
-  }
-  cellular_receive(response, true, 1000);
+    command = "AT+UMQTT=2,\"ec2-3-139-74-169.us-east-2.compute.amazonaws.com/\",1883\r";
+    response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
+    error = cellular_send(&command);
+    if (error != 0) {
+        return;
+    }
+    cellular_receive(response, true, 1000);
 
-  command = "AT+UMQTT=10,3600\r";
-  response = "\r\r\n+UMQTT: 10,1\r\r\n\r\nOK\r\n";
-  error = cellular_send(&command);
-  if (error != 0) {
-    return;
-  }
-  cellular_receive(response, true, 1000);
+    command = "AT+UMQTT=10,3600\r";
+    response = "\r\r\n+UMQTT: 10,1\r\r\n\r\nOK\r\n";
+    error = cellular_send(&command);
+    if (error != 0) {
+        return;
+    }
+    cellular_receive(response, true, 1000);
 
-  command = "AT+UMQTT=12,1\r";
-  response = "\r\r\n+UMQTT: 12,1\r\r\n\r\nOK\r\n";
-  error = cellular_send(&command);
-  if (error != 0) {
-    return;
-  }
-  cellular_receive(response, true, 1000);
+    command = "AT+UMQTT=12,1\r";
+    response = "\r\r\n+UMQTT: 12,1\r\r\n\r\nOK\r\n";
+    error = cellular_send(&command);
+    if (error != 0) {
+        return;
+    }
+    cellular_receive(response, true, 1000);
 
-  command = "AT+UMQTTC=1\r";
-  response = "\r\r\n+UMQTTC: 1,1\r\r\n\r\nOK\r\n\r\r\n+UUMQTTC: 1,0\r\r\n";
-  error = cellular_send(&command);
-  if (error != 0) {
-    return;
-  }
-  bool good = cellular_receive(response, true, 5000);
-  if (!good) {
-    volatile int x = 0;
-    x++;
-    return;
-  }
+    command = "AT+UMQTTC=1\r";
+    response = "\r\r\n+UMQTTC: 1,1\r\r\n\r\nOK\r\n\r\r\n+UUMQTTC: 1,0\r\r\n";
+    error = cellular_send(&command);
+    if (error != 0) {
+        return;
+    }
+    bool good = cellular_receive(response, true, 5000);
+    if (!good) {
+        volatile int x = 0;
+        x++;
+        return;
+    }
 
-  cellular_systemState = STATE_CONNECTED_NO_HANDSHAKE;
+    cellular_systemState = STATE_CONNECTED_NO_HANDSHAKE;
+    dmaDisable = false;
+    volatile int dmaError = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+
+
 }
 
 static void cellular_findTMobileHSNCode(std::string &code, std::string &response) {
@@ -918,7 +924,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
   // did not power on!
   if (cellular_systemState == STATE_OFF) {
     float timeSinceStart = clock_getTime();
-    if (timeSinceStart < 7.0f) {
+    if (timeSinceStart < 12.0f) {
       return;
     } else {
       // Powered ON! Now starting up cellular
@@ -933,7 +939,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       cellular_systemState = STATE_BOOTING;
       // requesting current connection information
       std::string command = "AT+COPS?\r";
-      cellular_send(&command);
+      cellular_sendNonBlocking(command);
 
     }
   }
@@ -944,12 +950,12 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       println(response);
       for (int i = 0; i < response.size(); i++) {
         if (response[i] == 'T') {
-          cellular_systemState = 3;
+          cellular_systemState = STATE_CONNECTING;
           return;
         }
       }
-      if (cellular_systemState == 1) {
-        cellular_systemState = 2;
+      if (cellular_systemState == STATE_BOOTING) {
+        cellular_systemState = STATE_SEARCHING;
         std::string command = "AT+COPS=?\r";
         cellular_sendNonBlocking(command);
       }
@@ -964,7 +970,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       cellular_findTMobileHSNCode(TMobile_HSNCode, availableConns);
       if (TMobile_HSNCode != "0") {
         std::string command = "AT+COPS=1,2,\"" + TMobile_HSNCode + "\"" + "\r";
-        cellular_send(&command);
+        cellular_sendNonBlocking(command);
         cellular_systemState = STATE_CONNECTING;
       }
     }
@@ -978,12 +984,20 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
   }
     // has connection but no server = 3
   else if (cellular_systemState == STATE_CONNECTING) {
-    if (finished_tx) {
+      if (!dmaDisable)
+      {
+          HAL_UART_DMAPause(&huart7);
+          dmaDisable = true;
+      }
+    else if (finished_tx) {
+
       cellular_mqttInit();
     }
 
   } else if (cellular_systemState == STATE_CONNECTED_NO_HANDSHAKE) {
-    cellular_sendStartTime(gpsData);
+      if (finished_tx) {
+          cellular_sendStartTime(gpsData);
+      }
 
   } else { // cellular_systemState == STATE_OK
 
