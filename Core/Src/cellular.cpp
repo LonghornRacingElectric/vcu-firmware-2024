@@ -609,7 +609,7 @@ static void cellular_mqttInit() {
     }
     cellular_receive(response, true, 1000);
 
-    command = "AT+UMQTT=2,\"ec2-3-139-74-169.us-east-2.compute.amazonaws.com/\",1883\r";
+    command = "AT+UMQTT=2,\"ec2-3-15-233-120.us-east-2.compute.amazonaws.com\",1883\r";
     response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
     error = cellular_send(&command);
     if (error != 0) {
@@ -939,12 +939,13 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       cellular_disableEcho();
       cellular_disableEcho();
       cellular_testConnection();
-      cellular_systemState = STATE_BOOTING;
+//      cellular_systemState = STATE_SEARCHING;
 //        volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
 //        error++;
 //        dmaDisable = false;
+//        HAL_Delay(100);
 ////        std::string command = "AT+COPS?\r";
-//        std::string command = "AT+COPS?\r";
+//        std::string command = "AT+COPS=?\r";
 //        cellular_sendNonBlocking(command);
 
       cellular_registerTMobile();
@@ -1018,12 +1019,11 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
   else if (cellular_systemState == STATE_CONNECTING) {
       if (!dmaDisable)
       {
-          HAL_UART_DMAPause(&huart7);
-          dmaDisable = true;
+          // TODO: Send MQTTINIT in nonblocking because disbale dma does not work
       }
-    else if (finished_tx) {
-
-      cellular_mqttInit();
+    else
+    {
+          cellular_mqttInit();
     }
 
   } else if (cellular_systemState == STATE_CONNECTED_NO_HANDSHAKE) {
