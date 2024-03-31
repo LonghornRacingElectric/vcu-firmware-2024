@@ -5,11 +5,29 @@
 #include "usb.h"
 
 
+// 0 = Did not Power On,
+#define STATE_OFF 0
+// 1 = Powered On but no connection
+#define STATE_BOOTING 1
+// 2 = Need to search for TMOBILE
+#define STATE_SEARCHING 2
+// 3 = Connect to TMOBILE but not server
+#define STATE_CONNECTING 3
+// 4 = Connected to server but did not send handshake
+#define STATE_CONNECTED_NO_HANDSHAKE 4
+// 5 = sent handshake, running as normal
+#define STATE_OK 5
+static uint8_t cellular_systemState = STATE_OFF;
+
+static float handshakeTimestamp;
+static bool finished_tx = true;
+static std::queue<std::string> cellular_dataToSend;
+
 // private helper methods
 static int cellular_send(std::string *command) {
-    std::string s = "send:";
-    println(s);
-    println(*command);
+  std::string s = "send:";
+  println(s);
+  println(*command);
   auto bytes = reinterpret_cast<const uint8_t *>(command->c_str());
   uint32_t error = HAL_UART_Transmit(&huart7, bytes, command->size(), HAL_MAX_DELAY);
   if (error != HAL_OK) {
@@ -19,10 +37,6 @@ static int cellular_send(std::string *command) {
 
 }
 
-static char commandBuffer[1024] = {0};
-static bool finished_tx = true;
-// Command queue, true is HF, false is LF, max size 50
-std::queue<std::string> cellular_dataToSend;
 
 static void cellular_sendNonBlocking(std::string &command) {
   if (!finished_tx) return;
@@ -98,9 +112,9 @@ static bool cellular_receive(std::string &expected, bool care, uint32_t timeout)
   memset(buffer, 0, sizeof(buffer));
   HAL_UART_Receive(&huart7, (uint8_t *) buffer, expected.size(), timeout);
   auto str = new std::string(buffer);
-    std::string s = "receive:";
-    println(s);
-    println(*str);
+  std::string s = "receive:";
+  println(s);
+  println(*str);
   if (*str != expected) {
 
     return false;
@@ -139,16 +153,8 @@ static int cellular_sendAndExpectOk(std::string *command) {
 }
 
 static bool cellular_areParametersUpdated() {
-  return false;
+  return false; // TODO implement Texas Tune
 }
-
-// 0 = Did not Power On,
-// 1 = Powered On but no connection
-// 2 = Need to search for TMOBILE
-// 3 = Connect to TMOBILE but not server
-// 4 = Connected to server but did not send handshake
-// 5 = sent handshake, running as normal
-static uint8_t cellular_systemState = 0;
 
 static void cellular_sendStartTime(GpsData *gpsData) {
   if (gpsData->year == 0) {
@@ -195,32 +201,16 @@ static void cellular_sendStartTime(GpsData *gpsData) {
   time = time + date + "." + std::to_string(data);
   std::string command = "AT+UMQTTC=2,0,0,\"/config/car\",\"" + time + "\"\r";
   cellular_send(&command);
-  cellular_systemState = 5;
+  cellular_systemState = STATE_OK;
+  handshakeTimestamp = clock_getTime();
 }
 
 
-static uint32_t cellular_calculateTimeDiff(GpsData *now) {
-
-  // first in days
-  int totalTime = 0;
-  totalTime = (365) * (now->year - referenceGPSData.year);
-  totalTime = totalTime + ((30) * (now->month - referenceGPSData.month));
-  totalTime = totalTime + (now->day - referenceGPSData.day);
-  // now hours
-  totalTime = totalTime * 24;
-  totalTime = totalTime + now->hour - referenceGPSData.hour;
-  // now seconds
-  totalTime = totalTime * 360;
-  totalTime = totalTime + now->seconds - referenceGPSData.seconds + ((60) * (now->minute - referenceGPSData.minute));
-  // now milli
-  uint32_t millis = totalTime * 1000;
-  millis = millis + now->millis - referenceGPSData.millis;
-  return millis;
-
+static uint32_t cellular_calculateTimeDiff() {
+  float timeSinceHandshake = clock_getTime() - handshakeTimestamp;
+  uint32_t timeSinceHandshakeMillis = static_cast<uint32_t>(timeSinceHandshake) * 1000;
+  return timeSinceHandshakeMillis;
 }
-
-// change
-static int time = 0;
 
 static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                                        PduStatus *pduStatus, InverterStatus *inverterStatus,
@@ -241,7 +231,7 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 
   // Real Time Clock
 
-  uint32_t fourBytesU = cellular_calculateTimeDiff(gpsData); // I do not know where to get this data
+  uint32_t fourBytesU = cellular_calculateTimeDiff();
   cellular_split32(ptr, fourBytesU);
 
 
@@ -464,7 +454,7 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
     dataToEncode = dataToEncode + encoded[i];
   }
   std::string command = "AT+UMQTTC=2,0,0,\"/h\",\"" + dataToEncode + "\"\r";
-    cellular_dataToSend.push(command);
+  cellular_dataToSend.push(command);
 //  std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";\
 //  std::string actual;
 //  cellular_sendNonBlocking(command);
@@ -474,7 +464,6 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 }
 
 
-
 static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                                       PduStatus *pduStatus, InverterStatus *inverterStatus,
                                       AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues,
@@ -482,14 +471,10 @@ static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcSt
   std::string dataToEncode = "";
   uint8_t arr[404];
   uint8_t *ptr = arr;
-  // Where do I get this data?
-
-  // Where do I get this?
-  // Getting millis :)
 
   uint8_t oneByteU = 1;
   cellular_split8(ptr, oneByteU);
-  uint32_t uint32 = cellular_calculateTimeDiff(gpsData);
+  uint32_t uint32 = cellular_calculateTimeDiff();
   cellular_split32(ptr, uint32);
 
   uint32 = 1;
@@ -560,7 +545,7 @@ static void cellular_sendTelemetryLow(VcuOutput *vcuCoreOutput, HvcStatus *hvcSt
   std::string command = "AT+UMQTTC=2,0,0,\"/l\",\"" + dataToEncode + "\"\r";
 //  std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
 //  cellular_sendNonBlocking(command);
-    cellular_dataToSend.push(command);
+  cellular_dataToSend.push(command);
   // cellular_receive(response, false, 1000);
 
 }
@@ -595,18 +580,17 @@ static void cellular_testConnection() {
 }
 
 static void cellular_mqttInit() {
-    std::string s = "mqtt init";
-    println(s);
+  std::string s = "mqtt init";
+  println(s);
 
   std::string command;
   std::string response;
   command = "AT+UMQTT=0,\"Car\"\r";
   response = "\r\r\n+UMQTT: 0,1\r\r\n\r\nOK\r\n";
   int error = 0;
-    error = cellular_send(&command);
-  if (error != 0)
-  {
-      return;
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
   }
   cellular_receiveAny(64, response, 1000);
   if (response.size() > 23) {
@@ -617,54 +601,50 @@ static void cellular_mqttInit() {
 
   command = "AT+UMQTT=1,1883\r";
   response = "\r\r\n+UMQTT: 1,1\r\r\n\r\nOK\r\n";
-    error = cellular_send(&command);
-    if (error != 0)
-    {
-        return;
-    }
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
   cellular_receive(response, true, 1000);
 
   command = "AT+UMQTT=2,\"ec2-3-139-74-169.us-east-2.compute.amazonaws.com/\",1883\r";
   response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
-    error = cellular_send(&command);
-    if (error != 0)
-    {
-        return;
-    }
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
   cellular_receive(response, true, 1000);
 
   command = "AT+UMQTT=10,3600\r";
   response = "\r\r\n+UMQTT: 10,1\r\r\n\r\nOK\r\n";
-    error = cellular_send(&command);
-    if (error != 0)
-    {
-        return;
-    }
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
   cellular_receive(response, true, 1000);
 
   command = "AT+UMQTT=12,1\r";
   response = "\r\r\n+UMQTT: 12,1\r\r\n\r\nOK\r\n";
-    error = cellular_send(&command);
-    if (error != 0)
-    {
-        return;
-    }
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
   cellular_receive(response, true, 1000);
 
   command = "AT+UMQTTC=1\r";
   response = "\r\r\n+UMQTTC: 1,1\r\r\n\r\nOK\r\n\r\r\n+UUMQTTC: 1,0\r\r\n";
-    error = cellular_send(&command);
-    if (error != 0)
-    {
-        return;
-    }
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
   bool good = cellular_receive(response, true, 5000);
-    if(!good) {
-        volatile int x = 0;
-        x++;
-        return;
-    }
-  cellular_systemState = 4;
+  if (!good) {
+    volatile int x = 0;
+    x++;
+    return;
+  }
+
+  cellular_systemState = STATE_CONNECTED_NO_HANDSHAKE;
 }
 
 static void cellular_findTMobileHSNCode(std::string &code, std::string &response) {
@@ -722,11 +702,11 @@ static void cellular_registerTMobile() {
   cellular_receiveAny(500, response, 3000);
   for (int i = 0; i < response.size(); i++) {
     if (response[i] == 'T') {
-        cellular_systemState = 3;
+      cellular_systemState = STATE_CONNECTING;
       return;
     }
   }
-  if (cellular_systemState == 2) {
+  if (cellular_systemState == STATE_SEARCHING) {
     std::string command = "AT+COPS=?\r";
     cellular_sendNonBlocking(command);
   }
@@ -793,75 +773,24 @@ static void cellular_respondToText(std::string *senderPhoneNumber, std::string *
 }
 
 // public methods
-uint8_t rxbuffer[1024];
 
 void cellular_init() {
 
-    std::string s = "cell init";
-    println(s);
+  std::string s = "cell init";
+  println(s);
 
   HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_RESET);
   HAL_Delay(500);
   HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_SET);
-//    HAL_Delay(8000);
-//    cellular_disableEcho();
-//    cellular_testConnection();
-//    cellular_disableEcho();
-//    cellular_disableEcho();
-//    cellular_disableEcho();
-//    cellular_testConnection();
-//    cellular_registerTMobile();
-//    cellular_mqttInit();
-//  if (cellular_systemState == 2) {
-////        cellular_mqttInit();
-//  }
-
-
-//    x++;
-//    VcuOutput vcuCoreOutput;
-//    HvcStatus hvcStatus;
-//    PduStatus pduStatus;
-//    InverterStatus inverterStatus;
-//    AnalogVoltages analogVoltages;
-//    WheelDisplacements wheelDisplacements;
-//    ImuData imuData;
-//    GpsData gpsData;
-//    cellular_createDummyHFSend(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
-//    x++;
-//    cellular_sendTelemetryHigh(&vcuCoreOutput, &hvcStatus, &pduStatus, &inverterStatus, &analogVoltages, &wheelDisplacements, &imuData, &gpsData);
-//  volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
-//  error = error + 0;
-//    cellular_subscribe();
-//    x++;
-//    while(1)
-//    {
-//        cellular_poll();
-//        x++;
-//    }
-
-
-
-
-// TODO MQTT disconnect if already connected
-//////
-//for(int i = 0; i < 200; i++)
-//{
-//    std::string command = "AT+UMQTTC=2,0,0,\"/data/dynamics\",\"{'time': " + std::to_string(1706483160 + i) + ", 'torque_command': " + std::to_string(i) + "}\"\r";
-//    std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";
-//    cellular_send(&command);
-//    cellular_receive(response, false, 1000);
-//    HAL_Delay(5000);
-//
-//}
-
-//  std::string phoneNumber = "18326411809";
-//  std::string message = "Hello Matthew, we are here to talk about your car's extended warranty!";
-//  cellular_sendText(&phoneNumber, &message);
-
-
-
-
-
+//  HAL_Delay(8000);
+//  cellular_disableEcho();
+//  cellular_testConnection();
+//  cellular_disableEcho();
+//  cellular_disableEcho();
+//  cellular_disableEcho();
+//  cellular_testConnection();
+//  cellular_registerTMobile();
+//  cellular_mqttInit();
 }
 
 
@@ -967,9 +896,6 @@ void cellular_respondToTexts() {
 }
 
 
-
-
-
 void cellular_periodic(VcuParameters *vcuCoreParameters,
                        VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus,
                        PduStatus *pduStatus, InverterStatus *inverterStatus,
@@ -990,65 +916,56 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
    */
 
   // did not power on!
-  if(cellular_systemState == 0)
-  {
-      float timeSinceStart = clock_getTime();
-      if (timeSinceStart < 12.0f)
-      {
+  if (cellular_systemState == STATE_OFF) {
+    float timeSinceStart = clock_getTime();
+    if (timeSinceStart < 7.0f) {
+      return;
+    } else {
+      // Powered ON! Now starting up cellular
+      cellular_disableEcho();
+      cellular_testConnection();
+      cellular_disableEcho();
+      cellular_disableEcho();
+      cellular_disableEcho();
+      cellular_testConnection();
+      volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+      error = error + 0;
+      cellular_systemState = STATE_BOOTING;
+      // requesting current connection information
+      std::string command = "AT+COPS?\r";
+      cellular_send(&command);
+
+    }
+  }
+    // waiting to check current connection info
+  else if (cellular_systemState == STATE_BOOTING) {
+    if (cell_completeLine) {
+      std::string response = cell_currLine;
+      println(response);
+      for (int i = 0; i < response.size(); i++) {
+        if (response[i] == 'T') {
+          cellular_systemState = 3;
           return;
+        }
       }
-      else
-      {
-          // Powered ON! Now Starting up cellular
-          cellular_disableEcho();
-          cellular_testConnection();
-          cellular_disableEcho();
-          cellular_disableEcho();
-          cellular_disableEcho();
-          cellular_testConnection();
-          cellular_systemState = 1;
-          // requesting current connection information
-          cellular_registerTMobile();
-//          std::string command = "AT+COPS?\r";
-//          cellular_send(&command);
-
+      if (cellular_systemState == 1) {
+        cellular_systemState = 2;
+        std::string command = "AT+COPS=?\r";
+        cellular_sendNonBlocking(command);
       }
-  }
-  // waiting to check current connection info
-  else if (cellular_systemState == 1)
-  {
-      if (cell_completeLine)
-      {
-          std::string response = cell_currLine;
-          println(response);
-          for (int i = 0; i < response.size(); i++) {
-              if (response[i] == 'T') {
-                  cellular_systemState = 3;
-                  return;
-              }
-          }
-          if(cellular_systemState == 1)
-          {
-              cellular_systemState = 2;
-              std::string command = "AT+COPS=?\r";
-              cellular_sendNonBlocking(command);
-          }
-      }
+    }
 
   }
-  // powered on but no connection
-  else if (cellular_systemState == 2)
-  {
-    if (cell_completeLine)
-    {
+    // powered on but no connection
+  else if (cellular_systemState == STATE_SEARCHING) {
+    if (cell_completeLine) {
       std::string availableConns = cell_currLine;
       std::string TMobile_HSNCode = "0";
       cellular_findTMobileHSNCode(TMobile_HSNCode, availableConns);
-      if (TMobile_HSNCode != "0")
-      {
+      if (TMobile_HSNCode != "0") {
         std::string command = "AT+COPS=1,2,\"" + TMobile_HSNCode + "\"" + "\r";
         cellular_send(&command);
-        cellular_systemState = 3;
+        cellular_systemState = STATE_CONNECTING;
       }
     }
     static float lastSearchingTime = 0;
@@ -1057,123 +974,76 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       lastSearchingTime = currentSearchingTime;
       std::string command = "AT+COPS=?\r";
       cellular_sendNonBlocking(command);
-
     }
   }
-  // has connection but no server = 3
-  else if (cellular_systemState == 3)
-  {
-      static float mqttTimer = clock_getTime();
-      float nowSeconds = clock_getTime();
-      if (nowSeconds - mqttTimer > 5.0f) {
-          mqttTimer = nowSeconds;
-          if(finished_tx)
-          {
-              cellular_disableEcho();
-              cellular_testConnection();
-              cellular_disableEcho();
-              cellular_disableEcho();
-              cellular_disableEcho();
-              cellular_testConnection();
-              cellular_mqttInit();
-              volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
-              error = error + 0;
-          }
+    // has connection but no server = 3
+  else if (cellular_systemState == STATE_CONNECTING) {
+    if (finished_tx) {
+      cellular_mqttInit();
+    }
 
-          time++;
+  } else if (cellular_systemState == STATE_CONNECTED_NO_HANDSHAKE) {
+    cellular_sendStartTime(gpsData);
+
+  } else { // cellular_systemState == STATE_OK
+
+    // generate high frequency message
+    static float lastHFTime = 0;
+    float nowHFTime = clock_getTime();
+    if (nowHFTime - lastHFTime > 0.05f) {
+      lastHFTime = nowHFTime;
+      if (cellular_dataToSend.size() < 10) {
+        cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus,
+                                   pduStatus, inverterStatus,
+                                   analogVoltages, wheelMagnetValues,
+                                   imuData, gpsData);
+      } else {
+        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELLULAR_QUEUE_OVERFLOW);
+      }
+    }
+
+    // generate low frequency message
+    static float lastLFTime = 0;
+    float nowLFTime = clock_getTime();
+    if (nowLFTime - lastLFTime > 1.0f) {
+      lastLFTime = nowLFTime;
+      if (cellular_dataToSend.size() < 10) {
+        cellular_sendTelemetryLow(vcuCoreOutput, hvcStatus,
+                                  pduStatus, inverterStatus,
+                                  analogVoltages, wheelMagnetValues,
+                                  imuData, gpsData);
+      } else {
+        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELLULAR_QUEUE_OVERFLOW);
+      }
+    }
+
+    // send messages from queue
+    if (finished_tx && !cellular_dataToSend.empty()) {
+      std::string command = cellular_dataToSend.front();
+      cellular_sendNonBlocking(command);
+      cellular_dataToSend.pop();
+    }
+
+
+    // park/drive specific actions
+    if (vcuCoreOutput->prndlState) {
+      // we're in drive
+
+    } else {
+      // we're in park
+
+      // check and respond to text messages once per second
+      static float lastTextTime = 0;
+      float nowTextTime = clock_getTime();
+      if (nowTextTime - lastTextTime > 1.0f && finished_tx) {
+        lastTextTime = nowTextTime;
+        cellular_respondToTexts();
       }
 
-  }
-  else
-  {
-      // when we are in Park
-      if(!vcuCoreOutput->prndlState == false)
-      {
-          cellular_systemState = 4;
-          cellular_subscribe();
-            while(vcuCoreOutput->prndlState == false)
-            {
-                cellular_poll();
-            }
+      // check for new parameters from Texas Tune
+      if (cellular_areParametersUpdated()) {
+        cellular_updateParameters(vcuCoreParameters);
       }
-      // when we are driving
-      else
-      {
-          // Check if we made the handshake
-          // State = 4
-          if (cellular_systemState == 4)
-          {
-              cellular_sendStartTime(gpsData);
-          }
-          // if handshake has been made
-          // State = 5
-          else
-          {
-              if (cellular_areParametersUpdated())
-              {
-                  cellular_updateParameters(vcuCoreParameters);
-              }
-              // send H/L freq messages
-              else
-              {
-                  static float lastHFTime = 0;
-                  float nowHFTime = clock_getTime();
-                  // should be 0.05
-                  if (nowHFTime - lastHFTime > 0.05f) {
-                      lastHFTime = nowHFTime;
-                      if (cellular_dataToSend.size() < 10)
-                      {
-                          cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus,
-                                                    pduStatus, inverterStatus,
-                                                    analogVoltages, wheelMagnetValues,
-                                                    imuData, gpsData);
-                      }
-                      else
-                      {
-                          FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELLULAR_QUEUE_OVERFLOW);
-
-                      }
-                  }
-                  static float lastLFTime = 0;
-                  float nowLFTime = clock_getTime();
-                  if (nowLFTime - lastLFTime > 1.0f) {
-                      lastLFTime = nowLFTime;
-                      if (cellular_dataToSend.size() < 10)
-                      {
-                          cellular_sendTelemetryLow(vcuCoreOutput, hvcStatus,
-                                                    pduStatus, inverterStatus,
-                                                    analogVoltages, wheelMagnetValues,
-                                                    imuData, gpsData);
-                      }
-                      else
-                      {
-                          FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELLULAR_QUEUE_OVERFLOW);
-
-                      }
-                      time++;
-                  }
-                  static float lastSeconds = 0;
-                  float nowSeconds = clock_getTime();
-                  if (nowSeconds - lastSeconds > 1.0f) {
-                      lastSeconds = nowSeconds;
-                      time++;
-                  }
-                  if(finished_tx)
-                  {
-                      std::string command = cellular_dataToSend.front();
-                      cellular_sendNonBlocking(command);
-                      cellular_dataToSend.pop();
-                  }
-              }
-//              // check and respond to text messages once per second
-//              static float lastTextTime = 0;
-//              float nowTextTime = clock_getTime();
-//              if (nowTextTime - lastTextTime > 1.0f) {
-//                  lastTextTime = nowTextTime;
-//                  cellular_respondToTexts();
-//              }
-          }
-      }
-
+    }
   }
 }
