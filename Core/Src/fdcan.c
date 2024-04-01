@@ -70,7 +70,7 @@ void MX_FDCAN2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN FDCAN2_Init 2 */
-
+  HAL_GPIO_WritePin(CAN_Term_GPIO_Port, CAN_Term_Pin, GPIO_PIN_SET);
   /* USER CODE END FDCAN2_Init 2 */
 
 }

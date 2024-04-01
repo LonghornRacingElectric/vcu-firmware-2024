@@ -152,7 +152,7 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
           // time data
           clock_getTime(),
           // vcu output data
-          (int)vcuCoreOutput->enableInverter, vcuCoreOutput->inverterTorqueRequest, (int)vcuCoreOutput->prndlState, (int)vcuCoreOutput->r2dBuzzer, (int)vcuCoreOutput->brakeLight, (int)vcuCoreOutput->enableDragReduction, vcuCoreOutput->pumpOutput, vcuCoreOutput->radiatorOutput, vcuCoreOutput->batteryFansOutput, vcuCoreOutput->vehicleDisplacement.x, vcuCoreOutput->vehicleDisplacement.y, vcuCoreOutput->vehicleDisplacement.z, vcuCoreOutput->vehicleVelocity.x, vcuCoreOutput->vehicleVelocity.y, vcuCoreOutput->vehicleVelocity.z, vcuCoreOutput->vehicleAcceleration.x, vcuCoreOutput->vehicleAcceleration.y, vcuCoreOutput->vehicleAcceleration.z, vcuCoreOutput->hvBatterySoc, vcuCoreOutput->lvBatterySoc, vcuCoreOutput->dashSpeed, vcuCoreOutput->telemetryApps, vcuCoreOutput->telemetryBse, vcuCoreOutput->telemetrySteeringWheel, (int)vcuCoreOutput->faultApps, (int)vcuCoreOutput->faultBse, (int)vcuCoreOutput->faultStompp, (int)vcuCoreOutput->faultSteering,
+          (int)vcuCoreOutput->enableInverter, vcuCoreOutput->inverterTorqueRequest, (int)vcuCoreOutput->prndlState, (int)vcuCoreOutput->r2dBuzzer, (int)vcuCoreOutput->brakeLight, (int)vcuCoreOutput->enableDragReduction, vcuCoreOutput->pumpOutput, vcuCoreOutput->radiatorOutput, vcuCoreOutput->batteryFansOutput, vcuCoreOutput->vehicleDisplacement.x, vcuCoreOutput->vehicleDisplacement.y, vcuCoreOutput->vehicleDisplacement.z, vcuCoreOutput->vehicleVelocity.x, vcuCoreOutput->vehicleVelocity.y, vcuCoreOutput->vehicleVelocity.z, vcuCoreOutput->vehicleAcceleration.x, vcuCoreOutput->vehicleAcceleration.y, vcuCoreOutput->vehicleAcceleration.z, vcuCoreOutput->hvBatterySoc, vcuCoreOutput->lvBatterySoc, vcuCoreOutput->dashSpeed, vcuCoreOutput->telemetryApps, vcuCoreOutput->telemetryBse, vcuCoreOutput->telemetrySteeringWheel, 0, 0, 0, 0,//(int)vcuCoreOutput->faultApps, (int)vcuCoreOutput->faultBse, (int)vcuCoreOutput->faultStompp, (int)vcuCoreOutput->faultSteering,
           // hvc status data
           hvcStatus->packVoltage, hvcStatus->packCurrent, hvcStatus->stateOfCharge, hvcStatus->packVoltageMean, hvcStatus->packVoltageMin, hvcStatus->packVoltageMax, hvcStatus->packVoltageRange, hvcStatus->packTempMean, hvcStatus->packTempMin, hvcStatus->packTempMax, hvcStatus->packTempRange, (int)hvcStatus->imd, (int)hvcStatus->ams, hvcStatus->contactorStatus, hvcStatus->cellVoltages, hvcStatus->cellTemps,
           // pdu status data
@@ -179,7 +179,7 @@ void nvm_init(VcuParameters *vcuParameters, GpsData *gpsData) {
   f_mount(&fs, "", 0);
 
   // load vcu parameters
-  nvm_loadParameters(vcuParameters);
+//  nvm_loadParameters(vcuParameters);
 
   // create telemetry csv file using time from gps clock
   char time[25];

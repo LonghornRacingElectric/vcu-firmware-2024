@@ -1,6 +1,10 @@
 #include "vcu.h"
 #include "VcuModel.h"
 
+void vcu_init(VcuParameters& params) {
+  vcu_updateParameters(params);
+}
+
 void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchState, HvcStatus &hvcStatus,
                  PduStatus &pduStatus, InverterStatus &inverterStatus, WheelMagnetValues &wheelMagnetValues,
                  ImuData &imuData, GpsData &gpsData, VcuOutput &vcuOutput, float deltaTime) {
