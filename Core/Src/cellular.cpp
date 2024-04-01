@@ -1019,7 +1019,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
   else if (cellular_systemState == STATE_CONNECTING) {
       if (!dmaDisable)
       {
-          // TODO: Send MQTTINIT in nonblocking because disbale dma does not work
+          // TODO: Send MQTTINIT in nonblocking because disbale dma does not workgit
       }
     else
     {
