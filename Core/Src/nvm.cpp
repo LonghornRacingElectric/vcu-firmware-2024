@@ -126,7 +126,7 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
   if(res) {
 
   }
-  // uodate file name
+  // update file name
   if(telemfilename == "0000_00_00__00_00_00.csv") {
       char time[25];
       sprintf(
@@ -174,7 +174,7 @@ void nvm_init(VcuParameters *vcuParameters, GpsData *gpsData) {
   f_mount(&fs, "", 0);
 
   // load vcu parameters
-//  nvm_loadParameters(vcuParameters);
+  nvm_loadParameters(vcuParameters);
 
   // create telemetry csv file using time from gps clock
   char time[25];
