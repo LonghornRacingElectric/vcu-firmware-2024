@@ -130,7 +130,7 @@ int main(void)
   MX_ADC1_Init();
   MX_FATFS_Init();
   MX_FDCAN2_Init();
-//  MX_SDMMC1_SD_Init();
+  MX_SDMMC1_SD_Init();
   MX_TIM5_Init();
   MX_USART1_UART_Init();
   MX_UART4_Init();
@@ -151,7 +151,7 @@ int main(void)
   gps_init();
   indicators_init();
 //  cellular_init();
-nvm_init(&vcuCoreParameters);
+  nvm_init(&vcuCoreParameters);
 
   /* USER CODE END 2 */
 
@@ -179,8 +179,6 @@ nvm_init(&vcuCoreParameters);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
     dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
     can_periodic(deltaTime);
-
-    println(vcuCoreOutput.dashSpeed);
 
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,

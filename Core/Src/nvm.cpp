@@ -2,15 +2,17 @@
 #include "fatfs.h"
 #include "clock.h"
 #include <sstream>
+#include <cstring>
 
 static FIL telemfile;
 static FATFS fs;
 static FRESULT res;
 static FIL fsrc;
 static FIL fdst;
-string telemfilename;
+static string telemfilename;
 
 static bool telemetryBegan = false;
+
 static char charBuffer[4096];
 
 static void nvm_loadParameters(VcuParameters *vcuParameters) {
@@ -75,10 +77,7 @@ static void nvm_saveParameters(VcuParameters *vcuParameters) {
 
 }
 
-static void nvm_beginTelemetry(std::string timestamp) {
-  // add timestamp info to file name
-  telemfilename = timestamp + ".csv";
-
+static void nvm_beginTelemetry() {
   // create new csv file and leave open to write telemetry
   res = f_open(
       &telemfile,
@@ -88,8 +87,6 @@ static void nvm_beginTelemetry(std::string timestamp) {
 
   if (res) {
     // TODO fault
-    volatile int x = res;
-    x++;
   }
 
   // create headers for data
@@ -105,48 +102,91 @@ static void nvm_beginTelemetry(std::string timestamp) {
 }
 
 static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, PduStatus *pduStatus, InverterStatus *inverterStatus, AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues, ImuData *imuData, GpsData *gpsData) {
+  static uint32_t counter = 0;
+
   // open telemfile
-  res = f_open(
-          &telemfile,
-          telemfilename.c_str(),
-          FA_OPEN_EXISTING | FA_WRITE | FA_OPEN_APPEND
-          );
-  if(res) {
-    // TODO fault
+  if(counter == 0) {
+    res = f_open(
+        &telemfile,
+        telemfilename.c_str(),
+        FA_OPEN_EXISTING | FA_WRITE | FA_OPEN_APPEND
+    );
+    if (res) {
+      // TODO fault
+    }
   }
 
   // write row of data into file
-  sprintf(
-          charBuffer,
-          // time format
-          "%10f,%d,%10f,%d,%d,%d,%d,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%d,%d,%d,%d,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%d,%d,%u,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10llu,%10llu,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hu\n",
-          // time data
-          clock_getTime(),
-          // vcu output data
-          (int)vcuCoreOutput->enableInverter, vcuCoreOutput->inverterTorqueRequest, (int)vcuCoreOutput->prndlState, (int)vcuCoreOutput->r2dBuzzer, (int)vcuCoreOutput->brakeLight, (int)vcuCoreOutput->enableDragReduction, vcuCoreOutput->pumpOutput, vcuCoreOutput->radiatorOutput, vcuCoreOutput->batteryFansOutput, vcuCoreOutput->vehicleDisplacement.x, vcuCoreOutput->vehicleDisplacement.y, vcuCoreOutput->vehicleDisplacement.z, vcuCoreOutput->vehicleVelocity.x, vcuCoreOutput->vehicleVelocity.y, vcuCoreOutput->vehicleVelocity.z, vcuCoreOutput->vehicleAcceleration.x, vcuCoreOutput->vehicleAcceleration.y, vcuCoreOutput->vehicleAcceleration.z, vcuCoreOutput->hvBatterySoc, vcuCoreOutput->lvBatterySoc, vcuCoreOutput->dashSpeed, vcuCoreOutput->telemetryApps, vcuCoreOutput->telemetryBse, vcuCoreOutput->telemetrySteeringWheel, 0, 0, 0, 0,//(int)vcuCoreOutput->faultApps, (int)vcuCoreOutput->faultBse, (int)vcuCoreOutput->faultStompp, (int)vcuCoreOutput->faultSteering,
-          // hvc status data
-          hvcStatus->packVoltage, hvcStatus->packCurrent, hvcStatus->stateOfCharge, hvcStatus->packVoltageMean, hvcStatus->packVoltageMin, hvcStatus->packVoltageMax, hvcStatus->packVoltageRange, hvcStatus->packTempMean, hvcStatus->packTempMin, hvcStatus->packTempMax, hvcStatus->packTempRange, (int)hvcStatus->imd, (int)hvcStatus->ams, hvcStatus->contactorStatus, hvcStatus->cellVoltages, hvcStatus->cellTemps,
-          // pdu status data
-          pduStatus->volumetricFlowRate, pduStatus->waterTempInverter, pduStatus->waterTempMotor, pduStatus->waterTempRadiator, pduStatus->radiatorFanRpmPercentage, pduStatus->lvVoltage, pduStatus->lvSoC, pduStatus->lvCurrent,
-          // inverter status data
-          inverterStatus->voltage, inverterStatus->current, inverterStatus->rpm, inverterStatus->inverterTemp, inverterStatus->motorTemp, inverterStatus->motorAngle, inverterStatus->resolverAngle, inverterStatus->phaseACurrent, inverterStatus->phaseBCurrent, inverterStatus->phaseCCurrent, inverterStatus->BCVoltage, inverterStatus->ABVoltage, inverterStatus->outputVoltage, inverterStatus->inverterFrequency, inverterStatus->torqueActual, inverterStatus->torqueCommand, inverterStatus->faultVector, inverterStatus->stateVector,
-          // analog voltages data
-          analogVoltages->apps1, analogVoltages->apps2, analogVoltages->bse1, analogVoltages->bse2, analogVoltages->steer, analogVoltages->sus1, analogVoltages->sus2,
-          // wheel magnet values data
-          wheelMagnetValues->fl, wheelMagnetValues->fr, wheelMagnetValues->bl, wheelMagnetValues->br,
-          // imu data
-          imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z, imuData->accelHvc.x, imuData->accelHvc.y, imuData->accelHvc.z, imuData->accelPdu.x, imuData->accelPdu.y, imuData->accelPdu.z, imuData->accelFl.x, imuData->accelFl.y, imuData->accelFl.z, imuData->accelFr.x, imuData->accelFr.y, imuData->accelFr.z, imuData->accelBl.x, imuData->accelBl.y, imuData->accelBl.z, imuData->accelBr.x, imuData->accelBr.y, imuData->accelBr.z,imuData->gyroVcu.x, imuData->gyroVcu.y, imuData->gyroVcu.z, imuData->gyroHvc.x, imuData->gyroHvc.y, imuData->gyroHvc.z, imuData->gyroPdu.x, imuData->gyroPdu.y, imuData->gyroPdu.z,
-          // gps data
-          gpsData->latitude, gpsData->longitude, gpsData->speed, gpsData->heading, gpsData->hour, gpsData->minute, gpsData->seconds, gpsData->year, gpsData->month, gpsData->day, gpsData->millis
-          );
-  f_printf(&telemfile, charBuffer);
 
-  // close file to save
-  f_close(&telemfile);
+  if(counter % 2 == 0) {
+    sprintf(charBuffer,
+        // time format
+            "%4f,%d,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%u,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10llu,%10llu,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hu\n",
+        // time data
+            clock_getTime(),
+        // vcu output data
+            (int) vcuCoreOutput->enableInverter, vcuCoreOutput->inverterTorqueRequest, (int) vcuCoreOutput->prndlState,
+            (int) vcuCoreOutput->r2dBuzzer, (int) vcuCoreOutput->brakeLight, (int) vcuCoreOutput->enableDragReduction,
+            vcuCoreOutput->pumpOutput, vcuCoreOutput->radiatorOutput, vcuCoreOutput->batteryFansOutput,
+            vcuCoreOutput->vehicleDisplacement.x, vcuCoreOutput->vehicleDisplacement.y,
+            vcuCoreOutput->vehicleDisplacement.z, vcuCoreOutput->vehicleVelocity.x, vcuCoreOutput->vehicleVelocity.y,
+            vcuCoreOutput->vehicleVelocity.z, vcuCoreOutput->vehicleAcceleration.x,
+            vcuCoreOutput->vehicleAcceleration.y, vcuCoreOutput->vehicleAcceleration.z, vcuCoreOutput->hvBatterySoc,
+            vcuCoreOutput->lvBatterySoc, vcuCoreOutput->dashSpeed, vcuCoreOutput->telemetryApps,
+            vcuCoreOutput->telemetryBse, vcuCoreOutput->telemetrySteeringWheel, 0, 0, 0,
+            0,//(int)vcuCoreOutput->faultApps, (int)vcuCoreOutput->faultBse, (int)vcuCoreOutput->faultStompp, (int)vcuCoreOutput->faultSteering,
+        // hvc status data
+            hvcStatus->packVoltage, hvcStatus->packCurrent, hvcStatus->stateOfCharge, hvcStatus->packVoltageMean,
+            hvcStatus->packVoltageMin, hvcStatus->packVoltageMax, hvcStatus->packVoltageRange, hvcStatus->packTempMean,
+            hvcStatus->packTempMin, hvcStatus->packTempMax, hvcStatus->packTempRange, (int) hvcStatus->imd,
+            (int) hvcStatus->ams, hvcStatus->contactorStatus, hvcStatus->cellVoltages, hvcStatus->cellTemps,
+        // pdu status data
+            pduStatus->volumetricFlowRate, pduStatus->waterTempInverter, pduStatus->waterTempMotor,
+            pduStatus->waterTempRadiator, pduStatus->radiatorFanRpmPercentage, pduStatus->lvVoltage, pduStatus->lvSoC,
+            pduStatus->lvCurrent,
+        // inverter status data
+            inverterStatus->voltage, inverterStatus->current, inverterStatus->rpm, inverterStatus->inverterTemp,
+            inverterStatus->motorTemp, inverterStatus->motorAngle, inverterStatus->resolverAngle,
+            inverterStatus->phaseACurrent, inverterStatus->phaseBCurrent, inverterStatus->phaseCCurrent,
+            inverterStatus->BCVoltage, inverterStatus->ABVoltage, inverterStatus->outputVoltage,
+            inverterStatus->inverterFrequency, inverterStatus->torqueActual, inverterStatus->torqueCommand,
+            inverterStatus->faultVector, inverterStatus->stateVector,
+        // analog voltages data
+            analogVoltages->apps1, analogVoltages->apps2, analogVoltages->bse1, analogVoltages->bse2,
+            analogVoltages->steer, analogVoltages->sus1, analogVoltages->sus2,
+        // wheel magnet values data
+            wheelMagnetValues->fl, wheelMagnetValues->fr, wheelMagnetValues->bl, wheelMagnetValues->br,
+        // imu data
+            imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z, imuData->accelHvc.x, imuData->accelHvc.y,
+            imuData->accelHvc.z, imuData->accelPdu.x, imuData->accelPdu.y, imuData->accelPdu.z, imuData->accelFl.x,
+            imuData->accelFl.y, imuData->accelFl.z, imuData->accelFr.x, imuData->accelFr.y, imuData->accelFr.z,
+            imuData->accelBl.x, imuData->accelBl.y, imuData->accelBl.z, imuData->accelBr.x, imuData->accelBr.y,
+            imuData->accelBr.z, imuData->gyroVcu.x, imuData->gyroVcu.y, imuData->gyroVcu.z, imuData->gyroHvc.x,
+            imuData->gyroHvc.y, imuData->gyroHvc.z, imuData->gyroPdu.x, imuData->gyroPdu.y, imuData->gyroPdu.z,
+        // gps data
+            gpsData->latitude, gpsData->longitude, gpsData->speed, gpsData->heading, gpsData->hour, gpsData->minute,
+            gpsData->seconds, gpsData->year, gpsData->month, gpsData->day, gpsData->millis
+    );
+  }
+
+  if(counter % 2 == 1) {
+    f_printf(&telemfile, charBuffer);
+  }
+
+  if(counter == FILE_SAVE_INTERVAL - 1) {
+    // close file to save
+    f_close(&telemfile);
+  }
+
+  counter = (counter + 1) % FILE_SAVE_INTERVAL;
 }
 
 void nvm_init(VcuParameters *vcuParameters) {
   //mount default drive
+  res = f_mount(&fs, "", 0);
+  if(res) {
+    // TODO fault
+  }
 
   // load vcu parameters
 //  nvm_loadParameters(vcuParameters);
@@ -166,18 +206,15 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
 
   if(!telemetryBegan && gpsData->year != 0) {
     // create telemetry csv file using time from gps clock
-    res = f_mount(&fs, "", 0);
-    if(res) {
-      volatile int x = res;
-      x++;
-    }
-    char time[25];
+    char time[64];
     sprintf(
             time,
-            "%02d_%02d_%02d__%02d_%02d_%02d",
+            "Log__20%02d_%02d_%02d__%02d_%02d_%02d.csv",
             gpsData->year, gpsData->month, gpsData->day, gpsData->hour, gpsData->minute, gpsData->seconds
     );
-    nvm_beginTelemetry(time);
+    telemfilename = std::string(time);
+
+    nvm_beginTelemetry();
     telemetryBegan = true;
   }
 
