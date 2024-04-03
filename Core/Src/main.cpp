@@ -46,6 +46,7 @@
 #include "wheelspeeds.h"
 #include "nvm.h"
 #include "vcu.h"
+#include "usb.h"
 
 /* USER CODE END Includes */
 
@@ -129,7 +130,7 @@ int main(void)
   MX_ADC1_Init();
   MX_FATFS_Init();
   MX_FDCAN2_Init();
-  MX_SDMMC1_SD_Init();
+//  MX_SDMMC1_SD_Init();
   MX_TIM5_Init();
   MX_USART1_UART_Init();
   MX_UART4_Init();
@@ -140,6 +141,7 @@ int main(void)
   clock_init();
   can_init(&hfdcan2);
 
+  vcu_init(vcuCoreParameters);
   inverter_init();
   dash_init();
   hvc_init();
@@ -148,8 +150,8 @@ int main(void)
   allImus_init(&hspi2);
   gps_init();
   indicators_init();
-  cellular_init();
-  nvm_init(&vcuCoreParameters, &gpsData);
+//  cellular_init();
+//nvm_init(&vcuCoreParameters, &gpsData);
 
   /* USER CODE END 2 */
 
@@ -178,12 +180,14 @@ int main(void)
     dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
     can_periodic(deltaTime);
 
-    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-                 &pduStatus, &inverterStatus, &analogVoltages,
-                 &wheelMagnetValues, &imuData, &gpsData);
-    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-                      &pduStatus, &inverterStatus, &analogVoltages,
-                      &wheelMagnetValues, &imuData, &gpsData);
+    println(vcuCoreOutput.dashSpeed);
+
+//    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+//                 &pduStatus, &inverterStatus, &analogVoltages,
+//                 &wheelMagnetValues, &imuData, &gpsData);
+//    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+//                      &pduStatus, &inverterStatus, &analogVoltages,
+//                      &wheelMagnetValues, &imuData, &gpsData);
   }
   /* USER CODE END 3 */
 }

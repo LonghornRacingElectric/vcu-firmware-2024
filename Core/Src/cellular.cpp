@@ -1069,7 +1069,6 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
                       }
                       else
                       {
-                          // FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELLULAR_QUEUE_OVERFLOW);
 
                       }
                   }
@@ -1086,7 +1085,6 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
                       }
                       else
                       {
-                          // FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELLULAR_QUEUE_OVERFLOW);
 
                       }
                       time++;
