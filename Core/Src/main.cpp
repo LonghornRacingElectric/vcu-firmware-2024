@@ -151,7 +151,7 @@ int main(void)
   gps_init();
   indicators_init();
 //  cellular_init();
-nvm_init(&vcuCoreParameters, &gpsData);
+nvm_init(&vcuCoreParameters);
 
   /* USER CODE END 2 */
 

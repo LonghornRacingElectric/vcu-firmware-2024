@@ -3,12 +3,15 @@
 #include "clock.h"
 #include <sstream>
 
-FIL telemfile;
-FATFS fs;
-FRESULT res;
-FIL fsrc;
-FIL fdst;
+static FIL telemfile;
+static FATFS fs;
+static FRESULT res;
+static FIL fsrc;
+static FIL fdst;
 string telemfilename;
+
+static bool telemetryBegan = false;
+static char charBuffer[4096];
 
 static void nvm_loadParameters(VcuParameters *vcuParameters) {
   UINT br = 0;
@@ -85,6 +88,8 @@ static void nvm_beginTelemetry(std::string timestamp) {
 
   if (res) {
     // TODO fault
+    volatile int x = res;
+    x++;
   }
 
   // create headers for data
@@ -107,24 +112,12 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
           FA_OPEN_EXISTING | FA_WRITE | FA_OPEN_APPEND
           );
   if(res) {
-
+    // TODO fault
   }
-  // update file name
-//  if(telemfilename == "0000_00_00__00_00_00.csv") {
-//      char time[25];
-//      sprintf(
-//              time,
-//              "%04d_%02d_%02d__%02d_%02d_%02d",
-//              gpsData->year, gpsData->month, gpsData->day, gpsData->hour, gpsData->minute, gpsData->seconds
-//      );
-//      string newtelemfilename = std::string(time) + ".csv";
-//      f_rename(telemfilename.c_str(), newtelemfilename.c_str());
-//      telemfilename = newtelemfilename;
-//  }
+
   // write row of data into file
-  char data[1250];
   sprintf(
-          data,
+          charBuffer,
           // time format
           "%10f,%d,%10f,%d,%d,%d,%d,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%d,%d,%d,%d,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%d,%d,%u,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10llu,%10llu,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hu\n",
           // time data
@@ -146,28 +139,17 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
           // gps data
           gpsData->latitude, gpsData->longitude, gpsData->speed, gpsData->heading, gpsData->hour, gpsData->minute, gpsData->seconds, gpsData->year, gpsData->month, gpsData->day, gpsData->millis
           );
-  f_printf(&telemfile, data);
+  f_printf(&telemfile, charBuffer);
 
   // close file to save
   f_close(&telemfile);
 }
 
-void nvm_init(VcuParameters *vcuParameters, GpsData *gpsData) {
+void nvm_init(VcuParameters *vcuParameters) {
   //mount default drive
-  f_mount(&fs, "", 0);
 
   // load vcu parameters
-  nvm_loadParameters(vcuParameters);
-
-  // create telemetry csv file using time from gps clock
-  char time[25];
-  sprintf(
-          time,
-          "%04d_%02d_%02d__%02d_%02d_%02d",
-          gpsData->year, gpsData->month, gpsData->day, gpsData->hour, gpsData->minute, gpsData->seconds
-          );
-  nvm_beginTelemetry(time);
-
+//  nvm_loadParameters(vcuParameters);
 }
 
 void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
@@ -176,13 +158,33 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
                   ImuData *imuData, GpsData *gpsData) {
 
   // save vcu parameters once a second
-  static float time = 0;
-  if (clock_getTime() >= time + 1) {
-    nvm_saveParameters(vcuParameters);
-    time = clock_getTime();
+//  static float time = 0;
+//  if (clock_getTime() >= time + 1) {
+//    nvm_saveParameters(vcuParameters);
+//    time = clock_getTime();
+//  }
+
+  if(!telemetryBegan && gpsData->year != 0) {
+    // create telemetry csv file using time from gps clock
+    res = f_mount(&fs, "", 0);
+    if(res) {
+      volatile int x = res;
+      x++;
+    }
+    char time[25];
+    sprintf(
+            time,
+            "%02d_%02d_%02d__%02d_%02d_%02d",
+            gpsData->year, gpsData->month, gpsData->day, gpsData->hour, gpsData->minute, gpsData->seconds
+    );
+    nvm_beginTelemetry(time);
+    telemetryBegan = true;
   }
 
   // call write telemetry to write rows
-  nvm_writeTelemetry(vcuCoreOutput, hvcStatus, pduStatus, inverterStatus, analogVoltages, wheelMagnetValues, imuData, gpsData);
+  if(telemetryBegan) {
+    nvm_writeTelemetry(vcuCoreOutput, hvcStatus, pduStatus, inverterStatus, analogVoltages, wheelMagnetValues, imuData,
+                       gpsData);
+  }
 
 }
