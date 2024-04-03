@@ -91,24 +91,7 @@ static void nvm_beginTelemetry(std::string timestamp) {
   f_printf(
           &telemfile,
           "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-          // time header
-          "Time",
-          // vcu output header
-          "Inverter Enabled", "Inverter Torque Request", "PRNDL State", "Ready To Drive Buzzer", "Brake Light", "Enable Drag Reduction", "Pump Output", "Radiator Output", "Battery Fans Output", "Vehicle Displacement X", "Vehicle Displacement Y", "Vehicle Displacement Z", "Vehicle Velocity X", "Vehicle Velocity Y", "Vehicle Velocity Z", "Vehicle Acceleration X", "Vehicle Acceleration Y", "Vehicle Acceleration Z", "HV Battery", "LV Battery", "Dash Speed", "APPS Telemetry", "BSE Telemetry", "Steering Wheel Telemetry", "APPS Fault", "BSE Fault", "STOMPP Fault", "Steering Fault",
-          // hvc status header
-          "Voltage", "Current", "State of Charge", "Pack Voltage Mean", "Pack Voltage Minimum", "Pack Voltage Maximum", "Pack Voltage Range", "Pack Temp Mean", "Pack Temp Minimum", "Pack Temp Maximum", "Pack Temp Range", "IMD", "AMS", "Contactor Status", "Cell Voltages", "Cell Temps",
-          // pdu status header
-          "Volumetric Flow Rate", "Water Temp Inverter", "Water Temp Motor", "Water Temp Radiator", "Radiator Fan RPM Percentage", "LV Voltage", "LV State of Charge", "LV Current",
-          // inverter status header
-          "Voltage Input into DC", "Current Input into DC", "RPM", "Inverter Temp", "Motor Temp", "Motor Angle", "Resolver Angle", "Phase A Current", "Phase B Current", "Phase C Current", "BC Voltage", "AB Voltage", "Output Voltage", "Inverter Frequency", "Actual Torque", "Torque Command", "Fault Vector", "State Vector",
-          // analog voltages header
-          "APPS 1 Voltage", "APPS 2 Voltage", "BSE 1 Voltage", "BSE 2 Voltage", "Steer Voltage", "Suspension 1 Voltage", "Suspension 2 Voltage",
-          // wheel magnet values header
-          "Front Left Wheel Speed", "Front Right Wheel Speed", "Back Left Wheel Speed", "Back Right Wheel Speed"
-          // imu header
-          "VCU Acceleration X", "VCU Acceleration Y", "VCU Acceleration Z", "HVC Acceleration X", "HVC Acceleration Y", "HVC Acceleration Z", "PDU Acceleration X", "PDU Acceleration Y", "PDU Acceleration Z", "Front Left Acceleration X", "Front Left Acceleration Y", "Front Left Acceleration Z", "Front Right Acceleration X", "Front Right Acceleration Y", "Front Right Acceleration Z", "Back Left Acceleration X", "Back Left Acceleration Y", "Back Left Acceleration Z", "Back Right Acceleration X", "Back Right Acceleration Y", "Back Right Acceleration Z", "VCU Gyro X", "VCU Gyro Y", "VCU Gyro Z", "HVC Gyro X", "HVC Gyro Y", "HVC Gyro Z", "PDU Gyro X", "PDU Gyro Y", "PDU Gyro Z"
-          // gps header
-          "Latitude", "Longitude", "Speed", "Heading", "Hour", "Minute", "Seconds", "Year", "Month", "Day", "Milliseconds"
+          "Time","Inverter Enabled", "Inverter Torque Request", "PRNDL State", "Ready To Drive Buzzer", "Brake Light", "Enable Drag Reduction", "Pump Output", "Radiator Output", "Battery Fans Output", "Vehicle Displacement X", "Vehicle Displacement Y", "Vehicle Displacement Z", "Vehicle Velocity X", "Vehicle Velocity Y", "Vehicle Velocity Z", "Vehicle Acceleration X", "Vehicle Acceleration Y", "Vehicle Acceleration Z", "HV Battery", "LV Battery", "Dash Speed", "APPS Telemetry", "BSE Telemetry", "Steering Wheel Telemetry", "APPS Fault", "BSE Fault", "STOMPP Fault", "Steering Fault","Voltage", "Current", "State of Charge", "Pack Voltage Mean", "Pack Voltage Minimum", "Pack Voltage Maximum", "Pack Voltage Range", "Pack Temp Mean", "Pack Temp Minimum", "Pack Temp Maximum", "Pack Temp Range", "IMD", "AMS", "Contactor Status", "Cell Voltages", "Cell Temps","Volumetric Flow Rate", "Water Temp Inverter", "Water Temp Motor", "Water Temp Radiator", "Radiator Fan RPM Percentage", "LV Voltage", "LV State of Charge", "LV Current", "Voltage Input into DC", "Current Input into DC", "RPM", "Inverter Temp", "Motor Temp", "Motor Angle", "Resolver Angle", "Phase A Current", "Phase B Current", "Phase C Current", "BC Voltage", "AB Voltage", "Output Voltage", "Inverter Frequency", "Actual Torque", "Torque Command", "Fault Vector", "State Vector","APPS 1 Voltage", "APPS 2 Voltage", "BSE 1 Voltage", "BSE 2 Voltage", "Steer Voltage", "Suspension 1 Voltage", "Suspension 2 Voltage", "Front Left Wheel Speed", "Front Right Wheel Speed", "Back Left Wheel Speed", "Back Right Wheel Speed","VCU Acceleration X", "VCU Acceleration Y", "VCU Acceleration Z", "HVC Acceleration X", "HVC Acceleration Y", "HVC Acceleration Z", "PDU Acceleration X", "PDU Acceleration Y", "PDU Acceleration Z", "Front Left Acceleration X", "Front Left Acceleration Y", "Front Left Acceleration Z", "Front Right Acceleration X", "Front Right Acceleration Y", "Front Right Acceleration Z", "Back Left Acceleration X", "Back Left Acceleration Y", "Back Left Acceleration Z", "Back Right Acceleration X", "Back Right Acceleration Y", "Back Right Acceleration Z", "VCU Gyro X", "VCU Gyro Y", "VCU Gyro Z", "HVC Gyro X", "HVC Gyro Y", "HVC Gyro Z", "PDU Gyro X", "PDU Gyro Y", "PDU Gyro Z","Latitude", "Longitude", "Speed", "Heading", "Hour", "Minute", "Seconds", "Year", "Month", "Day", "Milliseconds"
           );
 
   // close file to save
@@ -127,17 +110,17 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
 
   }
   // update file name
-  if(telemfilename == "0000_00_00__00_00_00.csv") {
-      char time[25];
-      sprintf(
-              time,
-              "%04d_%02d_%02d__%02d_%02d_%02d",
-              gpsData->year, gpsData->month, gpsData->day, gpsData->hour, gpsData->minute, gpsData->seconds
-      );
-      string newtelemfilename = std::string(time) + ".csv";
-      f_rename(telemfilename.c_str(), newtelemfilename.c_str());
-      telemfilename = newtelemfilename;
-  }
+//  if(telemfilename == "0000_00_00__00_00_00.csv") {
+//      char time[25];
+//      sprintf(
+//              time,
+//              "%04d_%02d_%02d__%02d_%02d_%02d",
+//              gpsData->year, gpsData->month, gpsData->day, gpsData->hour, gpsData->minute, gpsData->seconds
+//      );
+//      string newtelemfilename = std::string(time) + ".csv";
+//      f_rename(telemfilename.c_str(), newtelemfilename.c_str());
+//      telemfilename = newtelemfilename;
+//  }
   // write row of data into file
   char data[1250];
   sprintf(
