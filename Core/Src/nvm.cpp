@@ -90,7 +90,7 @@ static void nvm_beginTelemetry(std::string timestamp) {
   // create headers for data
   f_printf(
           &telemfile,
-          "%s\n",
+          "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
           // time header
           "Time",
           // vcu output header
@@ -126,29 +126,24 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
   if(res) {
 
   }
+  // update file name
+  if(telemfilename == "0000_00_00__00_00_00.csv") {
+      char time[25];
+      sprintf(
+              time,
+              "%04d_%02d_%02d__%02d_%02d_%02d",
+              gpsData->year, gpsData->month, gpsData->day, gpsData->hour, gpsData->minute, gpsData->seconds
+      );
+      string newtelemfilename = std::string(time) + ".csv";
+      f_rename(telemfilename.c_str(), newtelemfilename.c_str());
+      telemfilename = newtelemfilename;
+  }
   // write row of data into file
   char data[1250];
   sprintf(
           data,
           // time format
-          "%10f"
-          // vcu output format
-          "%d,%10f,%d,%d,%d,%d,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%d,%d,%d,%d"
-          // hvc status format
-          "%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%d,%d,%u,%10f,%10f"
-          // pdu status format
-          "%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f"
-          // inverter status format
-          "%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10llu,%10llu"
-          // analog voltages format
-          "%10f,%10f,%10f,%10f,%10f,%10f,%10f"
-          // wheel magnet values format
-          "%10f,%10f,%10f,%10f"
-          // imu format
-          "%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f"
-          // gps format
-          "%10f,%10f,%10f,%10f,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hu\n",
-
+          "%10f,%d,%10f,%d,%d,%d,%d,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%d,%d,%d,%d,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%d,%d,%u,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10llu,%10llu,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10f,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hu\n",
           // time data
           clock_getTime(),
           // vcu output data
@@ -179,7 +174,7 @@ void nvm_init(VcuParameters *vcuParameters, GpsData *gpsData) {
   f_mount(&fs, "", 0);
 
   // load vcu parameters
-//  nvm_loadParameters(vcuParameters);
+  nvm_loadParameters(vcuParameters);
 
   // create telemetry csv file using time from gps clock
   char time[25];
@@ -204,6 +199,7 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
     time = clock_getTime();
   }
 
+  // call write telemetry to write rows
   nvm_writeTelemetry(vcuCoreOutput, hvcStatus, pduStatus, inverterStatus, analogVoltages, wheelMagnetValues, imuData, gpsData);
 
 }

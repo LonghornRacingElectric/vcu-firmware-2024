@@ -151,7 +151,7 @@ int main(void)
   gps_init();
   indicators_init();
 //  cellular_init();
-//nvm_init(&vcuCoreParameters, &gpsData);
+nvm_init(&vcuCoreParameters, &gpsData);
 
   /* USER CODE END 2 */
 
@@ -182,9 +182,9 @@ int main(void)
 
     println(vcuCoreOutput.dashSpeed);
 
-//    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-//                 &pduStatus, &inverterStatus, &analogVoltages,
-//                 &wheelMagnetValues, &imuData, &gpsData);
+    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+                 &pduStatus, &inverterStatus, &analogVoltages,
+                 &wheelMagnetValues, &imuData, &gpsData);
 //    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
 //                      &pduStatus, &inverterStatus, &analogVoltages,
 //                      &wheelMagnetValues, &imuData, &gpsData);
