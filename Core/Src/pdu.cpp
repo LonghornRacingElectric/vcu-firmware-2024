@@ -1,6 +1,7 @@
 #include "pdu.h"
 #include "angel_can.h"
 #include "faults.h"
+#include "timeouts.h"
 
 static CanInbox lvbattStatusInbox;
 static CanInbox thermalStatusInbox;
@@ -12,10 +13,10 @@ static CanOutbox buzzerOutbox;
 static CanOutbox coolingOutbox;
 
 void pdu_init() {
-  can_addInbox(PDU_VCU_LVBAT, &lvbattStatusInbox);
-  can_addInbox(PDU_VCU_THERMAL, &thermalStatusInbox);
-  can_addInbox(PDU_VCU_LV_CURRENTS_1, &lvCurrents1Inbox);
-  can_addInbox(PDU_VCU_LV_CURRENTS_2, &lvCurrents2Inbox);
+  can_addInbox(PDU_VCU_LVBAT, &lvbattStatusInbox, PDU_TIMEOUT_SLOW);
+  can_addInbox(PDU_VCU_THERMAL, &thermalStatusInbox, PDU_TIMEOUT_SLOW);
+  can_addInbox(PDU_VCU_LV_CURRENTS_1, &lvCurrents1Inbox, PDU_TIMEOUT_SLOW);
+  can_addInbox(PDU_VCU_LV_CURRENTS_2, &lvCurrents2Inbox, PDU_TIMEOUT_SLOW);
 
   can_addOutbox(VCU_PDU_BRAKELIGHT, 0.01f, &brakeLightOutbox);
   can_addOutbox(VCU_PDU_BUZZER, 0.01f, &buzzerOutbox);
@@ -85,5 +86,12 @@ void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
     status->shdn = can_readFloat(uint16_t, &lvCurrents2Inbox, 4, 0.01f);
     status->bl = can_readFloat(uint16_t, &lvCurrents2Inbox, 6, 0.01f);
     status->isRecent = true;
+  }
+
+  if(lvCurrents2Inbox.isTimeout || lvCurrents1Inbox.isTimeout ||
+    thermalStatusInbox.isTimeout || lvbattStatusInbox.isTimeout) {
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_PDU);
+  } else {
+    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_PDU);
   }
 }

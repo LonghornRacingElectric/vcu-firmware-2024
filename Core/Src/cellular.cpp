@@ -3,7 +3,9 @@
 #include <queue>
 #include "faults.h"
 #include "usb.h"
-#include "secrets.h"
+// #include "secrets.h"
+
+#define AWS_SERVER "a2z1v3z5v3z5-ats.iot.us-west-2.amazonaws.com"
 
 
 volatile int x = 0;
@@ -48,7 +50,8 @@ static void cellular_sendNonBlocking(std::string &command) {
   auto bytes = reinterpret_cast<const uint8_t *>(command.c_str());
   uint32_t error = HAL_UART_Transmit_DMA(&huart7, bytes, command.size());
   if (error != HAL_OK) {
-    Error_Handler();
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_BAD_TX);
+    return;
   }
   finished_tx = false;
 
@@ -145,9 +148,11 @@ static bool cellular_receiveNonBlocking(std::string &expectedResponse, std::stri
   }
   response = std::string(reinterpret_cast<const char *>(cell_completeLine));
   if (response != expectedResponse) {
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_BAD_RX);
     return false;
   }
   cell_completeLine = false;
+  return true;
 
 }
 
@@ -245,7 +250,7 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
   cellular_split16(ptr, twoBytes);
 
   // vcu flag
-  uint16_t twoBytesU = 190; // I do not know where to get this data
+  uint16_t twoBytesU = vcuCoreOutput->flags; // I do not know where to get this data
   cellular_split16(ptr, twoBytesU);
 
   // vcu displacement x y z
@@ -1078,7 +1083,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
                                    analogVoltages, wheelMagnetValues,
                                    imuData, gpsData);
       } else {
-        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELLULAR_QUEUE_OVERFLOW);
+        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_FULL);
       }
     }
 
@@ -1093,7 +1098,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
                                   analogVoltages, wheelMagnetValues,
                                   imuData, gpsData);
       } else {
-        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELLULAR_QUEUE_OVERFLOW);
+        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_FULL);
       }
     }
 

@@ -58,8 +58,9 @@ static void nvm_saveParameters(VcuParameters *vcuParameters) {
   );
 
   if (res) {
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_NVM_NO_CREATE);
+    f_close(&fdst);
     return;
-    // TODO fault
   }
 
   // copy source to destination
@@ -70,7 +71,7 @@ static void nvm_saveParameters(VcuParameters *vcuParameters) {
       &bw
   );
   if (res || bw < sizeof(VcuParameters)) {
-    // TODO don't brick the car, but indicate we're out of storage with some kind of fault
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_NVM_NO_WRITE);
   }
 
   // close open files
@@ -87,7 +88,9 @@ static void nvm_beginTelemetry() {
   );
 
   if (res) {
-    // TODO fault
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_NVM_NO_CREATE);
+    f_close(&telemfile);
+    return;
   }
 
   // create headers for data
@@ -113,7 +116,7 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
         FA_OPEN_EXISTING | FA_WRITE | FA_OPEN_APPEND
     );
     if (res) {
-      // TODO fault
+      FAULT_SET(&vcu_fault_vector, FAULT_VCU_NVM_NO_WRITE);
     }
   }
 
@@ -186,7 +189,7 @@ void nvm_init(VcuParameters *vcuParameters) {
   //mount default drive
   res = f_mount(&fs, "", 0);
   if(res) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_NVM);
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_NVM_NO_MOUNT);
   }
 
   // load vcu parameters

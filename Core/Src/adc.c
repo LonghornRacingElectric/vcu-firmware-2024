@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
+#include "faults.h"
 
 /* USER CODE BEGIN 0 */
 #define CONVERT(RAW_ADC_VALUE) (((float) RAW_ADC_VALUE) * 3.3f / 65535.0f)
@@ -145,7 +146,7 @@ void MX_ADC1_Init(void)
   }
   /* USER CODE BEGIN ADC1_Init 2 */
   if(adc_start(&hadc1) != HAL_OK) {
-    Error_Handler();
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_ADC_NO_START);
   }
   /* USER CODE END ADC1_Init 2 */
 
