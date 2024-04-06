@@ -3,6 +3,10 @@
 #include <queue>
 #include "faults.h"
 #include "usb.h"
+#include "secrets.h"
+
+
+volatile int x = 0;
 
 
 // 0 = Did not Power On,
@@ -115,9 +119,8 @@ static bool cellular_receive(std::string &expected, bool care, uint32_t timeout)
   auto str = new std::string(buffer);
   std::string s = "receive:";
 //  println(s);
-//  println(*str);
+  println(*str);
   if (*str != expected) {
-
     return false;
   }
   return true;
@@ -130,9 +133,10 @@ static void cellular_receiveAny(int size, std::string &response, int time) {
   HAL_UARTEx_ReceiveToIdle(&huart7, (uint8_t *) buffer, 2, &rxAmount, time); // \r\n
   HAL_UARTEx_ReceiveToIdle(&huart7, (uint8_t *) (buffer + 2), size - 2, &rxAmount, time);
   response = std::string(buffer);
+  x++;
   std::string s = "receiveAny:";
 //  println(s);
-//  println(response);
+  println(response);
 }
 
 static bool cellular_receiveNonBlocking(std::string &expectedResponse, std::string &response) {
@@ -147,9 +151,9 @@ static bool cellular_receiveNonBlocking(std::string &expectedResponse, std::stri
 
 }
 
-static int cellular_sendAndExpectOk(std::string *command) {
-  int success = cellular_send(command);
-  success += cellular_receive(CELL_OK, true, 500);
+static bool cellular_sendAndExpectOk(std::string *command) {
+  bool success = (cellular_send(command) == 0);
+  success &= cellular_receive(CELL_OK, true, 1000);
   return success;
 }
 
@@ -582,74 +586,87 @@ static void cellular_testConnection() {
 
 
 static void cellular_mqttInit() {
-    std::string s = "mqtt init";
+  std::string s = "mqtt init";
 //    println(s);
 
-    std::string command;
-    std::string response;
-    command = "AT+UMQTT=0,\"Car\"\r";
-    response = "\r\r\n+UMQTT: 0,1\r\r\n\r\nOK\r\n";
-    int error = 0;
-    error = cellular_send(&command);
-    if (error != 0) {
-        return;
-    }
-    cellular_receiveAny(64, response, 1000);
-    if (response.size() > 23) {
-        return;
-    }
+  std::string command;
+  std::string response;
+  int error = 0;
+  bool good = false;
 
-//    println(response);
+  command = "AT+UMQTT=0,\"Car\"\r";
+  response = "\r\r\n+UMQTT: 0,1\r\r\n\r\nOK\r\n";
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
+  cellular_receiveAny(128, response, 1000);
 
-    command = "AT+UMQTT=1,1883\r";
-    response = "\r\r\n+UMQTT: 1,1\r\r\n\r\nOK\r\n";
-    error = cellular_send(&command);
-    if (error != 0) {
-        return;
-    }
-    cellular_receive(response, true, 1000);
+  command = "AT+UMQTT=1,1883\r";
+  response = "\r\r\n+UMQTT: 1,1\r\r\n\r\nOK\r\n";
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
+  cellular_receiveAny(128, response, 1000);
+//  good = cellular_receive(response, true, 1000);
+//  if(!good) {
+//    return;
+//  }
 
-    command = "AT+UMQTT=2,\"ec2-3-15-233-120.us-east-2.compute.amazonaws.com\",1883\r";
-    response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
-    error = cellular_send(&command);
-    if (error != 0) {
-        return;
-    }
-    cellular_receive(response, true, 1000);
+  command = std::string("AT+UMQTT=2,\"") + AWS_SERVER + std::string("\",1883\r");
+  response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
+  cellular_receiveAny(128, response, 1000);
+//  good = cellular_receive(response, true, 1000);
+//  if(!good) {
+//    return;
+//  }
 
-    command = "AT+UMQTT=10,3600\r";
-    response = "\r\r\n+UMQTT: 10,1\r\r\n\r\nOK\r\n";
-    error = cellular_send(&command);
-    if (error != 0) {
-        return;
-    }
-    cellular_receive(response, true, 1000);
+  command = "AT+UMQTT=10,3600\r";
+  response = "\r\r\n+UMQTT: 10,1\r\r\n\r\nOK\r\n";
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
+  cellular_receiveAny(128, response, 1000);
+//  good = cellular_receive(response, true, 1000);
+//  if(!good) {
+//    return;
+//  }
 
-    command = "AT+UMQTT=12,1\r";
-    response = "\r\r\n+UMQTT: 12,1\r\r\n\r\nOK\r\n";
-    error = cellular_send(&command);
-    if (error != 0) {
-        return;
-    }
-    cellular_receive(response, true, 1000);
+  command = "AT+UMQTT=12,1\r";
+  response = "\r\r\n+UMQTT: 12,1\r\r\n\r\nOK\r\n";
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
+  cellular_receiveAny(128, response, 1000);
+//  good = cellular_receive(response, true, 1000);
+//  if(!good) {
+//    return;
+//  }
 
-    command = "AT+UMQTTC=1\r";
-    response = "\r\r\n+UMQTTC: 1,1\r\r\n\r\nOK\r\n\r\r\n+UUMQTTC: 1,0\r\r\n";
-    error = cellular_send(&command);
-    if (error != 0) {
-        return;
-    }
-    bool good = cellular_receive(response, true, 5000);
-    if (!good) {
-        volatile int x = 0;
-        x++;
-        return;
-    }
+  command = "AT+UMQTTC=1\r";
+  response = "\r\r\n+UMQTTC: 1,1\r\r\n\r\nOK\r\n\r\r\n+UUMQTTC: 1,0\r\r\n";
+  error = cellular_send(&command);
+  if (error != 0) {
+    return;
+  }
+//  cellular_receiveAny(128, response, 1000);
+  good = cellular_receive(response, true, 5000);
+  if (!good) {
+    x++;
+    return;
+  }
 
-    cellular_systemState = STATE_CONNECTED_NO_HANDSHAKE;
-    dmaDisable = false;
-    volatile int dmaError = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
-    dmaError++;
+  cellular_systemState = STATE_CONNECTED_NO_HANDSHAKE;
+  dmaDisable = false;
+  volatile int dmaError = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+  dmaError++;
 
 
 }
@@ -714,10 +731,10 @@ static void cellular_registerTMobile() {
     }
   }
   if (cellular_systemState == STATE_BOOTING) {
-      volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
-      error++;
-      dmaDisable = false;
-      cellular_systemState = STATE_SEARCHING;
+    volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+    error++;
+    dmaDisable = false;
+    cellular_systemState = STATE_SEARCHING;
     std::string command = "AT+COPS=?\r";
     cellular_sendNonBlocking(command);
   }
@@ -787,8 +804,8 @@ static void cellular_respondToText(std::string *senderPhoneNumber, std::string *
 
 void cellular_init() {
 
-  std::string s = "cell init";
-//  println(s);
+  std::string s = "========= cell init ==========";
+  println(s);
 
   HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_RESET);
   HAL_Delay(500);
@@ -808,9 +825,13 @@ void cellular_init() {
 int cellular_sendText(std::string *phoneNumber, std::string *message) {
   std::string command;
   std::string response;
+  bool success;
 
   command = "AT+CMGF=1\r";
-  int success = cellular_sendAndExpectOk(&command);
+  success = cellular_sendAndExpectOk(&command);
+  if(!success) {
+    return 1;
+  }
 
   command = "AT+CMGS=\"" + *phoneNumber + "\"\r";
   response = "\r\n> ";
@@ -836,11 +857,18 @@ void cellular_respondToTexts() {
   std::string response;
   std::string sender;
   std::string message;
+  bool success;
 
-  HAL_UART_DMAPause(&huart7);
+  HAL_Delay(20);
+  HAL_UART_Abort(&huart7);
+  HAL_Delay(20);
 
   command = "AT+CMGF=1\r";
-  int success = cellular_sendAndExpectOk(&command);
+  success = cellular_sendAndExpectOk(&command);
+  if(!success) {
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+    return;
+  }
 
   command = "AT+CMGL\r";
   cellular_send(&command);
@@ -848,7 +876,11 @@ void cellular_respondToTexts() {
 
   // delete read messages to save space
   command = "AT+CMGD=0,3\r";
-  cellular_sendAndExpectOk(&command);
+  success = cellular_sendAndExpectOk(&command);
+  if(!success) {
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+    return;
+  }
 
   for (int i = 0; i < response.size();) {
     i += 2;
@@ -902,8 +934,9 @@ void cellular_respondToTexts() {
     }
 
     cellular_respondToText(&sender, &message);
-    HAL_UART_DMAResume(&huart7);
   }
+
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
 }
 
 
@@ -929,7 +962,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
   // did not power on!
   if (cellular_systemState == STATE_OFF) {
     float timeSinceStart = clock_getTime();
-    if (timeSinceStart < 12.0f) {
+    if (timeSinceStart < 10.0f) {
       return;
     } else {
       // Powered ON! Now starting up cellular
@@ -953,7 +986,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
 
 
 //        cellular_systemState = STATE_BOOTING;
-        // requesting current connection information
+      // requesting current connection information
 //        std::string command = "AT+COPS?\r"; //"AT+COPS?\r";
 //        cellular_sendNonBlocking(command);
 
@@ -1017,25 +1050,20 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
   }
     // has connection but no server = 3
   else if (cellular_systemState == STATE_CONNECTING) {
-      if (!dmaDisable)
-      {
-          // TODO: Send MQTTINIT in nonblocking because disbale dma does not workgit
-      }
-    else
-    {
-          cellular_mqttInit();
+    if (!dmaDisable) {
+      // TODO: Send MQTTINIT in nonblocking because disbale dma does not workgit
+    } else {
+      cellular_mqttInit();
     }
 
   } else if (cellular_systemState == STATE_CONNECTED_NO_HANDSHAKE) {
-      if(dmaDisable)
-      {
-          volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
-          error++;
-          dmaDisable = false;
-      }
-      else if (finished_tx) {
-          cellular_sendStartTime(gpsData);
-      }
+    if (dmaDisable) {
+      volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+      error++;
+      dmaDisable = false;
+    } else if (finished_tx) {
+      cellular_sendStartTime(gpsData);
+    }
 
   } else { // cellular_systemState == STATE_OK
 

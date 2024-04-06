@@ -39,7 +39,7 @@ static bool cellular_receive(std::string& expected, bool care);
 
 static void cellular_receiveAny(int size, std::string& response, int time);
 
-static int cellular_sendAndExpectOk(std::string* command);
+static bool cellular_sendAndExpectOk(std::string* command);
 
 static bool cellular_areParametersUpdated();
 
