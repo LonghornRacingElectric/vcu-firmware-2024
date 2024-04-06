@@ -1,6 +1,7 @@
 #include "nvm.h"
 #include "fatfs.h"
 #include "clock.h"
+#include "faults.h"
 #include <sstream>
 #include <cstring>
 
@@ -185,7 +186,7 @@ void nvm_init(VcuParameters *vcuParameters) {
   //mount default drive
   res = f_mount(&fs, "", 0);
   if(res) {
-    // TODO fault
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_NVM);
   }
 
   // load vcu parameters

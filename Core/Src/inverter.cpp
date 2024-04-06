@@ -100,13 +100,7 @@ static void inverter_getStatus(InverterStatus *status) {
   }
 
   if (paramsResponseInbox.isRecent) {
-    auto data = can_readInt(uint16_t, &paramsResponseInbox, 4);
-    if (paramsResponseInbox.data[2] == 0) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_INVPARAMS);
-    }
-    else{
-      status->newData = data;
-    }
+     status->newData = can_readInt(uint16_t, &paramsResponseInbox, 4);
     paramsResponseInbox.isRecent = false;
   }
 }
