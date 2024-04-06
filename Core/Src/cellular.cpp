@@ -2,6 +2,7 @@
 #include "cellular.h"
 #include <queue>
 #include "faults.h"
+#include "secrets.h"
 
 
 // private helper methods
@@ -610,7 +611,7 @@ static void cellular_mqttInit() {
     }
   cellular_receive(response, true, 1000);
 
-  command = "AT+UMQTT=2,\"ec2-3-22-208-58.us-east-2.compute.amazonaws.com/\",1883\r";
+  command = std::string("AT+UMQTT=2,\"") + AWS_SERVER + std::string("\",1883\r");
   response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
     error = cellular_send(&command);
     if (error != 0)

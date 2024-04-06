@@ -189,14 +189,6 @@ int main(void)
     cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                       &pduStatus, &inverterStatus, &analogVoltages,
                       &wheelMagnetValues, &imuData, &gpsData);
-
-    if(count > 25) {
-      println(vcuCoreOutput.dashSpeed);
-      count = 0;
-    }
-    else{
-      count++;
-    }
   }
   /* USER CODE END 3 */
 }
