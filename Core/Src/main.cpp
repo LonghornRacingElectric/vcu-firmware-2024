@@ -200,8 +200,6 @@ int main(void)
     cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                       &pduStatus, &inverterStatus, &analogVoltages,
                       &wheelMagnetValues, &imuData, &gpsData);
-
-
   }
   /* USER CODE END 3 */
 }
