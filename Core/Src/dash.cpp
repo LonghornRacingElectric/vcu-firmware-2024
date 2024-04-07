@@ -1,10 +1,13 @@
 #include "dash.h"
 #include "angel_can.h"
 #include "gps.h"
+#include "all_imus.h"
 
 CanOutbox dashOutbox;
 
+// TODO only use core for this stuff
 extern GpsData gpsData;
+extern ImuData imuData;
 
 void dash_init() {
   can_addOutbox(VCU_DASH_INFO1, 0.01f, &dashOutbox);
