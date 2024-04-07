@@ -105,7 +105,6 @@ static void inverter_getStatus(InverterStatus *status) {
     inverterStateInbox.isTimeout || currentInbox.isTimeout ||
     voltageInbox.isTimeout || motorPosInbox.isTimeout ||
     motorTempInbox.isTimeout || inverterTempInbox.isTimeout) {
-    status->isRecent = false;
     FAULT_SET(&vcu_fault_vector, FAULT_VCU_INV);
   }
   else {

@@ -97,7 +97,6 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
 
   if(contactorStatusInbox.isTimeout || packStatusInbox.isTimeout || amsImdInbox.isTimeout) {
     FAULT_SET(&vcu_fault_vector, FAULT_VCU_HVC_NOT_TELEM);
-    status->isRecent = false;
   }
   else{
     FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_HVC_NOT_TELEM);
@@ -123,7 +122,6 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
       }
     }
     if(voltageInbox.isTimeout) {
-      status->isRecent = false;
       FAULT_SET(&vcu_fault_vector, FAULT_VCU_HVC_TELEM);
     }
     else{
@@ -149,7 +147,6 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
       }
     }
     if(tempInbox.isTimeout) {
-      status->isRecent = false;
       FAULT_SET(&vcu_fault_vector, FAULT_VCU_HVC_TELEM);
     }
     else{

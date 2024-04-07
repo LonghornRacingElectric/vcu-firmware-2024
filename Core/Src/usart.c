@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 #include <string.h>
+#include "faults.h"
 
 /* USER CODE END 0 */
 
@@ -516,12 +517,24 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
           gps_completeLine = false;
           memcpy(gps_currLine, gps_tempLine, gps_currLineSize);
           gps_completeLine = true;
-          HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *) gps_tempLine, MAX_GPS_LINE_SIZE); // Resets index to 0 so that buffer doesn't overflow
+          int error = HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *) gps_tempLine, MAX_GPS_LINE_SIZE); // Resets index to 0 so that buffer doesn't overflow
+          if (error != 0) {
+            FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_NO_DMA_START);
+          }
+          else {
+            FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_GPS_NO_DMA_START);
+          }
       } else {
           if(gps_currLine[0] == 0) { // Checks if there is a valid NMEA line in the current line buffer
             gps_completeLine = false;
-            }
-          HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *) gps_tempLine + gps_tempLineSize, MAX_GPS_LINE_SIZE);
+          }
+          int error = HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *) gps_tempLine + gps_tempLineSize, MAX_GPS_LINE_SIZE);
+          if (error != 0) {
+            FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_NO_DMA_START);
+          }
+          else {
+            FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_GPS_NO_DMA_START);
+          }
           // Continue allowing in data;
         }
          // Resets index to 0 so that buffer doesn't overflow
@@ -532,7 +545,13 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
             cell_tempLineSize = 0;
         }
         if(Size == 2 && cell_tempLine[0] == '\r'){
-            HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine + 2, MAX_CELL_LINE_SIZE);
+            int error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine + 2, MAX_CELL_LINE_SIZE);
+            if(error != 0){
+                FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_NO_DMA_START);
+            }
+            else {
+                FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_CELL_NO_DMA_START);
+            }
         }
         else if (cell_tempLine[cell_tempLineSize - 1] == '\n'){
             cell_currLineSize = cell_tempLineSize;
@@ -540,7 +559,13 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
             cell_completeLine = false;
             memcpy(cell_currLine, cell_tempLine, cell_currLineSize);
             cell_completeLine = true;
-            HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE); // Resets index t
+            int error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE); // Resets index t
+            if(error != 0){
+              FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_NO_DMA_START);
+            }
+            else {
+              FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_CELL_NO_DMA_START);
+            }
         }
         else {
             cell_completeLine = false;

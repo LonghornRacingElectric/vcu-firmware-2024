@@ -3,9 +3,7 @@
 #include <queue>
 #include "faults.h"
 #include "usb.h"
-// #include "secrets.h"
-
-#define AWS_SERVER "a2z1v3z5v3z5-ats.iot.us-west-2.amazonaws.com"
+#include "secrets.h"
 
 
 volatile int x = 0;
@@ -37,10 +35,7 @@ static int cellular_send(std::string *command) {
 //  println(*command);
   auto bytes = reinterpret_cast<const uint8_t *>(command->c_str());
   uint32_t error = HAL_UART_Transmit(&huart7, bytes, command->size(), HAL_MAX_DELAY);
-  if (error != HAL_OK) {
-    return error;
-  }
-  return 0;
+  return error;
 
 }
 
@@ -49,11 +44,10 @@ static void cellular_sendNonBlocking(std::string &command) {
   if (!finished_tx) return;
   auto bytes = reinterpret_cast<const uint8_t *>(command.c_str());
   uint32_t error = HAL_UART_Transmit_DMA(&huart7, bytes, command.size());
-  if (error != HAL_OK) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_BAD_TX);
-    return;
+  if (error == HAL_OK) {
+    finished_tx = false;
   }
-  finished_tx = false;
+
 
 }
 
@@ -124,6 +118,7 @@ static bool cellular_receive(std::string &expected, bool care, uint32_t timeout)
 //  println(s);
   println(*str);
   if (*str != expected) {
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_BAD_RX);
     return false;
   }
   return true;
@@ -966,6 +961,8 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
 
   // did not power on!
   if (cellular_systemState == STATE_OFF) {
+    FAULT_CLEAR(&vcu_fault_vector, CELL_RESET_STATE);
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_NOCXN);
     float timeSinceStart = clock_getTime();
     if (timeSinceStart < 10.0f) {
       return;
@@ -1034,6 +1031,8 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
 //  }
     // powered on but no connection
   else if (cellular_systemState == STATE_SEARCHING) {
+    FAULT_CLEAR(&vcu_fault_vector, CELL_RESET_STATE);
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_SEARCHING);
     if (cell_completeLine) {
       std::string availableConns = cell_currLine;
       cell_completeLine = false;
@@ -1055,6 +1054,8 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
   }
     // has connection but no server = 3
   else if (cellular_systemState == STATE_CONNECTING) {
+    FAULT_CLEAR(&vcu_fault_vector, CELL_RESET_STATE);
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_CONNECTING);
     if (!dmaDisable) {
       // TODO: Send MQTTINIT in nonblocking because disbale dma does not workgit
     } else {
@@ -1062,8 +1063,15 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
     }
 
   } else if (cellular_systemState == STATE_CONNECTED_NO_HANDSHAKE) {
+    FAULT_CLEAR(&vcu_fault_vector, CELL_RESET_STATE);
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_NO_HANDSHAKE);
     if (dmaDisable) {
       volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+      if(error != HAL_OK) {
+        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_NO_DMA_START);
+        return;
+      }
+      FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_CELL_NO_DMA_START);
       error++;
       dmaDisable = false;
     } else if (finished_tx) {
@@ -1071,19 +1079,20 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
     }
 
   } else { // cellular_systemState == STATE_OK
-
+    FAULT_CLEAR(&vcu_fault_vector, CELL_RESET_STATE);
     // generate high frequency message
     static float lastHFTime = 0;
     float nowHFTime = clock_getTime();
     if (nowHFTime - lastHFTime > 0.05f) {
       lastHFTime = nowHFTime;
       if (cellular_dataToSend.size() < 10) {
+        FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_CELL_QUEUE_FULL);
         cellular_sendTelemetryHigh(vcuCoreOutput, hvcStatus,
                                    pduStatus, inverterStatus,
                                    analogVoltages, wheelMagnetValues,
                                    imuData, gpsData);
       } else {
-        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_FULL);
+        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_QUEUE_FULL);
       }
     }
 
@@ -1093,12 +1102,13 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
     if (nowLFTime - lastLFTime > 1.0f) {
       lastLFTime = nowLFTime;
       if (cellular_dataToSend.size() < 10) {
+        FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_CELL_QUEUE_FULL);
         cellular_sendTelemetryLow(vcuCoreOutput, hvcStatus,
                                   pduStatus, inverterStatus,
                                   analogVoltages, wheelMagnetValues,
                                   imuData, gpsData);
       } else {
-        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_FULL);
+        FAULT_SET(&vcu_fault_vector, FAULT_VCU_CELL_QUEUE_FULL);
       }
     }
 

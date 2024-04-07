@@ -82,7 +82,7 @@ int Adafruit_GPS::lastNMEA(vector<string>& nmea, int max) {
 int Adafruit_GPS::waitForNewMessage() {
   auto error = HAL_UARTEx_ReceiveToIdle_DMA(&uart_handler, (uint8_t *) gps_tempLine, MAX_GPS_LINE_SIZE);
   if (error != HAL_OK) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_BAD_RX);
+    FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_NO_DMA_START);
   }
   return error;
 }
@@ -92,7 +92,11 @@ bool Adafruit_GPS::checkTimeout(){
     gps.countPerSecond = gps.count;
     gps.count = 0;
     gps.lastTimeRecorded = clock_getDeltaTime();
-    if(gps.countPerSecond == 0) return true;
+    if(gps.countPerSecond == 0) {
+      FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_TIMEOUT);
+      return true;
+    }
+    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_GPS_TIMEOUT);
   }
   return false;
 }
@@ -104,25 +108,21 @@ void gps_init() {
     bool fault = false;
     auto status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_BAUD_115200));
     if(status != HAL_OK) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_BAD_TX);
       fault = true;
     }
     //sends both GGA and RMC data
     status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_OUTPUT_RMCGGA));
     if(status != HAL_OK) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_BAD_TX);
       fault = true;
     }
     //sets the update rate to 1 Hz
     status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_UPDATE_10HZ));
     if(status != HAL_OK) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_BAD_TX);
       fault = true;
     }
     //requests the antenna status
     status = static_cast<HAL_StatusTypeDef>(gps.send_command(PGCMD_ANTENNA));
     if(status != HAL_OK) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_BAD_TX);
       fault = true;
     }
     gps.is_ready = !fault;

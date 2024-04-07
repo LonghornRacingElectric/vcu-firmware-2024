@@ -1,7 +1,18 @@
 #ifndef VCU_FIRMWARE_2024_TIMEOUTS_H
 #define VCU_FIRMWARE_2024_TIMEOUTS_H
 
-#include <stdint.h>
+#include "faults.h"
+
+#define timeout_fault(boolean, fault)  \
+    do { \
+        if (boolean) { \
+            FAULT_SET(&vcu_fault_vector, fault); \
+        } else { \
+            FAULT_CLEAR(&vcu_fault_vector, fault); \
+        } \
+    } while(0)
+
+// I defined timouts to be 10 times the period of expected reception rate
 
 #define INV_TIMEOUT_SLOW 1.0f
 #define INV_TIMEOUT_FAST 0.1f
