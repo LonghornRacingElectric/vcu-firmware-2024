@@ -1,7 +1,10 @@
 #include "dash.h"
 #include "angel_can.h"
+#include "gps.h"
 
 CanOutbox dashOutbox;
+
+extern GpsData gpsData;
 
 void dash_init() {
   can_addOutbox(VCU_DASH_INFO1, 0.01f, &dashOutbox);
@@ -9,7 +12,7 @@ void dash_init() {
 
 void dash_periodic(PduStatus* pduStatus, HvcStatus* hvcStatus, VcuOutput* vcuCoreOutput) {
   dashOutbox.dlc = 5;
-  // TODO modify VCU core to output dash info
+  dashOutbox.data[0] = gpsData.seconds;
 //  dashOutbox.data[0] = (int8_t) vcuCoreOutput->speed;
 //  dashOutbox.data[1] = (int8_t) vcuCoreOutput->torque;
 //  dashOutbox.data[2] = (int8_t) (vcuCoreOutput->power / 1000.0f);
