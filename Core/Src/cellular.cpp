@@ -861,6 +861,7 @@ void cellular_respondToTexts() {
 
   HAL_Delay(20);
   HAL_UART_Abort(&huart7);
+  finished_tx = true;
   HAL_Delay(20);
 
   command = "AT+CMGF=1\r";

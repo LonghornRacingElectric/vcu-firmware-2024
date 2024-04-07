@@ -15,8 +15,8 @@ void dash_init() {
 
 void dash_periodic(PduStatus* pduStatus, HvcStatus* hvcStatus, VcuOutput* vcuCoreOutput) {
   dashOutbox.dlc = 5;
-  dashOutbox.data[0] = gpsData.seconds;
-//  dashOutbox.data[0] = (int8_t) vcuCoreOutput->speed;
+//  dashOutbox.data[0] = gpsData.seconds;
+  dashOutbox.data[0] = (int8_t) vcuCoreOutput->dashSpeed;
 //  dashOutbox.data[1] = (int8_t) vcuCoreOutput->torque;
 //  dashOutbox.data[2] = (int8_t) (vcuCoreOutput->power / 1000.0f);
 //  dashOutbox.data[3] = (uint8_t) (hvcStatus->hvSoC * 100.0f);
