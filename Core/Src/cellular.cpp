@@ -36,7 +36,6 @@ static int cellular_send(std::string *command) {
 //  println(s);
 //  println(*command);
     auto bytes = reinterpret_cast<const uint8_t *>(command->c_str());
-    x++;
     uint32_t error = HAL_UART_Transmit(&huart7, bytes, command->size(), HAL_MAX_DELAY);
     if (error != HAL_OK) {
         return error;
@@ -49,7 +48,6 @@ static int cellular_send(std::string *command) {
 static void cellular_sendNonBlocking(std::string &command) {
     if (!finished_tx) return;
     auto bytes = reinterpret_cast<const uint8_t *>(command.c_str());
-    x++;
     uint32_t error = HAL_UART_Transmit_DMA(&huart7, bytes, command.size());
     if (error != HAL_OK) {
         Error_Handler();
@@ -124,7 +122,6 @@ static bool cellular_receive(std::string &expected, bool care, uint32_t timeout)
     std::string s = "receive:";
 //  println(s);
 //  println(*str);
-x++;
     if (*str != expected) {
         return false;
     }
@@ -138,7 +135,6 @@ static void cellular_receiveAny(int size, std::string &response, int time) {
     HAL_UARTEx_ReceiveToIdle(&huart7, (uint8_t *) buffer, 2, &rxAmount, time); // \r\n
     HAL_UARTEx_ReceiveToIdle(&huart7, (uint8_t *) (buffer + 2), size - 2, &rxAmount, time);
     response = std::string(buffer);
-    x++;
     std::string s = "receiveAny:";
 //  println(s);
 //  println(response);
@@ -609,7 +605,6 @@ static void cellular_mqttInit() {
     }
     cellular_receiveAny(128, response, 1000);
 
-    x++;
     command = "AT+UMQTT=1,1883\r";
     response = "\r\r\n+UMQTT: 1,1\r\r\n\r\nOK\r\n";
     error = cellular_send(&command);
@@ -623,7 +618,6 @@ static void cellular_mqttInit() {
 //    return;
 //  }
 
-    x++;
     command = std::string("AT+UMQTT=2,\"") + AWS_SERVER + std::string("\",1883\r");
     response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
     error = cellular_send(&command);
@@ -631,7 +625,6 @@ static void cellular_mqttInit() {
         return;
     }
     cellular_receiveAny(128, response, 1000);
-    x++;
 //  good = cellular_receive(response, true, 1000);
 //  if(!good) {
 //    return;
@@ -650,7 +643,6 @@ static void cellular_mqttInit() {
 //    return;
 //  }
 
-    x++;
     command = "AT+UMQTT=12,1\r";
     response = "\r\r\n+UMQTT: 12,1\r\r\n\r\nOK\r\n";
     error = cellular_send(&command);
@@ -662,7 +654,6 @@ static void cellular_mqttInit() {
 //  if(!good) {
 //    return;
 //  }
-    x++;
     command = "AT+UMQTTC=1\r";
     response = "\r\r\n+UMQTTC: 1,1\r\r\n\r\nOK\r\n\r\r\n+UUMQTTC: 1,0\r\r\n";
     error = cellular_send(&command);
@@ -672,7 +663,6 @@ static void cellular_mqttInit() {
     cellular_receiveAny(128, response, 5000);
 //  good = cellular_receive(response, true, 5000);
 //  if (!good) {
-//    x++;
 //    return;
 //  }
 
