@@ -428,13 +428,13 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 
 
     // Wheel Speed: fl, fr, bl, br
-    twoBytes = (int16_t) (wheelMagnetValues->fl / 0.1f);
+    twoBytes = (int16_t) (vcuCoreOutput->telemetryWheelSpeedFl / 0.1f);
     cellular_split16(ptr, twoBytes);
-    twoBytes = (int16_t) (wheelMagnetValues->fr / 0.1f);
+    twoBytes = (int16_t) (vcuCoreOutput->telemetryWheelSpeedFr / 0.1f);
     cellular_split16(ptr, twoBytes);
-    twoBytes = (int16_t) (wheelMagnetValues->bl / 0.1f);
+    twoBytes = (int16_t) (vcuCoreOutput->telemetryWheelSpeedBl / 0.1f);
     cellular_split16(ptr, twoBytes);
-    twoBytes = (int16_t) (wheelMagnetValues->br / 0.1f);
+    twoBytes = (int16_t) (vcuCoreOutput->telemetryWheelSpeedBr / 0.1f);
     cellular_split16(ptr, twoBytes);
 
     // inverter Voltage
