@@ -173,6 +173,8 @@ int main(void)
     allImus_periodic(&imuData);
     gps_periodic(&gpsData);
 
+    wheelMagnetValues.fl = wheelMagnetValues.fr;
+
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
