@@ -30,6 +30,8 @@ UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart7;
 UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_uart4_tx;
+DMA_HandleTypeDef hdma_uart7_rx;
+DMA_HandleTypeDef hdma_uart7_tx;
 DMA_HandleTypeDef hdma_usart1_rx;
 
 /* LPUART1 init function */
@@ -184,8 +186,7 @@ void MX_USART1_UART_Init(void)
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_SWAP_INIT|UART_ADVFEATURE_RXOVERRUNDISABLE_INIT;
-  huart1.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_RXOVERRUNDISABLE_INIT;
   huart1.AdvancedInit.OverrunDisable = UART_ADVFEATURE_OVERRUN_DISABLE;
   if (HAL_UART_Init(&huart1) != HAL_OK)
   {
@@ -314,6 +315,46 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Alternate = GPIO_AF11_UART7;
     HAL_GPIO_Init(CELL_UART_TX_GPIO_Port, &GPIO_InitStruct);
 
+    /* UART7 DMA Init */
+    /* UART7_RX Init */
+    hdma_uart7_rx.Instance = DMA1_Stream3;
+    hdma_uart7_rx.Init.Request = DMA_REQUEST_UART7_RX;
+    hdma_uart7_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_uart7_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_uart7_rx.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_uart7_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_uart7_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    hdma_uart7_rx.Init.Mode = DMA_NORMAL;
+    hdma_uart7_rx.Init.Priority = DMA_PRIORITY_LOW;
+    hdma_uart7_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    if (HAL_DMA_Init(&hdma_uart7_rx) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(uartHandle,hdmarx,hdma_uart7_rx);
+
+    /* UART7_TX Init */
+    hdma_uart7_tx.Instance = DMA1_Stream4;
+    hdma_uart7_tx.Init.Request = DMA_REQUEST_UART7_TX;
+    hdma_uart7_tx.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    hdma_uart7_tx.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_uart7_tx.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_uart7_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_uart7_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    hdma_uart7_tx.Init.Mode = DMA_NORMAL;
+    hdma_uart7_tx.Init.Priority = DMA_PRIORITY_LOW;
+    hdma_uart7_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    if (HAL_DMA_Init(&hdma_uart7_tx) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(uartHandle,hdmatx,hdma_uart7_tx);
+
+    /* UART7 interrupt Init */
+    HAL_NVIC_SetPriority(UART7_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(UART7_IRQn);
   /* USER CODE BEGIN UART7_MspInit 1 */
 
   /* USER CODE END UART7_MspInit 1 */
@@ -435,6 +476,12 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
     HAL_GPIO_DeInit(CELL_UART_TX_GPIO_Port, CELL_UART_TX_Pin);
 
+    /* UART7 DMA DeInit */
+    HAL_DMA_DeInit(uartHandle->hdmarx);
+    HAL_DMA_DeInit(uartHandle->hdmatx);
+
+    /* UART7 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(UART7_IRQn);
   /* USER CODE BEGIN UART7_MspDeInit 1 */
 
   /* USER CODE END UART7_MspDeInit 1 */
@@ -474,34 +521,54 @@ uint16_t gps_tempLineSize = 0;
 bool cell_completeLine = false;
 char cell_currLine[MAX_CELL_LINE_SIZE] = {0};
 uint16_t cell_currLineSize = 0;
+char cell_tempLine[BUF_SIZE] = {0};
+uint16_t cell_tempLineSize = 0;
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
-    if(huart->RxEventType == HAL_UART_RXEVENT_IDLE) { // If the DMA has finished receiving data
+    if(huart->Instance == USART1) { // If the DMA has finished receiving data
       gps_tempLineSize += Size;
       if(gps_tempLineSize >= BUF_SIZE) {
         gps_tempLineSize = 0;
       }
-      if (huart->Instance == USART1) {
-        if(gps_tempLine[gps_tempLineSize - 1] == '\n') {
+      if(gps_tempLine[gps_tempLineSize - 1] == '\n') {
           gps_currLineSize = gps_tempLineSize;
           gps_tempLineSize = 0;
           gps_completeLine = false;
           memcpy(gps_currLine, gps_tempLine, gps_currLineSize);
           gps_completeLine = true;
           HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *) gps_tempLine, MAX_GPS_LINE_SIZE); // Resets index to 0 so that buffer doesn't overflow
-        } else {
+      } else {
           if(gps_currLine[0] == 0) { // Checks if there is a valid NMEA line in the current line buffer
             gps_completeLine = false;
-          }
+            }
           HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *) gps_tempLine + gps_tempLineSize, MAX_GPS_LINE_SIZE);
           // Continue allowing in data;
         }
          // Resets index to 0 so that buffer doesn't overflow
-      } else if (huart->Instance == UART7) {
-        cell_completeLine = true;
-        cell_currLineSize = Size;
-        HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_currLine, MAX_CELL_LINE_SIZE); // Resets index to 0 so that buffer doesn't overflow
-      }
+    }
+    else if(huart->Instance == UART7){
+        cell_tempLineSize += Size;
+        if(cell_tempLineSize >= BUF_SIZE){
+            cell_tempLineSize = 0;
+        }
+        if(Size == 2 && cell_tempLine[0] == '\r'){
+            HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine + 2, MAX_CELL_LINE_SIZE);
+        }
+        else if (cell_tempLine[cell_tempLineSize - 1] == '\n'){
+            cell_currLineSize = cell_tempLineSize;
+            cell_tempLineSize = 0;
+            cell_completeLine = false;
+            memcpy(cell_currLine, cell_tempLine, cell_currLineSize);
+            cell_completeLine = true;
+            HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE); // Resets index t
+        }
+        else {
+            cell_completeLine = false;
+        }
+    }
+    else {
+        volatile int x = 0;
+        x++;
     }
 }
 

@@ -46,6 +46,7 @@
 #include "wheelspeeds.h"
 #include "nvm.h"
 #include "vcu.h"
+#include "usb.h"
 
 /* USER CODE END Includes */
 
@@ -140,6 +141,7 @@ int main(void)
   clock_init();
   can_init(&hfdcan2);
 
+  vcu_init(vcuCoreParameters);
   inverter_init();
   dash_init();
   hvc_init();
@@ -148,19 +150,18 @@ int main(void)
   allImus_init(&hspi2);
   gps_init();
   indicators_init();
-  // cellular_init();
-  nvm_init();
+  cellular_init();
+  nvm_init(&vcuCoreParameters);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  int count = 0;
   while (1) {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    /* Example code for reading the GPS data. This is how the arduino does it */
-
     float deltaTime = clock_getDeltaTime();
     led_rainbow(deltaTime);
 
@@ -171,6 +172,8 @@ int main(void)
     wheelspeeds_periodic(&wheelMagnetValues);
     allImus_periodic(&imuData);
     gps_periodic(&gpsData);
+
+    wheelMagnetValues.fl = wheelMagnetValues.fr;
 
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
@@ -183,10 +186,9 @@ int main(void)
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
                  &wheelMagnetValues, &imuData, &gpsData);
-//    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-//                      &pduStatus, &inverterStatus, &analogVoltages,
-//                      &wheelMagnetValues, &imuData, &gpsData);
-    FAULT_CLEARALL(&vcu_fault_vector);
+    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+                      &pduStatus, &inverterStatus, &analogVoltages,
+                      &wheelMagnetValues, &imuData, &gpsData);
   }
   /* USER CODE END 3 */
 }

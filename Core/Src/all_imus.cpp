@@ -11,7 +11,7 @@ static CanInbox imu_unsSfl_inbox;
 static CanInbox imu_unsSbr_inbox;
 static CanInbox imu_unsSbl_inbox;
 
-void allImus_init(SPI_HandleTypeDef* hspi_ptr) {
+void allImus_init(SPI_HandleTypeDef *hspi_ptr) {
     imu_init(hspi_ptr);
     can_addInbox(HVC_VCU_IMU_ACCEL, &imu_hvcaccel_inbox);
     can_addInbox(HVC_VCU_IMU_GYRO, &imu_hvcgyro_inbox);
@@ -80,8 +80,10 @@ static void externalImus_getGyros(xyz* gyroHvc, xyz* gyroPdu) {
 
 void allImus_periodic(ImuData *imuData) {
 
-//  if accel_ready() imu_getAccel(&imuData->accelVcu);
-//  if gyro_ready() imu_getGyro(&imuData->gyroVcu);
+  if(imu_isAccelReady())
+    imu_getAccel(&imuData->accelVcu);
+  if(imu_isGyroReady())
+    imu_getGyro(&imuData->gyroVcu);
 
   externalImus_getAccels(&imuData->accelHvc, &imuData->accelPdu, &imuData->accelFl, &imuData->accelFr, &imuData->accelBl, &imuData->accelBr);
   externalImus_getGyros(&imuData->gyroHvc, &imuData->gyroPdu);

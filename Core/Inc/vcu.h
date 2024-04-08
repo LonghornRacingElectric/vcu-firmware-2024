@@ -14,6 +14,8 @@
 static VcuInput vcuInput;
 static VcuModel vcuModel;
 
+void vcu_init(VcuParameters& params);
+
 /**
  * Executes VCU Core.
  */

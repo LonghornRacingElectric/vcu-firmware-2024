@@ -58,10 +58,10 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, CAN_Term_Pin|IMD_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SPI_CS_EEPROM_GPIO_Port, SPI_CS_EEPROM_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA, SPI_CS_EEPROM_Pin|CELL_PWR_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, AMS_LED_Pin|CELL_PWR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(AMS_LED_GPIO_Port, AMS_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PCPin PCPin PCPin PCPin
                            PCPin */
