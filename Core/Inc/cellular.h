@@ -67,6 +67,7 @@ static void cellular_disableEcho();
 
 static void cellular_findTMobileHSNCode(std::string& code);
 
+static void cellular_nonBlockingMQTTINIT(int commandSet);
 /**
  * only needs to be done once, then it's stored in the module's NVM
  */
