@@ -908,6 +908,7 @@ void cellular_respondToTexts() {
     HAL_Delay(20);
     HAL_UART_Abort(&huart7);
     HAL_Delay(20);
+    finished_tx = true;
 
     command = "AT+CMGF=1\r";
     success = cellular_sendAndExpectOk(&command);
@@ -1109,6 +1110,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
                 error++;
                 dmaDisable = false;
                 HAL_Delay(100);
+                finished_tx = true;
             }
 //            static int commandSet = 0;
 //            static bool commandSent = false;
