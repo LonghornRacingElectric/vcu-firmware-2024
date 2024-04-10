@@ -157,8 +157,6 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  int count = 0;
-  float fake_speed = 0.0f;
   while (1) {
     /* USER CODE END WHILE */
 
@@ -179,16 +177,6 @@ int main(void)
 
     inverter_periodic(&inverterStatus, &vcuCoreOutput);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
-//    if(count > 100) {
-//      println(vcuCoreOutput.dashSpeed);
-//      vcuCoreOutput.dashSpeed = fake_speed++;
-//      if(fake_speed > 99.0f) fake_speed = 0.0f;
-//      count = 0;
-//    }
-//    else{
-//      vcuCoreOutput.dashSpeed = fake_speed;
-//      count++;
-//    }
     dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
     can_periodic(deltaTime);
 
