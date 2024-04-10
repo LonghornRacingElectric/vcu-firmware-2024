@@ -146,7 +146,7 @@ void MX_ADC1_Init(void)
   }
   /* USER CODE BEGIN ADC1_Init 2 */
   if(adc_start(&hadc1) != HAL_OK) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_ADC_NO_START);
+    FAULT_SET(&faultVector, FAULT_VCU_ADC_NO_START);
   }
   /* USER CODE END ADC1_Init 2 */
 

@@ -33,10 +33,10 @@ static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, x
     imu_hvcaccel_inbox.isRecent = false;
   }
   if(imu_hvcaccel_inbox.isTimeout) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_HVC_NOT_TELEM);
+    FAULT_SET(&faultVector, FAULT_VCU_HVC_NOT_TELEM);
   }
   else {
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_HVC_NOT_TELEM);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_HVC_NOT_TELEM);
   }
 
   if(imu_pduaccel_inbox.isRecent) {
@@ -46,10 +46,10 @@ static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, x
     imu_pduaccel_inbox.isRecent = false;
   }
   if(imu_pduaccel_inbox.isTimeout) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_PDU);
+    FAULT_SET(&faultVector, FAULT_VCU_PDU);
   }
   else {
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_PDU);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_PDU);
   }
 
   if(imu_unsSfl_inbox.isRecent) {
@@ -59,10 +59,10 @@ static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, x
     imu_unsSfl_inbox.isRecent = false;
   }
   if(imu_unsSfl_inbox.isTimeout) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_UNS_FL);
+    FAULT_SET(&faultVector, FAULT_VCU_UNS_FL);
   }
   else {
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_UNS_FL);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_FL);
   }
 
   if(imu_unsSfr_inbox.isRecent) {
@@ -72,10 +72,10 @@ static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, x
     imu_unsSfr_inbox.isRecent = false;
   }
   if(imu_unsSfr_inbox.isTimeout) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_UNS_FR);
+    FAULT_SET(&faultVector, FAULT_VCU_UNS_FR);
   }
   else {
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_UNS_FR);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_FR);
   }
 
   if(imu_unsSbl_inbox.isRecent) {
@@ -85,10 +85,10 @@ static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, x
     imu_unsSbl_inbox.isRecent = false;
   }
   if(imu_unsSbl_inbox.isTimeout) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_UNS_BL);
+    FAULT_SET(&faultVector, FAULT_VCU_UNS_BL);
   }
   else {
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_UNS_BL);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_BL);
   }
 
   if(imu_unsSbr_inbox.isRecent) {
@@ -98,10 +98,10 @@ static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, x
     imu_unsSbr_inbox.isRecent = false;
   }
   if(imu_unsSbr_inbox.isTimeout) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_UNS_BR);
+    FAULT_SET(&faultVector, FAULT_VCU_UNS_BR);
   }
   else {
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_UNS_BR);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_BR);
   }
 
 }
@@ -114,10 +114,10 @@ static void externalImus_getGyros(xyz* gyroHvc, xyz* gyroPdu) {
     imu_hvcgyro_inbox.isRecent = false;
   }
   if(imu_hvcgyro_inbox.isTimeout) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_HVC_NOT_TELEM);
+    FAULT_SET(&faultVector, FAULT_VCU_HVC_NOT_TELEM);
   }
   else {
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_HVC_NOT_TELEM);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_HVC_NOT_TELEM);
   }
 
   if(imu_pdugyro_inbox.isRecent) {
@@ -127,10 +127,10 @@ static void externalImus_getGyros(xyz* gyroHvc, xyz* gyroPdu) {
     imu_pdugyro_inbox.isRecent = false;
   }
   if(imu_pdugyro_inbox.isTimeout) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_PDU);
+    FAULT_SET(&faultVector, FAULT_VCU_PDU);
   }
   else {
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_PDU);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_PDU);
   }
 }
 

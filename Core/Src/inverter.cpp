@@ -105,10 +105,10 @@ static void inverter_getStatus(InverterStatus *status) {
     inverterStateInbox.isTimeout || currentInbox.isTimeout ||
     voltageInbox.isTimeout || motorPosInbox.isTimeout ||
     motorTempInbox.isTimeout || inverterTempInbox.isTimeout) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_INV);
+    FAULT_SET(&faultVector, FAULT_VCU_INV);
   }
   else {
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_INV);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_INV);
   }
 
   if (paramsResponseInbox.isRecent) {

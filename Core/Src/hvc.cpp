@@ -96,10 +96,10 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
   }
 
   if(contactorStatusInbox.isTimeout || packStatusInbox.isTimeout || amsImdInbox.isTimeout) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_HVC_NOT_TELEM);
+    FAULT_SET(&faultVector, FAULT_VCU_HVC_NOT_TELEM);
   }
   else{
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_HVC_NOT_TELEM);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_HVC_NOT_TELEM);
   }
 
   // Ok so this will be more efficient only if hvc_periodic() is called faster than every 100 us (it takes about 100us for new voltage data to come in)
@@ -122,10 +122,10 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
       }
     }
     if(voltageInbox.isTimeout) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_HVC_TELEM);
+      FAULT_SET(&faultVector, FAULT_VCU_HVC_TELEM);
     }
     else{
-      FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_HVC_TELEM);
+      FAULT_CLEAR(&faultVector, FAULT_VCU_HVC_TELEM);
     }
   }
 
@@ -147,10 +147,10 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
       }
     }
     if(tempInbox.isTimeout) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_HVC_TELEM);
+      FAULT_SET(&faultVector, FAULT_VCU_HVC_TELEM);
     }
     else{
-      FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_HVC_TELEM);
+      FAULT_CLEAR(&faultVector, FAULT_VCU_HVC_TELEM);
     }
   }
 

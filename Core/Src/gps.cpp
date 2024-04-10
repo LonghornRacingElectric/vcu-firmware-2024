@@ -82,21 +82,21 @@ int Adafruit_GPS::lastNMEA(vector<string>& nmea, int max) {
 int Adafruit_GPS::waitForNewMessage() {
   auto error = HAL_UARTEx_ReceiveToIdle_DMA(&uart_handler, (uint8_t *) gps_tempLine, MAX_GPS_LINE_SIZE);
   if (error != HAL_OK) {
-    FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_NO_DMA_START);
+    FAULT_SET(&faultVector, FAULT_VCU_GPS_NO_DMA_START);
   }
   return error;
 }
 
 bool Adafruit_GPS::checkTimeout(){
-  if(clock_getDeltaTime() - gps.lastTimeRecorded > 1.0f){
+  if(clock_getTime() - gps.lastTimeRecorded > 1.0f){
     gps.countPerSecond = gps.count;
     gps.count = 0;
-    gps.lastTimeRecorded = clock_getDeltaTime();
+    gps.lastTimeRecorded = clock_getTime();
     if(gps.countPerSecond == 0) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_TIMEOUT);
+      FAULT_SET(&faultVector, FAULT_VCU_GPS_TIMEOUT);
       return true;
     }
-    FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_GPS_TIMEOUT);
+    FAULT_CLEAR(&faultVector, FAULT_VCU_GPS_TIMEOUT);
   }
   return false;
 }
@@ -140,7 +140,7 @@ void gps_periodic(GpsData* gpsData) {
         vector<string> new_lines;
         int error = gps.lastNMEA(new_lines, 2);
         if(error != 0) {
-          FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS_BAD_RX);
+          FAULT_SET(&faultVector, FAULT_VCU_GPS_BAD_RX);
           return;
         }
         for(const auto& new_line : new_lines) {

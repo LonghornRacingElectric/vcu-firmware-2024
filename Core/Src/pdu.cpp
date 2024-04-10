@@ -90,5 +90,9 @@ void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
 
   auto pdu_timeout = lvCurrents2Inbox.isTimeout || lvCurrents1Inbox.isTimeout ||
     thermalStatusInbox.isTimeout || lvbattStatusInbox.isTimeout;
-  timeout_fault(pdu_timeout, FAULT_VCU_PDU);
+  if(pdu_timeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_PDU);
+  } else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_PDU);
+  }
 }

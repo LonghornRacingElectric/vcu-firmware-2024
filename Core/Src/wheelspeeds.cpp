@@ -22,10 +22,10 @@ void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues) {
         whs_fr_inbox.isRecent = false;
     }
     if(whs_fr_inbox.isTimeout) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_UNS_FR);
+      FAULT_SET(&faultVector, FAULT_VCU_UNS_FR);
     }
     else {
-      FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_UNS_FR);
+      FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_FR);
     }
 
     if(whs_fl_inbox.isRecent) {
@@ -33,10 +33,10 @@ void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues) {
         whs_fl_inbox.isRecent = false;
     }
     if(whs_fl_inbox.isTimeout) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_UNS_FL);
+      FAULT_SET(&faultVector, FAULT_VCU_UNS_FL);
     }
     else {
-      FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_UNS_FL);
+      FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_FL);
     }
 
     if(whs_br_inbox.isRecent) {
@@ -44,10 +44,10 @@ void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues) {
         whs_br_inbox.isRecent = false;
     }
     if(whs_br_inbox.isTimeout) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_UNS_BR);
+      FAULT_SET(&faultVector, FAULT_VCU_UNS_BR);
     }
     else {
-      FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_UNS_BR);
+      FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_BR);
     }
 
     if(whs_bl_inbox.isRecent) {
@@ -55,9 +55,9 @@ void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues) {
         whs_bl_inbox.isRecent = false;
     }
     if(whs_bl_inbox.isTimeout) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_UNS_BL);
+      FAULT_SET(&faultVector, FAULT_VCU_UNS_BL);
     }
     else {
-      FAULT_CLEAR(&vcu_fault_vector, FAULT_VCU_UNS_BL);
+      FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_BL);
     }
 }
