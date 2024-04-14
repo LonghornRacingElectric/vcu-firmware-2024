@@ -16,7 +16,7 @@ typedef struct PduStatus {
     float waterTempMotor;
     float waterTempRadiator;
 
-    float radiatorFanRpmPercentage;
+    float radiatorFanRpm;
 
     float lvVoltage;
     float lvSoC;

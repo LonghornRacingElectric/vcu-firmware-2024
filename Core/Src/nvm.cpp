@@ -142,7 +142,7 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
             (int) hvcStatus->ams, hvcStatus->contactorStatus, hvcStatus->cellVoltages, hvcStatus->cellTemps,
         // pdu status data
             pduStatus->volumetricFlowRate, pduStatus->waterTempInverter, pduStatus->waterTempMotor,
-            pduStatus->waterTempRadiator, pduStatus->radiatorFanRpmPercentage, pduStatus->lvVoltage, pduStatus->lvSoC,
+            pduStatus->waterTempRadiator, pduStatus->radiatorFanRpm, pduStatus->lvVoltage, pduStatus->lvSoC,
             pduStatus->lvCurrent,
         // inverter status data
             inverterStatus->voltage, inverterStatus->current, inverterStatus->rpm, inverterStatus->inverterTemp,
