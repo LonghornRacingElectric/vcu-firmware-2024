@@ -16,22 +16,22 @@ void wheelspeeds_init() {
 
 void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues) {
     if(whs_fr_inbox.isRecent) {
-      wheelMagnetValues->fr = can_readFloat(int16_t, &whs_fr_inbox, 0, 0.00714f);
+      wheelMagnetValues->fr = can_readFloat(int16_t, &whs_fr_inbox, 0, 0.0025f);
         whs_fr_inbox.isRecent = false;
     }
 
     if(whs_fl_inbox.isRecent) {
-      wheelMagnetValues->fl = can_readFloat(int16_t, &whs_fl_inbox, 0, 0.00714f);
+      wheelMagnetValues->fl = can_readFloat(int16_t, &whs_fl_inbox, 0, 0.0025f);
         whs_fl_inbox.isRecent = false;
     }
 
     if(whs_br_inbox.isRecent) {
-      wheelMagnetValues->br = can_readFloat(int16_t, &whs_br_inbox, 0, 0.00714f);
+      wheelMagnetValues->br = can_readFloat(int16_t, &whs_br_inbox, 0, 0.0025f);
         whs_br_inbox.isRecent = false;
     }
 
     if(whs_bl_inbox.isRecent) {
-      wheelMagnetValues->bl = can_readFloat(int16_t, &whs_bl_inbox, 0, 0.00714f);
+      wheelMagnetValues->bl = can_readFloat(int16_t, &whs_bl_inbox, 0, 0.0025f);
         whs_bl_inbox.isRecent = false;
     }
 }
