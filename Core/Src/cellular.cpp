@@ -602,7 +602,7 @@ static void cellular_mqttInit() {
   if (error != 0) {
     return;
   }
-  cellular_receiveAny(128, response, 1000);
+  cellular_receiveAny(128, response, 200);
 
   command = "AT+UMQTT=1,1883\r";
   response = "\r\r\n+UMQTT: 1,1\r\r\n\r\nOK\r\n";
@@ -611,7 +611,7 @@ static void cellular_mqttInit() {
     return;
   }
 
-  cellular_receiveAny(128, response, 1000);
+  cellular_receiveAny(128, response, 200);
 //  good = cellular_receive(response, true, 1000);
 //  if(!good) {
 //    return;
@@ -623,7 +623,7 @@ static void cellular_mqttInit() {
   if (error != 0) {
     return;
   }
-  cellular_receiveAny(128, response, 1000);
+  cellular_receiveAny(128, response, 200);
 //  good = cellular_receive(response, true, 1000);
 //  if(!good) {
 //    return;
@@ -636,7 +636,7 @@ static void cellular_mqttInit() {
   if (error != 0) {
     return;
   }
-  cellular_receiveAny(128, response, 1000);
+  cellular_receiveAny(128, response, 200);
 //  good = cellular_receive(response, true, 1000);
 //  if(!good) {
 //    return;
@@ -648,7 +648,7 @@ static void cellular_mqttInit() {
   if (error != 0) {
     return;
   }
-  cellular_receiveAny(128, response, 1000);
+  cellular_receiveAny(128, response, 200);
 //  good = cellular_receive(response, true, 1000);
 //  if(!good) {
 //    return;
@@ -659,7 +659,7 @@ static void cellular_mqttInit() {
   if (error != 0) {
     return;
   }
-  cellular_receiveAny(128, response, 5000);
+  cellular_receiveAny(128, response, 2000);
 //  good = cellular_receive(response, true, 5000);
 //  if (!good) {
 //    return;
@@ -1126,7 +1126,11 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
 //            }
 
     } else {
-      cellular_mqttInit();
+      static float lastMqttAttempt = 0;
+      if(clock_getTime() - lastMqttAttempt > 1.0f && !vcuCoreOutput->prndlState) {
+        cellular_mqttInit();
+        lastMqttAttempt = clock_getTime();
+      }
     }
 
   } else if (cellular_systemState == STATE_CONNECTED_NO_HANDSHAKE) {
@@ -1202,7 +1206,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       float nowTextTime = clock_getTime();
       if (nowTextTime - lastTextTime > 1.0f && finished_tx) {
         lastTextTime = nowTextTime;
-        cellular_respondToTexts();
+        // cellular_respondToTexts(); // This makes car slow for some reason
       }
 
       // check for new parameters from Texas Tune

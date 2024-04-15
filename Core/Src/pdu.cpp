@@ -66,8 +66,8 @@ void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
     status->waterTempMotor = can_readInt(int8_t, &thermalStatusInbox, 1); // in 0.1C units, range is -40.0 - 215.0C (max is 215C, but higher will just be ignored
     status->waterTempInverter = can_readInt(int8_t, &thermalStatusInbox, 2); // in 0.1C units, range is -40.0 - 215.0C (max is 215C, but higher will just be ignored
     status->waterTempRadiator = can_readInt(int8_t, &thermalStatusInbox, 3); // in 0.1C units, range is -40.0 - 215.0C (max is 215C, but higher will just be ignored
-    status->radiatorFanRpmPercentage =
-        can_readInt(uint8_t, &thermalStatusInbox, 4); // in 0.1% units, range is 0.0 - 100.0% (max is 100%, but higher will just be ignored
+    status->radiatorFanRpm =
+        can_readInt(uint16_t, &thermalStatusInbox, 4); // in rpm units, range is 0 - 8300rpm (max is 8300rpm, but higher will just be ignored)
     status->isRecent = true;
   }
   if(lvCurrents1Inbox.isRecent) {
