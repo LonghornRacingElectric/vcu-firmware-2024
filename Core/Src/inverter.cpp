@@ -1,7 +1,7 @@
 #include "inverter.h"
-#include "fdcan.h"
 #include "angel_can.h"
 #include "faults.h"
+#include "timeouts.h"
 
 using namespace std;
 
@@ -21,19 +21,21 @@ static CanOutbox torqueCommandOutbox;
 static CanOutbox paramsRequestOutbox;
 
 void inverter_init() {
-  can_addInbox(INV_VOLTAGE, &voltageInbox);
-  can_addInbox(INV_CURRENT, &currentInbox);
-  can_addInbox(INV_TEMP3_DATA, &motorTempInbox);
-  can_addInbox(INV_TEMP1_DATA, &inverterTempInbox);
-  can_addInbox(INV_MOTOR_POSITIONS, &motorPosInbox);
-  can_addInbox(INV_STATE_CODES, &inverterStateInbox);
-  can_addInbox(INV_FAULT_CODES, &inverterFaultInbox);
-  can_addInbox(INV_TORQUE_TIMER, &torqueInfoInbox);
-  // can_addInbox(INV_HIGH_SPEED_MSG, &highSpeedInbox);
+  can_addInbox(INV_VOLTAGE, &voltageInbox, INV_TIMEOUT_FAST);
+  can_addInbox(INV_CURRENT, &currentInbox, INV_TIMEOUT_FAST);
+  can_addInbox(INV_TEMP3_DATA, &motorTempInbox, INV_TIMEOUT_SLOW);
+  can_addInbox(INV_TEMP1_DATA, &inverterTempInbox, INV_TIMEOUT_SLOW);
+  can_addInbox(INV_MOTOR_POSITIONS, &motorPosInbox, INV_TIMEOUT_FAST);
+  can_addInbox(INV_STATE_CODES, &inverterStateInbox, INV_TIMEOUT_FAST);
+  can_addInbox(INV_FAULT_CODES, &inverterFaultInbox, INV_TIMEOUT_FAST);
+  can_addInbox(INV_TORQUE_TIMER, &torqueInfoInbox, INV_TIMEOUT_FAST);
+  // can_addInbox(INV_HIGH_SPEED_MSG, &highSpeedInbox, INV_TIMEOUT_VERYFAST);
   can_addInbox(INV_VCU_PARAMS_RESPONSE, &paramsResponseInbox);
 
   can_addOutbox(VCU_INV_COMMAND, 0.003f, &torqueCommandOutbox);
   can_addOutbox(VCU_INV_PARAMS_REQUEST, 1.0f, &paramsRequestOutbox);
+
+  // TODO: send out command to set inverter params to send out this data
 }
 
 static void inverter_getStatus(InverterStatus *status) {
@@ -99,14 +101,18 @@ static void inverter_getStatus(InverterStatus *status) {
     status->isRecent = true;
   }
 
+  if(torqueInfoInbox.isTimeout || inverterFaultInbox.isTimeout ||
+    inverterStateInbox.isTimeout || currentInbox.isTimeout ||
+    voltageInbox.isTimeout || motorPosInbox.isTimeout ||
+    motorTempInbox.isTimeout || inverterTempInbox.isTimeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_INV);
+  }
+  else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_INV);
+  }
+
   if (paramsResponseInbox.isRecent) {
-    auto data = can_readInt(uint16_t, &paramsResponseInbox, 4);
-    if (paramsResponseInbox.data[2] == 0) {
-      FAULT_SET(&vcu_fault_vector, FAULT_VCU_INV_PARAMS);
-    }
-    else{
-      status->newData = data;
-    }
+     status->newData = can_readInt(uint16_t, &paramsResponseInbox, 4);
     paramsResponseInbox.isRecent = false;
   }
 }

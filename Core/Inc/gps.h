@@ -129,10 +129,10 @@ public:
      */
     bool parse(const string& nmea);
     /**
-     * Checks if there hasnt been any new NMEA sentences in the last 5 seconds
+     * Checks if there hasnt been any new NMEA sentences in the last second
      * @return true or false for timeout
      */
-    bool checkTimeout();
+    static bool checkTimeout();
     /**
      * Reads the next NMEA sentence from the GPS module.
      * @return

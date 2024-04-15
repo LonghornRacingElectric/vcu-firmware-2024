@@ -1,6 +1,8 @@
 #include "all_imus.h"
 #include "angel_can_ids.h"
 #include "angel_can.h"
+#include "faults.h"
+#include "timeouts.h"
 
 static CanInbox imu_hvcaccel_inbox;
 static CanInbox imu_hvcgyro_inbox;
@@ -13,14 +15,14 @@ static CanInbox imu_unsSbl_inbox;
 
 void allImus_init(SPI_HandleTypeDef *hspi_ptr) {
     imu_init(hspi_ptr);
-    can_addInbox(HVC_VCU_IMU_ACCEL, &imu_hvcaccel_inbox);
-    can_addInbox(HVC_VCU_IMU_GYRO, &imu_hvcgyro_inbox);
-    can_addInbox(PDU_VCU_IMU_ACCEL, &imu_pduaccel_inbox);
-    can_addInbox(PDU_VCU_IMU_GYRO, &imu_pdugyro_inbox);
-    can_addInbox(UNSFR_VCU_IMU, &imu_unsSfr_inbox);
-    can_addInbox(UNSFL_VCU_IMU, &imu_unsSfl_inbox);
-    can_addInbox(UNSBR_VCU_IMU, &imu_unsSbr_inbox);
-    can_addInbox(UNSBL_VCU_IMU, &imu_unsSbl_inbox);
+    can_addInbox(HVC_VCU_IMU_ACCEL, &imu_hvcaccel_inbox, HVC_TIMEOUT_FAST);
+    can_addInbox(HVC_VCU_IMU_GYRO, &imu_hvcgyro_inbox, HVC_TIMEOUT_FAST);
+    can_addInbox(PDU_VCU_IMU_ACCEL, &imu_pduaccel_inbox, PDU_TIMEOUT_FAST);
+    can_addInbox(PDU_VCU_IMU_GYRO, &imu_pdugyro_inbox, PDU_TIMEOUT_FAST);
+    can_addInbox(UNSFR_VCU_IMU, &imu_unsSfr_inbox, UNS_TIMEOUT);
+    can_addInbox(UNSFL_VCU_IMU, &imu_unsSfl_inbox, UNS_TIMEOUT);
+    can_addInbox(UNSBR_VCU_IMU, &imu_unsSbr_inbox, UNS_TIMEOUT);
+    can_addInbox(UNSBL_VCU_IMU, &imu_unsSbl_inbox, UNS_TIMEOUT);
 }
 
 static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, xyz* accelFr, xyz* accelBl, xyz* accelBr) {
@@ -30,35 +32,76 @@ static void externalImus_getAccels(xyz* accelHvc, xyz* accelPdu, xyz* accelFl, x
     accelHvc->z = can_readFloat(int16_t, &imu_hvcaccel_inbox, 4, 0.01f);
     imu_hvcaccel_inbox.isRecent = false;
   }
+  if(imu_hvcaccel_inbox.isTimeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_HVC_NOT_TELEM);
+  }
+  else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_HVC_NOT_TELEM);
+  }
+
   if(imu_pduaccel_inbox.isRecent) {
     accelPdu->x = can_readFloat(int16_t, &imu_pduaccel_inbox, 0, 0.01f);
     accelPdu->y = can_readFloat(int16_t, &imu_pduaccel_inbox, 2, 0.01f);
     accelPdu->z = can_readFloat(int16_t, &imu_pduaccel_inbox, 4, 0.01f);
     imu_pduaccel_inbox.isRecent = false;
   }
+  if(imu_pduaccel_inbox.isTimeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_PDU);
+  }
+  else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_PDU);
+  }
+
   if(imu_unsSfl_inbox.isRecent) {
     accelFl->x = can_readFloat(int16_t, &imu_unsSfl_inbox, 0, 0.01f);
     accelFl->y = can_readFloat(int16_t, &imu_unsSfl_inbox, 2, 0.01f);
     accelFl->z = can_readFloat(int16_t, &imu_unsSfl_inbox, 4, 0.01f);
     imu_unsSfl_inbox.isRecent = false;
   }
+  if(imu_unsSfl_inbox.isTimeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_UNS_FL);
+  }
+  else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_FL);
+  }
+
   if(imu_unsSfr_inbox.isRecent) {
     accelFr->x = can_readFloat(int16_t, &imu_unsSfr_inbox, 0, 0.01f);
     accelFr->y = can_readFloat(int16_t, &imu_unsSfr_inbox, 2, 0.01f);
     accelFr->z = can_readFloat(int16_t, &imu_unsSfr_inbox, 4, 0.01f);
     imu_unsSfr_inbox.isRecent = false;
   }
+  if(imu_unsSfr_inbox.isTimeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_UNS_FR);
+  }
+  else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_FR);
+  }
+
   if(imu_unsSbl_inbox.isRecent) {
     accelBl->x = can_readFloat(int16_t, &imu_unsSbl_inbox, 0, 0.01f);
     accelBl->y = can_readFloat(int16_t, &imu_unsSbl_inbox, 2, 0.01f);
     accelBl->z = can_readFloat(int16_t, &imu_unsSbl_inbox, 4, 0.01f);
     imu_unsSbl_inbox.isRecent = false;
   }
+  if(imu_unsSbl_inbox.isTimeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_UNS_BL);
+  }
+  else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_BL);
+  }
+
   if(imu_unsSbr_inbox.isRecent) {
     accelBr->x = can_readFloat(int16_t, &imu_unsSbr_inbox, 0, 0.01f);
     accelBr->y = can_readFloat(int16_t, &imu_unsSbr_inbox, 2, 0.01f);
     accelBr->z = can_readFloat(int16_t, &imu_unsSbr_inbox, 4, 0.01f);
     imu_unsSbr_inbox.isRecent = false;
+  }
+  if(imu_unsSbr_inbox.isTimeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_UNS_BR);
+  }
+  else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_BR);
   }
 
 }
@@ -70,11 +113,24 @@ static void externalImus_getGyros(xyz* gyroHvc, xyz* gyroPdu) {
     gyroHvc->z = can_readFloat(int16_t, &imu_hvcgyro_inbox, 4, 0.01f);
     imu_hvcgyro_inbox.isRecent = false;
   }
+  if(imu_hvcgyro_inbox.isTimeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_HVC_NOT_TELEM);
+  }
+  else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_HVC_NOT_TELEM);
+  }
+
   if(imu_pdugyro_inbox.isRecent) {
     gyroPdu->x = can_readFloat(int16_t, &imu_pdugyro_inbox, 0, 0.01f);
     gyroPdu->y = can_readFloat(int16_t, &imu_pdugyro_inbox, 2, 0.01f);
     gyroPdu->z = can_readFloat(int16_t, &imu_pdugyro_inbox, 4, 0.01f);
     imu_pdugyro_inbox.isRecent = false;
+  }
+  if(imu_pdugyro_inbox.isTimeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_PDU);
+  }
+  else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_PDU);
   }
 }
 
