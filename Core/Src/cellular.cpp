@@ -5,6 +5,8 @@
 #include "usb.h"
 #include "secrets.h"
 
+//#define TEXTS_ONLY
+
 
 volatile int x = 0;
 
@@ -24,6 +26,7 @@ volatile int x = 0;
 static uint8_t cellular_systemState = STATE_OFF;
 
 static float handshakeTimestamp;
+static float powerOnStartTime;
 static bool finished_tx = true;
 static bool dmaDisable = true;
 static std::queue<std::string> cellular_dataToSend;
@@ -845,6 +848,7 @@ void cellular_init() {
   HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_RESET);
   HAL_Delay(500);
   HAL_GPIO_WritePin(CELL_PWR_GPIO_Port, CELL_PWR_Pin, GPIO_PIN_SET);
+  powerOnStartTime = clock_getTime();
 //  HAL_Delay(8000);
 //  cellular_disableEcho();
 //  cellular_testConnection();
@@ -894,15 +898,19 @@ void cellular_respondToTexts() {
   std::string message;
   bool success;
 
+#ifndef TEXTS_ONLY
   HAL_Delay(20);
   HAL_UART_Abort(&huart7);
   HAL_Delay(20);
   finished_tx = true;
+#endif
 
   command = "AT+CMGF=1\r";
   success = cellular_sendAndExpectOk(&command);
   if (!success) {
+#ifndef TEXTS_ONLY
     HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+#endif
     return;
   }
 
@@ -914,7 +922,9 @@ void cellular_respondToTexts() {
   command = "AT+CMGD=0,3\r";
   success = cellular_sendAndExpectOk(&command);
   if (!success) {
+#ifndef TEXTS_ONLY
     HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+#endif
     return;
   }
 
@@ -972,7 +982,9 @@ void cellular_respondToTexts() {
     cellular_respondToText(&sender, &message);
   }
 
+#ifndef TEXTS_ONLY
   HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+#endif
 }
 
 
@@ -981,6 +993,37 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
                        PduStatus *pduStatus, InverterStatus *inverterStatus,
                        AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues,
                        ImuData *imuData, GpsData *gpsData) {
+
+#ifdef TEXTS_ONLY
+  if (vcuCoreOutput->prndlState) {
+    // we're in drive
+
+  } else {
+    // we're in park
+    static bool inited = false;
+    static float lastTextTime = 0;
+
+    if (!inited && (clock_getTime() - powerOnStartTime > 10.0f)) {
+      cellular_disableEcho();
+      cellular_testConnection();
+      cellular_disableEcho();
+      cellular_disableEcho();
+      cellular_disableEcho();
+      cellular_testConnection();
+      inited = true;
+      lastTextTime = clock_getTime();
+    }
+
+    if(inited) {
+      // check and respond to text messages once per second
+      float nowTextTime = clock_getTime();
+      if (nowTextTime - lastTextTime > 1.0f) {
+        lastTextTime = nowTextTime;
+        cellular_respondToTexts();
+      }
+    }
+  }
+#else
 
   /*
    * if(not_connected) {
@@ -1215,4 +1258,5 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       }
     }
   }
+#endif
 }
