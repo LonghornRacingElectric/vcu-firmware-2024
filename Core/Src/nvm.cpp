@@ -27,7 +27,12 @@ float findMean(const float* newData, size_t numData) {
         }
         sum += newData[i];
     }
-    return sum / (float) (numData - removed);
+    if (sum / (float) (numData - removed) == 0) {
+        return 0;
+    } else {
+        return sum / (float) (numData - removed);
+    }
+
 }
 
 float findMin(const float* newData, size_t numData) {
