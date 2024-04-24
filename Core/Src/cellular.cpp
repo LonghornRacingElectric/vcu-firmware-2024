@@ -5,7 +5,7 @@
 #include "usb.h"
 #include "secrets.h"
 
-//#define TEXTS_ONLY
+#define TEXTS_ONLY
 
 
 volatile int x = 0;
@@ -831,10 +831,7 @@ static void cellular_respondToText(std::string *senderPhoneNumber, std::string *
     longString += " W";
   }
 
-  std::string response = "I'm parked at " + latString + ", " + longString + ".";
-  if (vcuCoreOutput.prndlState) {
-    response = "I'm driving right now. Talk to you later.";
-  }
+  std::string response = "Hi, it's Angelique! I'm parked at " + latString + ", " + longString + ".";
   cellular_sendText(senderPhoneNumber, &response);
 }
 
