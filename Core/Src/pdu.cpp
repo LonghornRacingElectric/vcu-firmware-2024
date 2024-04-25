@@ -26,6 +26,7 @@ void pdu_init() {
 static void pdu_updateBrakeLight(float brightness) {
   brakeLightOutbox.dlc = 1;
   brakeLightOutbox.data[0] = (uint8_t) (brightness * 100.0f);
+  brakeLightOutbox.data[0] = 100; // TODO remove
   brakeLightOutbox.isRecent = true;
 }
 
