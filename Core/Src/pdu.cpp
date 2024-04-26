@@ -24,9 +24,8 @@ void pdu_init() {
 }
 
 static void pdu_updateBrakeLight(float brightness) {
-  brakeLightOutbox.dlc = 1;
-  brakeLightOutbox.data[0] = (uint8_t) (brightness * 100.0f);
-  brakeLightOutbox.data[0] = 100; // TODO remove
+  brakeLightOutbox.dlc = 2;
+  can_writeFloat(uint16_t, &brakeLightOutbox, 0, brightness, 0.0001f);
   brakeLightOutbox.isRecent = true;
 }
 
@@ -46,7 +45,7 @@ static void pdu_updateCoolingOutput(float radiatorFanRpmPercentage, float pumpPe
 void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
 
   // At the moment, vcuCore only outputs a boolean for on and off in general.
-  pdu_updateBrakeLight((float) vcuOutput->brakeLight);
+  pdu_updateBrakeLight(vcuOutput->brakeLight);
 
   pdu_updateBuzzer(vcuOutput->r2dBuzzer ? BUZZER_BUZZ : BUZZER_SILENT);
 
