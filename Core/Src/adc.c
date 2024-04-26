@@ -19,9 +19,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
-#include "faults.h"
 
 /* USER CODE BEGIN 0 */
+#include "faults.h"
 #define CONVERT(RAW_ADC_VALUE) (((float) RAW_ADC_VALUE) * 3.3f / 65535.0f)
 /* USER CODE END 0 */
 

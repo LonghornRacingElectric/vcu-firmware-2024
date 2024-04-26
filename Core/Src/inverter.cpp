@@ -30,12 +30,10 @@ void inverter_init() {
   can_addInbox(INV_FAULT_CODES, &inverterFaultInbox, INV_TIMEOUT_FAST);
   can_addInbox(INV_TORQUE_TIMER, &torqueInfoInbox, INV_TIMEOUT_FAST);
   // can_addInbox(INV_HIGH_SPEED_MSG, &highSpeedInbox, INV_TIMEOUT_VERYFAST);
-  can_addInbox(INV_VCU_PARAMS_RESPONSE, &paramsResponseInbox);
 
   can_addOutbox(VCU_INV_COMMAND, 0.003f, &torqueCommandOutbox);
-  can_addOutbox(VCU_INV_PARAMS_REQUEST, 1.0f, &paramsRequestOutbox);
-
-  // TODO: send out command to set inverter params to send out this data
+  can_addOutbox(0x0C1, 0.1f, &paramsRequestOutbox);
+  inverter_writeParameter(147, 1000);
 }
 
 static void inverter_getStatus(InverterStatus *status) {
@@ -122,19 +120,21 @@ static void inverter_updateTorqueCommand(float torque, float rpm, bool enable_in
   can_writeFloat(int16_t, &torqueCommandOutbox, 0, torque, 0.1f);
   can_writeFloat(int16_t, &torqueCommandOutbox, 2, rpm, 1.0f);
   torqueCommandOutbox.data[5] = (uint8_t) enable_inverter; // Enable
+  torqueCommandOutbox.dlc = 8;
   torqueCommandOutbox.isRecent = true;
 }
 
 unsigned int inverter_resetFaults() {
   // send a can message telling the inverter to reset faults by setting addr 20 to 0
-  return inverter_paramsIO(20, 0, true);
+  return inverter_writeParameter(20, 0);
 }
 
-unsigned int inverter_paramsIO(uint16_t param_addr, uint16_t param_value, bool write) {
+unsigned int inverter_writeParameter(uint16_t param_addr, uint16_t param_value) {
   // send a can message telling the inverter to set params
-  can_writeInt(uint16_t, &paramsRequestOutbox, 0, param_addr); //param addr
-  can_writeInt(uint8_t, &paramsRequestOutbox, 2, write); //param value (dummy value)
-  can_writeInt(uint16_t, &paramsRequestOutbox, 4, param_value); //param value
+  can_writeInt(uint16_t, &paramsRequestOutbox, 0, param_addr); // param addr
+  can_writeInt(uint8_t, &paramsRequestOutbox, 2, 1); // write
+  can_writeInt(uint16_t, &paramsRequestOutbox, 4, param_value); // param value
+  paramsRequestOutbox.dlc = 8;
   paramsRequestOutbox.isRecent = true;
   return 0;
 }

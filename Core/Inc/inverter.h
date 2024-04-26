@@ -63,7 +63,7 @@ unsigned int inverter_resetFaults();
  * @param write
  * @return error_code
  */
-unsigned int inverter_paramsIO(uint16_t param_addr, uint16_t param_value, bool write);
+unsigned int inverter_writeParameter(uint16_t param_addr, uint16_t param_value);
 
 /**
  * Periodic method to get status and update torque command.

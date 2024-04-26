@@ -5,7 +5,7 @@
 #include "usb.h"
 #include "secrets.h"
 
-#define TEXTS_ONLY
+//#define TEXTS_ONLY
 
 
 volatile int x = 0;
@@ -1250,9 +1250,9 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       }
 
       // check for new parameters from Texas Tune
-      if (cellular_areParametersUpdated()) {
-        cellular_updateParameters(vcuCoreParameters);
-      }
+//      if (cellular_areParametersUpdated()) {
+//        cellular_updateParameters(vcuCoreParameters);
+//      }
     }
   }
 #endif
