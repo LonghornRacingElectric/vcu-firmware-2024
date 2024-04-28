@@ -71,10 +71,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin PBPin PBPin
-                           PBPin */
-  GPIO_InitStruct.Pin = DriveSwitch_Pin|BSPD_MotorFailure_Pin|NVM_SD_DETECT_Pin|SHDN_IN_Pin
-                          |SHDN_OUT_Pin;
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = DriveSwitch_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(DriveSwitch_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PBPin PBPin PBPin PBPin */
+  GPIO_InitStruct.Pin = BSPD_MotorFailure_Pin|NVM_SD_DETECT_Pin|SHDN_IN_Pin|SHDN_OUT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
