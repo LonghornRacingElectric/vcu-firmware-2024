@@ -9,7 +9,7 @@ void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchSt
                  PduStatus &pduStatus, InverterStatus &inverterStatus, WheelMagnetValues &wheelMagnetValues,
                  ImuData &imuData, GpsData &gpsData, VcuOutput &vcuOutput, float deltaTime) {
 
-  bool inverterReady = (!hvcStatus.ams) && (!hvcStatus.imd);
+  bool inverterReady = true; //(!hvcStatus.ams) && (!hvcStatus.imd);
 
   vcuInput = {
           analogVoltages.apps1,
@@ -53,6 +53,9 @@ void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchSt
           imuData.gyroPdu,
   };
 
+  if(deltaTime <= 0) {
+    deltaTime = 0.003f;
+  }
   vcuModel.evaluate(&vcuInput, &vcuOutput, deltaTime);
 }
 

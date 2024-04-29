@@ -32,8 +32,8 @@ void inverter_init() {
   // can_addInbox(INV_HIGH_SPEED_MSG, &highSpeedInbox, INV_TIMEOUT_VERYFAST);
 
   can_addOutbox(VCU_INV_COMMAND, 0.003f, &torqueCommandOutbox);
-  can_addOutbox(0x0C1, 0.1f, &paramsRequestOutbox);
-  inverter_writeParameter(147, 1000);
+//  can_addOutbox(0x0C1, 0.1f, &paramsRequestOutbox);
+//  inverter_writeParameter(147, 1000);
 }
 
 static void inverter_getStatus(InverterStatus *status) {
@@ -90,6 +90,9 @@ static void inverter_getStatus(InverterStatus *status) {
     status->faultVector = can_readInt(uint64_t, &inverterFaultInbox, 0);
     inverterFaultInbox.isRecent = false;
     status->isRecent = true;
+    volatile bool resolverDisconnected = status->faultVector & 0x4000000000000000;
+    volatile int x = 0;
+    x++;
   }
 
   if (torqueInfoInbox.isRecent) {

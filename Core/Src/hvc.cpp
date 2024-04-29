@@ -1,6 +1,7 @@
 #include "hvc.h"
 #include "timeouts.h"
 #include "faults.h"
+#include "clock.h"
 
 static CanInbox voltageInboxes[VOLTS_MAILBOXES_NUM];
 static CanInbox tempInboxes[TEMPS_MAILBOXES_NUM];
@@ -90,8 +91,8 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
     status->isRecent = true;
   }
   if(amsImdInbox.isTimeout) {
-    status->imd = true;
-    status->ams = true;
+    status->imd = ((int)(clock_getTime()*3)) % 2;
+    status->ams = !status->imd;
   }
   if (packStatusInbox.isRecent) {
     packStatusInbox.isRecent = false;

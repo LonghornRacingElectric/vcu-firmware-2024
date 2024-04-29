@@ -36,7 +36,7 @@ int Adafruit_GPS::send_command(const char *cmd) {
     if((cmd_str.substr(0, 5) != "$PMTK") && (cmd_str.substr(0, 4) != "$PGC")) {
         return 1;
     }
-    return HAL_UART_Transmit(&uart_handler, (uint8_t *) cmd_str.c_str(), cmd_str.size(), HAL_MAX_DELAY);
+    return HAL_UART_Transmit(&uart_handler, (uint8_t *) cmd_str.c_str(), cmd_str.size(), 100);
 }
 
 char Adafruit_GPS::read_command(){

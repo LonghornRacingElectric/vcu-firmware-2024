@@ -175,14 +175,16 @@ int main(void)
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
+//    println(((inverterStatus.stateVector >> 16) & 0xFF));
+
     inverter_periodic(&inverterStatus, &vcuCoreOutput);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
-    dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
+    dash_periodic(&pduStatus, &hvcStatus, &inverterStatus, &gpsData, &vcuCoreOutput);
     can_periodic(deltaTime);
 
-    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-                 &pduStatus, &inverterStatus, &analogVoltages,
-                 &wheelMagnetValues, &imuData, &gpsData);
+//    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+//                 &pduStatus, &inverterStatus, &analogVoltages,
+//                 &wheelMagnetValues, &imuData, &gpsData);
 //    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
 //                      &pduStatus, &inverterStatus, &analogVoltages,
 //                      &wheelMagnetValues, &imuData, &gpsData);
