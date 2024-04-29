@@ -10,6 +10,12 @@ static CanInbox contactorStatusInbox;
 static CanInbox coolingInbox;
 static CanInbox ccsInbox;
 static CanOutbox coolingOutbox;
+static CanOutbox hvcParamsOutbox;
+
+float CELL_OVER_VOLTAGE = 4.0f;
+float CELL_UNDER_VOLTAGE = 2.7f;
+float OVER_TEMP = 60.0f;
+float UNDER_TEMP = 0.0f;
 
 void hvc_init() {
   can_addInboxes(HVC_VCU_CELL_VOLTAGES_START, HVC_VCU_CELL_VOLTAGES_END, voltageInboxes, HVC_TIMEOUT_TELEM);
@@ -21,6 +27,13 @@ void hvc_init() {
   can_addInbox(HVC_VCU_CONTACTOR_STATUS, &contactorStatusInbox, HVC_TIMEOUT_FAST);
 
   can_addOutbox(VCU_HVC_COOLING, 0.1f, &coolingOutbox);
+
+  can_addOutbox(VCU_HVC_PARAMS, 1.0f, &hvcParamsOutbox);
+  hvcParamsOutbox.dlc = 8;
+  can_writeFloat(uint16_t, &hvcParamsOutbox, 0, CELL_UNDER_VOLTAGE, 0.1f);
+  can_writeFloat(uint16_t, &hvcParamsOutbox, 2, CELL_OVER_VOLTAGE, 0.1f);
+  can_writeFloat(uint16_t, &hvcParamsOutbox, 4, UNDER_TEMP, 1.0f);
+  can_writeFloat(uint16_t, &hvcParamsOutbox, 6, OVER_TEMP, 1.0f);
 }
 
 void hvc_updateCooling(float battFanRpmPercentage, float battUniqueSegRpmPercentage) {
