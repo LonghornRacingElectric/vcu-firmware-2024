@@ -122,7 +122,10 @@ static void inverter_getStatus(InverterStatus *status) {
 static void inverter_updateTorqueCommand(float torque, float rpm, bool enable_inverter) {
   can_writeFloat(int16_t, &torqueCommandOutbox, 0, torque, 0.1f);
   can_writeFloat(int16_t, &torqueCommandOutbox, 2, rpm, 1.0f);
+  torqueCommandOutbox.data[4] = 1; // direction bool
   torqueCommandOutbox.data[5] = (uint8_t) enable_inverter; // Enable
+  torqueCommandOutbox.data[6] = 0;
+  torqueCommandOutbox.data[7] = 0;
   torqueCommandOutbox.dlc = 8;
   torqueCommandOutbox.isRecent = true;
 }

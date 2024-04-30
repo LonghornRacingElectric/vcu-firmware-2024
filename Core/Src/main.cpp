@@ -175,7 +175,7 @@ int main(void)
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
-//    println(((inverterStatus.stateVector >> 16) & 0xFF));
+    println(vcuCoreOutput.inverterTorqueRequest);
 
     inverter_periodic(&inverterStatus, &vcuCoreOutput);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
