@@ -180,9 +180,11 @@ int main(void)
     dash_periodic(&pduStatus, &hvcStatus, &inverterStatus, &gpsData, &vcuCoreOutput);
     can_periodic(deltaTime);
 
-//    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-//                 &pduStatus, &inverterStatus, &analogVoltages,
-//                 &wheelMagnetValues, &imuData, &gpsData);
+//    println(vcuCoreOutput.telemetryApps);
+
+    nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+                 &pduStatus, &inverterStatus, &analogVoltages,
+                 &wheelMagnetValues, &imuData, &gpsData);
 //    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
 //                      &pduStatus, &inverterStatus, &analogVoltages,
 //                      &wheelMagnetValues, &imuData, &gpsData);
