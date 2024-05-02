@@ -33,10 +33,16 @@ void inverter_init() {
   // can_addInbox(INV_HIGH_SPEED_MSG, &highSpeedInbox, INV_TIMEOUT_VERYFAST);
 
   can_addOutbox(VCU_INV_COMMAND, 0.003f, &torqueCommandOutbox);
-  can_addOutbox(0x0C1, 0.1f, &paramsRequestOutbox);
-//  inverter_writeParameter(168, 20);
+//  can_addOutbox(0x0C1, 0.1f, &paramsRequestOutbox);
+//  inverter_writeParameter(168, 100); // torque ramp
   inverter_writeParameter(20, 0);
-}sz
+//  inverter_writeParameter(111, 8000); // motor over-speed fault RPM
+//  inverter_writeParameter(128, 6500); // max RPM
+//  inverter_writeParameter(127, 4400); // field weakening start RPM
+//  inverter_writeParameter(169, 5100); // speed rate limit RPM
+//  inverter_writeParameter(129, 2300); // torque limit
+//  inverter_writeParameter(101, 3000); // D axis current limit
+}
 
 static void inverter_getStatus(InverterStatus *status) {
 
