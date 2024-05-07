@@ -157,7 +157,6 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  int count = 0;
   while (1) {
     /* USER CODE END WHILE */
 
@@ -173,22 +172,22 @@ int main(void)
     allImus_periodic(&imuData);
     gps_periodic(&gpsData);
 
-    wheelMagnetValues.fl = wheelMagnetValues.fr;
-
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
     inverter_periodic(&inverterStatus, &vcuCoreOutput);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
-    dash_periodic(&pduStatus, &hvcStatus, &vcuCoreOutput);
+    dash_periodic(&pduStatus, &hvcStatus, &inverterStatus, &gpsData, &vcuCoreOutput);
     can_periodic(deltaTime);
+
+//    println(vcuCoreOutput.telemetryApps);
 
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
                  &wheelMagnetValues, &imuData, &gpsData);
-    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-                      &pduStatus, &inverterStatus, &analogVoltages,
-                      &wheelMagnetValues, &imuData, &gpsData);
+//    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+//                      &pduStatus, &inverterStatus, &analogVoltages,
+//                      &wheelMagnetValues, &imuData, &gpsData);
   }
   /* USER CODE END 3 */
 }

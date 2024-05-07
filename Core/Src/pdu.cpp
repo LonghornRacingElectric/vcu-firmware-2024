@@ -1,6 +1,7 @@
 #include "pdu.h"
 #include "angel_can.h"
 #include "faults.h"
+#include "timeouts.h"
 
 static CanInbox lvbattStatusInbox;
 static CanInbox thermalStatusInbox;
@@ -12,10 +13,10 @@ static CanOutbox buzzerOutbox;
 static CanOutbox coolingOutbox;
 
 void pdu_init() {
-  can_addInbox(PDU_VCU_LVBAT, &lvbattStatusInbox);
-  can_addInbox(PDU_VCU_THERMAL, &thermalStatusInbox);
-  can_addInbox(PDU_VCU_LV_CURRENTS_1, &lvCurrents1Inbox);
-  can_addInbox(PDU_VCU_LV_CURRENTS_2, &lvCurrents2Inbox);
+  can_addInbox(PDU_VCU_LVBAT, &lvbattStatusInbox, PDU_TIMEOUT_SLOW);
+  can_addInbox(PDU_VCU_THERMAL, &thermalStatusInbox, PDU_TIMEOUT_SLOW);
+  can_addInbox(PDU_VCU_LV_CURRENTS_1, &lvCurrents1Inbox, PDU_TIMEOUT_SLOW);
+  can_addInbox(PDU_VCU_LV_CURRENTS_2, &lvCurrents2Inbox, PDU_TIMEOUT_SLOW);
 
   can_addOutbox(VCU_PDU_BRAKELIGHT, 0.01f, &brakeLightOutbox);
   can_addOutbox(VCU_PDU_BUZZER, 0.01f, &buzzerOutbox);
@@ -23,8 +24,8 @@ void pdu_init() {
 }
 
 static void pdu_updateBrakeLight(float brightness) {
-  brakeLightOutbox.dlc = 1;
-  brakeLightOutbox.data[0] = (uint8_t) (brightness * 100.0f);
+  brakeLightOutbox.dlc = 2;
+  can_writeFloat(uint16_t, &brakeLightOutbox, 0, brightness, 0.0001f);
   brakeLightOutbox.isRecent = true;
 }
 
@@ -44,7 +45,7 @@ static void pdu_updateCoolingOutput(float radiatorFanRpmPercentage, float pumpPe
 void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
 
   // At the moment, vcuCore only outputs a boolean for on and off in general.
-  pdu_updateBrakeLight((float) vcuOutput->brakeLight);
+  pdu_updateBrakeLight(vcuOutput->brakeLight);
 
   pdu_updateBuzzer(vcuOutput->r2dBuzzer ? BUZZER_BUZZ : BUZZER_SILENT);
 
@@ -65,8 +66,8 @@ void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
     status->waterTempMotor = can_readInt(int8_t, &thermalStatusInbox, 1); // in 0.1C units, range is -40.0 - 215.0C (max is 215C, but higher will just be ignored
     status->waterTempInverter = can_readInt(int8_t, &thermalStatusInbox, 2); // in 0.1C units, range is -40.0 - 215.0C (max is 215C, but higher will just be ignored
     status->waterTempRadiator = can_readInt(int8_t, &thermalStatusInbox, 3); // in 0.1C units, range is -40.0 - 215.0C (max is 215C, but higher will just be ignored
-    status->radiatorFanRpmPercentage =
-        can_readInt(uint8_t, &thermalStatusInbox, 4); // in 0.1% units, range is 0.0 - 100.0% (max is 100%, but higher will just be ignored
+    status->radiatorFanRpm =
+        can_readInt(uint16_t, &thermalStatusInbox, 4); // in rpm units, range is 0 - 8300rpm (max is 8300rpm, but higher will just be ignored)
     status->isRecent = true;
   }
   if(lvCurrents1Inbox.isRecent) {
@@ -85,5 +86,13 @@ void pdu_periodic(PduStatus *status, VcuOutput *vcuOutput) {
     status->shdn = can_readFloat(uint16_t, &lvCurrents2Inbox, 4, 0.01f);
     status->bl = can_readFloat(uint16_t, &lvCurrents2Inbox, 6, 0.01f);
     status->isRecent = true;
+  }
+
+  auto pdu_timeout = lvCurrents2Inbox.isTimeout || lvCurrents1Inbox.isTimeout ||
+    thermalStatusInbox.isTimeout || lvbattStatusInbox.isTimeout;
+  if(pdu_timeout) {
+    FAULT_SET(&faultVector, FAULT_VCU_PDU);
+  } else {
+    FAULT_CLEAR(&faultVector, FAULT_VCU_PDU);
   }
 }

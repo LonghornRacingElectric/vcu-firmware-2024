@@ -1,7 +1,7 @@
 #include "gps.h"
 #include "faults.h"
 #include "clock.h"
-#include <cstring>
+
 
 Adafruit_GPS gps(huart1);
 GpsData referenceGPSData;
@@ -11,6 +11,7 @@ Adafruit_GPS::Adafruit_GPS(UART_HandleTypeDef &hlpuart) : uart_handler(hlpuart) 
 
     paused = false;
     received = false;
+    is_ready = false;
     hour = minute = seconds = year = month = day = fixquality = fixquality_3d = satellites = 0;
     latitude = longitude = geoidheight = altitude = HDOP = VDOP = PDOP = speed = angle = 0.0;
     latitude_dir = longitude_dir = 0;
@@ -35,7 +36,7 @@ int Adafruit_GPS::send_command(const char *cmd) {
     if((cmd_str.substr(0, 5) != "$PMTK") && (cmd_str.substr(0, 4) != "$PGC")) {
         return 1;
     }
-    return HAL_UART_Transmit(&uart_handler, (uint8_t *) cmd_str.c_str(), cmd_str.size(), HAL_MAX_DELAY);
+    return HAL_UART_Transmit(&uart_handler, (uint8_t *) cmd_str.c_str(), cmd_str.size(), 100);
 }
 
 char Adafruit_GPS::read_command(){
@@ -81,17 +82,21 @@ int Adafruit_GPS::lastNMEA(vector<string>& nmea, int max) {
 int Adafruit_GPS::waitForNewMessage() {
   auto error = HAL_UARTEx_ReceiveToIdle_DMA(&uart_handler, (uint8_t *) gps_tempLine, MAX_GPS_LINE_SIZE);
   if (error != HAL_OK) {
-    // FAULT_SET(&vcu_fault_vector, FAULT_VCU_GPS);
+    FAULT_SET(&faultVector, FAULT_VCU_GPS_NO_DMA_START);
   }
   return error;
 }
 
 bool Adafruit_GPS::checkTimeout(){
-  if(clock_getDeltaTime() - gps.lastTimeRecorded > 2.0f){
+  if(clock_getTime() - gps.lastTimeRecorded > 1.0f){
     gps.countPerSecond = gps.count;
     gps.count = 0;
-    gps.lastTimeRecorded = clock_getDeltaTime();
-    if(gps.countPerSecond == 0) return true;
+    gps.lastTimeRecorded = clock_getTime();
+    if(gps.countPerSecond == 0) {
+      FAULT_SET(&faultVector, FAULT_VCU_GPS_TIMEOUT);
+      return true;
+    }
+    FAULT_CLEAR(&faultVector, FAULT_VCU_GPS_TIMEOUT);
   }
   return false;
 }
@@ -100,25 +105,27 @@ void gps_init() {
     gps.waitForNewMessage();
     // Baud rate is hard-coded to 115200 bps
     // Note: we may have to connect an arduino to the GPS module to change the baud rate
+    bool fault = false;
     auto status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_BAUD_115200));
     if(status != HAL_OK) {
-      Error_Handler();
+      fault = true;
     }
     //sends both GGA and RMC data
     status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_OUTPUT_RMCGGA));
     if(status != HAL_OK) {
-      Error_Handler();
+      fault = true;
     }
     //sets the update rate to 1 Hz
     status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_UPDATE_10HZ));
     if(status != HAL_OK) {
-      Error_Handler();
+      fault = true;
     }
     //requests the antenna status
     status = static_cast<HAL_StatusTypeDef>(gps.send_command(PGCMD_ANTENNA));
     if(status != HAL_OK) {
-      Error_Handler();
+      fault = true;
     }
+    gps.is_ready = !fault;
 }
 
 void gps_periodic(GpsData* gpsData) {
@@ -132,8 +139,12 @@ void gps_periodic(GpsData* gpsData) {
     if(gps.newNMEAreceived()){
         vector<string> new_lines;
         int error = gps.lastNMEA(new_lines, 2);
+        if(error != 0) {
+          FAULT_SET(&faultVector, FAULT_VCU_GPS_BAD_RX);
+          return;
+        }
         for(const auto& new_line : new_lines) {
-          if (!gps.parse(new_line) || error != 0) {
+          if (!gps.parse(new_line)) {
             return;
           }
         }

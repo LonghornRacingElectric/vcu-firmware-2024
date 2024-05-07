@@ -1,6 +1,8 @@
 #include "nvm.h"
 #include "fatfs.h"
 #include "clock.h"
+#include "hvc.h"
+#include "faults.h"
 #include <sstream>
 #include <cstring>
 
@@ -14,6 +16,42 @@ static string telemfilename;
 static bool telemetryBegan = false;
 
 static char charBuffer[4096];
+
+float findMean(const float* newData, size_t numData) {
+    float sum = 0;
+    size_t removed = 0;
+    for(int i = 0; i < numData; i++) {
+        if(newData[i] == 0){
+            removed++;
+            continue;
+        }
+        sum += newData[i];
+    }
+    if (sum / (float) (numData - removed) == 0) {
+        return 0;
+    } else {
+        return sum / (float) (numData - removed);
+    }
+
+}
+
+float findMin(const float* newData, size_t numData) {
+    float newMin = 0;
+    for(int i = 0; i < numData; i++) {
+        if(newData[i] == 0) continue;
+        if(newData[i] < newMin) newMin = newData[i];
+    }
+    return newMin;
+}
+
+float findMax(const float* newData, size_t numData) {
+    float newMax = 0;
+    for(int i = 0; i < numData; i++) {
+        if(newData[i] == 0) continue;
+        if(newData[i] > newMax) newMax = newData[i];
+    }
+    return newMax;
+}
 
 static void nvm_loadParameters(VcuParameters *vcuParameters) {
   UINT br = 0;
@@ -57,8 +95,9 @@ static void nvm_saveParameters(VcuParameters *vcuParameters) {
   );
 
   if (res) {
+    FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_CREATE);
+    f_close(&fdst);
     return;
-    // TODO fault
   }
 
   // copy source to destination
@@ -69,7 +108,7 @@ static void nvm_saveParameters(VcuParameters *vcuParameters) {
       &bw
   );
   if (res || bw < sizeof(VcuParameters)) {
-    // TODO don't brick the car, but indicate we're out of storage with some kind of fault
+    FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_WRITE);
   }
 
   // close open files
@@ -86,14 +125,16 @@ static void nvm_beginTelemetry() {
   );
 
   if (res) {
-    // TODO fault
+    FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_CREATE);
+    f_close(&telemfile);
+    return;
   }
 
   // create headers for data
   f_printf(
           &telemfile,
-          "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-          "Time","Inverter Enabled", "Inverter Torque Request", "PRNDL State", "Ready To Drive Buzzer", "Brake Light", "Enable Drag Reduction", "Pump Output", "Radiator Output", "Battery Fans Output", "Vehicle Displacement X", "Vehicle Displacement Y", "Vehicle Displacement Z", "Vehicle Velocity X", "Vehicle Velocity Y", "Vehicle Velocity Z", "Vehicle Acceleration X", "Vehicle Acceleration Y", "Vehicle Acceleration Z", "HV Battery", "LV Battery", "Dash Speed", "APPS Telemetry", "BSE Telemetry", "Steering Wheel Telemetry", "APPS Fault", "BSE Fault", "STOMPP Fault", "Steering Fault","Voltage", "Current", "State of Charge", "Pack Voltage Mean", "Pack Voltage Minimum", "Pack Voltage Maximum", "Pack Voltage Range", "Pack Temp Mean", "Pack Temp Minimum", "Pack Temp Maximum", "Pack Temp Range", "IMD", "AMS", "Contactor Status", "Cell Voltages", "Cell Temps","Volumetric Flow Rate", "Water Temp Inverter", "Water Temp Motor", "Water Temp Radiator", "Radiator Fan RPM Percentage", "LV Voltage", "LV State of Charge", "LV Current", "Voltage Input into DC", "Current Input into DC", "RPM", "Inverter Temp", "Motor Temp", "Motor Angle", "Resolver Angle", "Phase A Current", "Phase B Current", "Phase C Current", "BC Voltage", "AB Voltage", "Output Voltage", "Inverter Frequency", "Actual Torque", "Torque Command", "Fault Vector", "State Vector","APPS 1 Voltage", "APPS 2 Voltage", "BSE 1 Voltage", "BSE 2 Voltage", "Steer Voltage", "Suspension 1 Voltage", "Suspension 2 Voltage", "Front Left Wheel Speed", "Front Right Wheel Speed", "Back Left Wheel Speed", "Back Right Wheel Speed","VCU Acceleration X", "VCU Acceleration Y", "VCU Acceleration Z", "HVC Acceleration X", "HVC Acceleration Y", "HVC Acceleration Z", "PDU Acceleration X", "PDU Acceleration Y", "PDU Acceleration Z", "Front Left Acceleration X", "Front Left Acceleration Y", "Front Left Acceleration Z", "Front Right Acceleration X", "Front Right Acceleration Y", "Front Right Acceleration Z", "Back Left Acceleration X", "Back Left Acceleration Y", "Back Left Acceleration Z", "Back Right Acceleration X", "Back Right Acceleration Y", "Back Right Acceleration Z", "VCU Gyro X", "VCU Gyro Y", "VCU Gyro Z", "HVC Gyro X", "HVC Gyro Y", "HVC Gyro Z", "PDU Gyro X", "PDU Gyro Y", "PDU Gyro Z","Latitude", "Longitude", "Speed", "Heading", "Hour", "Minute", "Seconds", "Year", "Month", "Day", "Milliseconds"
+          "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+          "Time", "Inverter Enabled", "Inverter Torque Request", "PRNDL State", "Ready To Drive Buzzer", "Brake Light", "Enable Drag Reduction", "Pump Output", "Radiator Output", "Battery Fans Output", "Vehicle Displacement X", "Vehicle Displacement Y", "Vehicle Displacement Z", "Vehicle Velocity X", "Vehicle Velocity Y", "Vehicle Velocity Z", "Vehicle Acceleration X", "Vehicle Acceleration Y", "Vehicle Acceleration Z", "HV Battery", "LV Battery", "Dash Speed", "APPS Telemetry", "BSE Telemetry", "Steering Wheel Telemetry", "APPS Fault", "BSE Fault", "STOMPP Fault", "Steering Fault","Voltage", "Current", "State of Charge", "Pack Voltage Mean", "Pack Voltage Minimum", "Pack Voltage Maximum", "Pack Voltage Range", "Pack Temp Mean", "Pack Temp Minimum", "Pack Temp Maximum", "Pack Temp Range", "IMD", "AMS", "Contactor Status", "Cell Voltage Mean", "Cell Voltage Max", "Cell Voltage Min", "Cell Temps Mean", "Cell Temps Max", "Cell Temps Min", "Volumetric Flow Rate", "Water Temp Inverter", "Water Temp Motor", "Water Temp Radiator", "Radiator Fan RPM Percentage", "LV Voltage", "LV State of Charge", "LV Current", "Voltage Input into DC", "Current Input into DC", "RPM", "Inverter Temp", "Motor Temp", "Motor Angle", "Resolver Angle", "Phase A Current", "Phase B Current", "Phase C Current", "BC Voltage", "AB Voltage", "Output Voltage", "Inverter Frequency", "Actual Torque", "Torque Command", "Fault Vector", "State Vector","APPS 1 Voltage", "APPS 2 Voltage", "BSE 1 Voltage", "BSE 2 Voltage", "Steer Voltage", "Suspension 1 Voltage", "Suspension 2 Voltage", "Front Left Wheel Speed", "Front Right Wheel Speed", "Back Left Wheel Speed", "Back Right Wheel Speed","VCU Acceleration X", "VCU Acceleration Y", "VCU Acceleration Z", "HVC Acceleration X", "HVC Acceleration Y", "HVC Acceleration Z", "PDU Acceleration X", "PDU Acceleration Y", "PDU Acceleration Z", "Front Left Acceleration X", "Front Left Acceleration Y", "Front Left Acceleration Z", "Front Right Acceleration X", "Front Right Acceleration Y", "Front Right Acceleration Z", "Back Left Acceleration X", "Back Left Acceleration Y", "Back Left Acceleration Z", "Back Right Acceleration X", "Back Right Acceleration Y", "Back Right Acceleration Z", "VCU Gyro X", "VCU Gyro Y", "VCU Gyro Z", "HVC Gyro X", "HVC Gyro Y", "HVC Gyro Z", "PDU Gyro X", "PDU Gyro Y", "PDU Gyro Z","Latitude", "Longitude", "Speed", "Heading", "Hour", "Minute", "Seconds", "Year", "Month", "Day", "Milliseconds"
           );
 
   // close file to save
@@ -112,16 +153,15 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
         FA_OPEN_EXISTING | FA_WRITE | FA_OPEN_APPEND
     );
     if (res) {
-      // TODO fault
+      FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_WRITE);
     }
   }
 
   // write row of data into file
-
   if(counter % 2 == 0) {
     sprintf(charBuffer,
         // time format
-            "%4f,%d,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%u,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10llu,%10llu,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hhu,%10hu\n",
+            "%4f,%d,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%u,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10llu,%10llu,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10hhu,%10hhu,%10hu,%10hhu,%10hhu,%10hu,%10hu\n",
         // time data
             clock_getTime(),
         // vcu output data
@@ -139,10 +179,13 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
             hvcStatus->packVoltage, hvcStatus->packCurrent, hvcStatus->stateOfCharge, hvcStatus->packVoltageMean,
             hvcStatus->packVoltageMin, hvcStatus->packVoltageMax, hvcStatus->packVoltageRange, hvcStatus->packTempMean,
             hvcStatus->packTempMin, hvcStatus->packTempMax, hvcStatus->packTempRange, (int) hvcStatus->imd,
-            (int) hvcStatus->ams, hvcStatus->contactorStatus, hvcStatus->cellVoltages, hvcStatus->cellTemps,
+            (int) hvcStatus->ams, hvcStatus->contactorStatus, findMean(hvcStatus->cellVoltages, 4*TEMPS_MAILBOXES_NUM),
+            findMax(hvcStatus->cellVoltages, 4*TEMPS_MAILBOXES_NUM), findMin(hvcStatus->cellVoltages, 4*TEMPS_MAILBOXES_NUM),
+            findMean(hvcStatus->cellTemps, 4*TEMPS_MAILBOXES_NUM), findMax(hvcStatus->cellTemps, 4*TEMPS_MAILBOXES_NUM),
+            findMin(hvcStatus->cellTemps, 4*TEMPS_MAILBOXES_NUM),//(hvcStatus->cellVoltages), hvcStatus->cellTemps,
         // pdu status data
             pduStatus->volumetricFlowRate, pduStatus->waterTempInverter, pduStatus->waterTempMotor,
-            pduStatus->waterTempRadiator, pduStatus->radiatorFanRpmPercentage, pduStatus->lvVoltage, pduStatus->lvSoC,
+            pduStatus->waterTempRadiator, pduStatus->radiatorFanRpm, pduStatus->lvVoltage, pduStatus->lvSoC,
             pduStatus->lvCurrent,
         // inverter status data
             inverterStatus->voltage, inverterStatus->current, inverterStatus->rpm, inverterStatus->inverterTemp,
@@ -185,7 +228,7 @@ void nvm_init(VcuParameters *vcuParameters) {
   //mount default drive
   res = f_mount(&fs, "", 0);
   if(res) {
-    // TODO fault
+    FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_MOUNT);
   }
 
   // load vcu parameters
