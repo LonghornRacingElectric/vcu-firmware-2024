@@ -34,8 +34,8 @@ void inverter_init() {
 
   can_addOutbox(VCU_INV_COMMAND, 0.003f, &torqueCommandOutbox);
 //  can_addOutbox(0x0C1, 0.1f, &paramsRequestOutbox);
+//  inverter_writeParameter(20, 0); // fault reset
 //  inverter_writeParameter(168, 100); // torque ramp
-  inverter_writeParameter(20, 0);
 //  inverter_writeParameter(111, 8000); // motor over-speed fault RPM
 //  inverter_writeParameter(128, 6500); // max RPM
 //  inverter_writeParameter(127, 4400); // field weakening start RPM
