@@ -769,12 +769,12 @@ static void cellular_registerTMobile() {
     }
   }
   if (cellular_systemState == STATE_BOOTING) {
-    volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
-    error++;
     dmaDisable = false;
     cellular_systemState = STATE_SEARCHING;
     std::string command = "AT+COPS=?\r";
     cellular_sendNonBlocking(command);
+    volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+    error++;
   }
 
 }
