@@ -185,9 +185,9 @@ int main(void)
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
                  &wheelMagnetValues, &imuData, &gpsData);
-    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-                      &pduStatus, &inverterStatus, &analogVoltages,
-                      &wheelMagnetValues, &imuData, &gpsData);
+//    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+//                      &pduStatus, &inverterStatus, &analogVoltages,
+//                      &wheelMagnetValues, &imuData, &gpsData);
   }
   /* USER CODE END 3 */
 }
