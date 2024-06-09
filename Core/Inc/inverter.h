@@ -52,22 +52,28 @@ static void inverter_updateTorqueCommand(float torque, float rpm, bool enable_in
 
 /**
  * Reset faults over CAN.
- * @return error_code
  */
-unsigned int inverter_resetFaults();
+void inverter_resetFaults();
 
 /**
  * Read/write inverter parameters over CAN.
  * @param param_addr
  * @param param_value
  * @param write
- * @return error_code
  */
-unsigned int inverter_writeParameter(uint16_t param_addr, uint16_t param_value);
+void inverter_writeParameter(uint16_t param_addr, uint16_t param_value);
+
+/**
+ * Read/write inverter parameters over CAN.
+ * @param param_addr
+ * @param param_value
+ * @param write
+ */
+void inverter_updateParameterCommand(float deltaTime);
 
 /**
  * Periodic method to get status and update torque command.
  */
-void inverter_periodic(InverterStatus *status, VcuOutput* vcuCoreOutput);
+void inverter_periodic(InverterStatus *status, VcuOutput* vcuCoreOutput, float deltaTime);
 
 #endif //VCU_FIRMWARE_2024_INVERTER_H

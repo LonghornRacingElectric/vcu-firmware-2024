@@ -175,7 +175,7 @@ int main(void)
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
-    inverter_periodic(&inverterStatus, &vcuCoreOutput);
+    inverter_periodic(&inverterStatus, &vcuCoreOutput, deltaTime);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
     dash_periodic(&pduStatus, &hvcStatus, &inverterStatus, &gpsData, &vcuCoreOutput);
     can_periodic(deltaTime);
