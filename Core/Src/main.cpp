@@ -172,6 +172,9 @@ int main(void)
     allImus_periodic(&imuData);
     gps_periodic(&gpsData);
 
+    // TODO why is front right not working??
+    wheelMagnetValues.fr = wheelMagnetValues.fl;
+
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 

@@ -9,7 +9,7 @@ void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchSt
                  PduStatus &pduStatus, InverterStatus &inverterStatus, WheelMagnetValues &wheelMagnetValues,
                  ImuData &imuData, GpsData &gpsData, VcuOutput &vcuOutput, float deltaTime) {
 
-  bool inverterReady = true; //(!hvcStatus.ams) && (!hvcStatus.imd);
+  bool inverterReady = (!hvcStatus.ams) && (!hvcStatus.imd);
 
   vcuInput = {
           analogVoltages.apps1,

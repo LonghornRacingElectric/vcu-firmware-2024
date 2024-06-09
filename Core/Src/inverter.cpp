@@ -41,21 +41,27 @@ void inverter_init() {
   can_addInbox(INV_FAULT_CODES, &inverterFaultInbox, INV_TIMEOUT_FAST);
   can_addInbox(INV_TORQUE_TIMER, &torqueInfoInbox, INV_TIMEOUT_FAST);
   //can_addInbox(INV_HIGH_SPEED_MSG, &highSpeedInbox, INV_TIMEOUT_VERYFAST);
+  can_addInbox(INV_VCU_PARAMS_RESPONSE, &paramsResponseInbox, 1.0f);
 
   can_addOutbox(VCU_INV_COMMAND, 0.003f, &torqueCommandOutbox);
   can_addOutbox(0x0C1, 0.1f, &paramsRequestOutbox);
 
-  inverter_writeParameter(148, 0x1CE5);
 
-//  inverter_writeParameter(168, 100); // torque ramp
-//  inverter_writeParameter(111, 8000); // motor over-speed fault RPM
+//  inverter_writeParameter(148, 0x1CE5); // message selection
+//  inverter_writeParameter(168, 10); // torque ramp, use 100 loaded
+//  inverter_writeParameter(111, 6900); // motor over-speed fault RPM
 //  inverter_writeParameter(128, 6500); // max RPM
-//  inverter_writeParameter(127, 4400); // field weakening start RPM
+//  inverter_writeParameter(127, 4000); // field weakening start RPM ("break speed")
 //  inverter_writeParameter(169, 5100); // speed rate limit RPM
 //  inverter_writeParameter(129, 2300); // torque limit
-//  inverter_writeParameter(101, 3000); // D axis current limit
-
-  inverter_resetFaults();
+//  inverter_writeParameter(100, 3600); // Q axis current limit
+//  inverter_writeParameter(101, 900); // D axis current limit
+//  inverter_writeParameter(164, 100); // P gain
+//  inverter_writeParameter(165, 360); // I gain
+//  inverter_writeParameter(166, 0); // D gain
+//  inverter_writeParameter(167, 0); // low-pass filter gain
+//  inverter_writeParameter(187, 0); // shudder compensation
+//  inverter_resetFaults();
 }
 
 static void inverter_getStatus(InverterStatus *status) {
@@ -114,7 +120,6 @@ static void inverter_getStatus(InverterStatus *status) {
     status->isRecent = true;
     volatile bool resolverDisconnected = status->faultVector & 0x4000000000000000;
     volatile int x = 0;
-    println(status->faultVector);
     x++;
   }
 
@@ -135,10 +140,10 @@ static void inverter_getStatus(InverterStatus *status) {
     FAULT_CLEAR(&faultVector, FAULT_VCU_INV);
   }
 
-//  if (paramsResponseInbox.isRecent) {
-//     status->newData = can_readInt(uint16_t, &paramsResponseInbox, 4);
-//    paramsResponseInbox.isRecent = false;
-//  }
+  if (paramsResponseInbox.isRecent) {
+    status->newData = can_readInt(uint16_t, &paramsResponseInbox, 4);
+    paramsResponseInbox.isRecent = false;
+  }
 }
 
 
@@ -165,6 +170,12 @@ void inverter_writeParameter(uint16_t address, uint16_t value) {
   parameterUpdateQueue.push(parameterUpdate);
 }
 
+void inverter_readParameter(uint16_t address) {
+  can_writeInt(uint16_t, &paramsRequestOutbox, 0, address); // param addr
+  can_writeInt(uint8_t, &paramsRequestOutbox, 2, 0); // read
+  paramsRequestOutbox.dlc = 8;
+}
+
 void inverter_updateParameterCommand(float deltaTime) {
   if (parameterUpdateQueue.empty()) {
     return;
@@ -177,7 +188,6 @@ void inverter_updateParameterCommand(float deltaTime) {
   can_writeInt(uint8_t, &paramsRequestOutbox, 2, 1); // write
   can_writeInt(uint16_t, &paramsRequestOutbox, 4, parameterUpdate.value); // param value
   paramsRequestOutbox.dlc = 8;
-  paramsRequestOutbox.isRecent = true;
 
   // weird inconsistency in cascadia documentation
   if(parameterUpdate.address == 148) {
@@ -198,4 +208,5 @@ void inverter_periodic(InverterStatus *status, VcuOutput* vcuCoreOutput, float d
   inverter_getStatus(status);
   inverter_updateTorqueCommand(vcuCoreOutput->inverterTorqueRequest, 0, vcuCoreOutput->enableInverter);
   inverter_updateParameterCommand(deltaTime);
+//  inverter_readParameter(165);
 }
