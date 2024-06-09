@@ -22,7 +22,7 @@ void hvc_init() {
   can_addInboxes(HVC_VCU_CELL_VOLTAGES_START, HVC_VCU_CELL_VOLTAGES_END, voltageInboxes, HVC_TIMEOUT_TELEM);
   can_addInboxes(HVC_VCU_CELL_TEMPS_START, HVC_VCU_CELL_TEMPS_END, tempInboxes, HVC_TIMEOUT_TELEM);
   can_addInbox(HVC_VCU_PACK_STATUS, &packStatusInbox, HVC_TIMEOUT_FAST);
-  can_addInbox(HVC_VCU_AMS_IMD, &amsImdInbox, HVC_TIMEOUT_FAST);
+  can_addInbox(HVC_VCU_AMS_IMD, &amsImdInbox, 1.0f);
   can_addInbox(HVC_VCU_FAN_RPM, &coolingInbox, HVC_TIMEOUT_SLOW);
   can_addInbox(HVC_VCU_CCS_INFO, &ccsInbox, HVC_TIMEOUT_TELEM);
   can_addInbox(HVC_VCU_CONTACTOR_STATUS, &contactorStatusInbox, HVC_TIMEOUT_FAST);
