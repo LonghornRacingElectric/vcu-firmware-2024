@@ -54,7 +54,7 @@ void inverter_init() {
 //  inverter_writeParameter(127, 4000); // field weakening start RPM ("break speed")
 //  inverter_writeParameter(169, 5100); // speed rate limit RPM
 //  inverter_writeParameter(129, 2300); // torque limit
-//  inverter_writeParameter(100, 3600); // Q axis current limit
+  inverter_writeParameter(100, 4530); // Q axis current limit
 //  inverter_writeParameter(101, 900); // D axis current limit
 //  inverter_writeParameter(164, 100); // P gain
 //  inverter_writeParameter(165, 360); // I gain
@@ -120,7 +120,9 @@ static void inverter_getStatus(InverterStatus *status) {
     status->isRecent = true;
     volatile bool resolverDisconnected = status->faultVector & 0x4000000000000000;
     volatile int x = 0;
-    x++;
+    if(status->faultVector) {
+      x++;
+    }
   }
 
   if (torqueInfoInbox.isRecent) {

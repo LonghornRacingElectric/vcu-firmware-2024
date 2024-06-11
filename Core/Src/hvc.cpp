@@ -105,7 +105,7 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
   }
   if (contactorStatusInbox.isRecent) {
     contactorStatusInbox.isRecent = false;
-    status->contactorStatus = (HvcStatus::ContactorStatus) contactorStatusInbox.data[0];
+    status->contactorStatus = contactorStatusInbox.data[0];
     status->isRecent = true;
   }
 
