@@ -161,12 +161,12 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
   if(counter % 2 == 0) {
     sprintf(charBuffer,
         // time format
-            "%4f,%d,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%u,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10llu,%10llu,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10hhu,%10hhu,%10hu,%10hhu,%10hhu,%10hu,%10hu\n",
+            "%4f,%d,%4f,%d,%d,%4f,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%u,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10llu,%10llu,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10hhu,%10hhu,%10hu,%10hhu,%10hhu,%10hu,%10hu\n",
         // time data
             clock_getTime(),
         // vcu output data
             (int) vcuCoreOutput->enableInverter, vcuCoreOutput->inverterTorqueRequest, (int) vcuCoreOutput->prndlState,
-            (int) vcuCoreOutput->r2dBuzzer, (int) vcuCoreOutput->brakeLight, (int) vcuCoreOutput->enableDragReduction,
+            (int) vcuCoreOutput->r2dBuzzer, vcuCoreOutput->brakeLight, (int) vcuCoreOutput->enableDragReduction,
             vcuCoreOutput->pumpOutput, vcuCoreOutput->radiatorOutput, vcuCoreOutput->batteryFansOutput,
             vcuCoreOutput->vehicleDisplacement.x, vcuCoreOutput->vehicleDisplacement.y,
             vcuCoreOutput->vehicleDisplacement.z, vcuCoreOutput->vehicleVelocity.x, vcuCoreOutput->vehicleVelocity.y,
