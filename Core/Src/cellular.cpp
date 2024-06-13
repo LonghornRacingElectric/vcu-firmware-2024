@@ -209,7 +209,7 @@ static void cellular_sendStartTime(GpsData *gpsData) {
   time = time + date + "." + std::to_string(data);
   std::string command = "AT+UMQTTC=2,0,0,\"/config/car\",\"" + time + "\"\r";
 //  cellular_sendNonBlocking(command);
-  cellular_sendNonBlocking(command);
+  cellular_send(&command);
   cellular_systemState = STATE_OK;
   handshakeTimestamp = clock_getTime();
 }
@@ -1135,7 +1135,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
     FAULT_CLEAR(&faultVector, CELL_RESET_STATE);
     FAULT_SET(&faultVector, FAULT_VCU_CELL_CONNECTING);
     if (!dmaDisable) {
-      if (finished_tx) {
+      if (finished_tx && !vcuCoreOutput->prndlState) {
         HAL_Delay(20);
         HAL_UART_Abort(&huart7);
         HAL_Delay(20);
@@ -1185,7 +1185,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       FAULT_CLEAR(&faultVector, FAULT_VCU_CELL_NO_DMA_START);
       error++;
       dmaDisable = false;
-    } else if (finished_tx) {
+    } else if (finished_tx && !vcuCoreOutput->prndlState) {
       cellular_sendStartTime(gpsData);
     }
 
@@ -1214,10 +1214,10 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       lastLFTime = nowLFTime;
       if (cellular_dataToSend.size() < 10) {
         FAULT_CLEAR(&faultVector, FAULT_VCU_CELL_QUEUE_FULL);
-        cellular_sendTelemetryLow(vcuCoreOutput, hvcStatus,
-                                  pduStatus, inverterStatus,
-                                  analogVoltages, wheelMagnetValues,
-                                  imuData, gpsData);
+//        cellular_sendTelemetryLow(vcuCoreOutput, hvcStatus,
+//                                  pduStatus, inverterStatus,
+//                                  analogVoltages, wheelMagnetValues,
+//                                  imuData, gpsData);
       } else {
         FAULT_SET(&faultVector, FAULT_VCU_CELL_QUEUE_FULL);
       }
@@ -1246,7 +1246,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       float nowTextTime = clock_getTime();
       if (nowTextTime - lastTextTime > 1.0f && finished_tx) {
         lastTextTime = nowTextTime;
-        // cellular_respondToTexts(); // This makes car slow for some reason
+//         cellular_respondToTexts();
       }
 
       // check for new parameters from Texas Tune
