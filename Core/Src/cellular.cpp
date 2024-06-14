@@ -217,7 +217,7 @@ static void cellular_sendStartTime(GpsData *gpsData) {
 
 static uint32_t cellular_calculateTimeDiff() {
   float timeSinceHandshake = clock_getTime() - handshakeTimestamp;
-  uint32_t timeSinceHandshakeMillis = static_cast<uint32_t>(timeSinceHandshake) * 1000;
+  uint32_t timeSinceHandshakeMillis = static_cast<uint32_t>(timeSinceHandshake * 1000.0f);
   return timeSinceHandshakeMillis;
 }
 
@@ -229,7 +229,7 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 
   std::string dataToEncode = "";
   // byte size of data
-  uint8_t arr[143];
+  uint8_t arr[200];
   uint8_t *ptr = arr;
 
   // For HF
@@ -457,12 +457,10 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 
 
   // now encoding data
-  char encoded[192];
-  cellular_Base64encode(encoded, arr, 143);
-  for (int i = 0; i < 192; i++) {
-    dataToEncode = dataToEncode + encoded[i];
-  }
-  std::string command = "AT+UMQTTC=2,0,0,\"/h\",\"" + dataToEncode + "\"\r";
+  char encoded[220];
+  cellular_Base64encode(encoded, arr, 164);
+  std::string encodedString = string(encoded);
+  std::string command = "AT+UMQTTC=2,0,0,\"/h\",\"" + encodedString + "\"\r";
   cellular_dataToSend.push(command);
 //  std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";\
 //  std::string actual;
@@ -1194,7 +1192,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
     // generate high frequency message
     static float lastHFTime = clock_getTime();
     float nowHFTime = clock_getTime();
-    if (nowHFTime - lastHFTime > 0.05f) {
+    if (nowHFTime - lastHFTime > 0.2f) { // TODO 20+ Hz
       lastHFTime = nowHFTime;
       if (cellular_dataToSend.size() < 10) {
         FAULT_CLEAR(&faultVector, FAULT_VCU_CELL_QUEUE_FULL);
