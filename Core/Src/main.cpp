@@ -175,8 +175,13 @@ int main(void)
     // TODO why is front right not working??
     wheelMagnetValues.fr = wheelMagnetValues.fl;
 
+//    println(analogVoltages.apps1);
+//    println(analogVoltages.apps2);
+
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
+
+//    println(vcuCoreOutput.telemetryApps);
 
     inverter_periodic(&inverterStatus, &vcuCoreOutput, deltaTime);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);

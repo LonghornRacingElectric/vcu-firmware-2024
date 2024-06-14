@@ -20,6 +20,8 @@ void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchSt
 
           analogVoltages.steer,
 
+          inverterStatus.rpm,
+
           wheelMagnetValues.fl,
           wheelMagnetValues.fr,
           wheelMagnetValues.bl,

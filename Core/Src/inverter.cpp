@@ -54,14 +54,24 @@ void inverter_init() {
 //  inverter_writeParameter(127, 4000); // field weakening start RPM ("break speed")
 //  inverter_writeParameter(169, 5100); // speed rate limit RPM
 //  inverter_writeParameter(129, 2300); // torque limit
-  inverter_writeParameter(100, 4530); // Q axis current limit
+//  inverter_writeParameter(100, 4530); // Q axis current limit
 //  inverter_writeParameter(101, 900); // D axis current limit
 //  inverter_writeParameter(164, 100); // P gain
 //  inverter_writeParameter(165, 360); // I gain
 //  inverter_writeParameter(166, 0); // D gain
 //  inverter_writeParameter(167, 0); // low-pass filter gain
 //  inverter_writeParameter(187, 0); // shudder compensation
-//  inverter_resetFaults();
+//  inverter_writeParameter(246, 10); // min PWM
+//  inverter_writeParameter(247, 10); // max PWM
+//  inverter_writeParameter(245, 10); // stall PWM
+//  inverter_writeParameter(250, 0); // nominal PWM with stall region
+  inverter_resetFaults();
+
+
+  // 246 = 6 = 6 kHz min PWM
+  // 247 = 17 = 17 kHz max PWM
+  // 245 = 6 = 6 kHz stall PWM
+  // 250 = 1 = continuously variable with stall region
 }
 
 static void inverter_getStatus(InverterStatus *status) {
@@ -210,5 +220,6 @@ void inverter_periodic(InverterStatus *status, VcuOutput* vcuCoreOutput, float d
   inverter_getStatus(status);
   inverter_updateTorqueCommand(vcuCoreOutput->inverterTorqueRequest, 0, vcuCoreOutput->enableInverter);
   inverter_updateParameterCommand(deltaTime);
-//  inverter_readParameter(165);
+//  inverter_readParameter(250);
+//  println(status->newData);
 }

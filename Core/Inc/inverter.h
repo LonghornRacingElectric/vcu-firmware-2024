@@ -64,6 +64,11 @@ void inverter_resetFaults();
 void inverter_writeParameter(uint16_t param_addr, uint16_t param_value);
 
 /**
+ *
+ */
+void inverter_readParameter(uint16_t address);
+
+/**
  * Read/write inverter parameters over CAN.
  * @param param_addr
  * @param param_value
