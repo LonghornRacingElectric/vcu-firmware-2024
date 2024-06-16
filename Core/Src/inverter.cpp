@@ -19,6 +19,7 @@ static CanInbox inverterFaultInbox;
 static CanInbox torqueInfoInbox;
 static CanInbox highSpeedInbox;
 static CanInbox paramsResponseInbox;
+static CanInbox extraInbox;
 
 static CanOutbox torqueCommandOutbox;
 static CanOutbox paramsRequestOutbox;
@@ -35,6 +36,7 @@ void inverter_init() {
   can_addInbox(INV_VOLTAGE, &voltageInbox, INV_TIMEOUT_FAST);
   can_addInbox(INV_CURRENT, &currentInbox, INV_TIMEOUT_FAST);
   can_addInbox(INV_TEMP3_DATA, &motorTempInbox, INV_TIMEOUT_SLOW);
+  can_addInbox(0x0A1, &extraInbox, INV_TIMEOUT_SLOW);
   can_addInbox(INV_TEMP1_DATA, &inverterTempInbox, INV_TIMEOUT_SLOW);
   can_addInbox(INV_MOTOR_POSITIONS, &motorPosInbox, INV_TIMEOUT_FAST);
   can_addInbox(INV_STATE_CODES, &inverterStateInbox, INV_TIMEOUT_FAST);
@@ -44,7 +46,6 @@ void inverter_init() {
   can_addInbox(INV_VCU_PARAMS_RESPONSE, &paramsResponseInbox, 1.0f);
 
   can_addOutbox(VCU_INV_COMMAND, 0.003f, &torqueCommandOutbox);
-  can_addOutbox(0x0C1, 0.1f, &paramsRequestOutbox);
 
 
 //  inverter_writeParameter(148, 0x1CE5); // message selection
@@ -61,11 +62,17 @@ void inverter_init() {
 //  inverter_writeParameter(166, 0); // D gain
 //  inverter_writeParameter(167, 0); // low-pass filter gain
 //  inverter_writeParameter(187, 0); // shudder compensation
+//  inverter_writeParameter(241, 10); // default PWM
 //  inverter_writeParameter(246, 10); // min PWM
 //  inverter_writeParameter(247, 10); // max PWM
 //  inverter_writeParameter(245, 10); // stall PWM
-//  inverter_writeParameter(250, 0); // nominal PWM with stall region
-  inverter_resetFaults();
+//  inverter_writeParameter(250, 0); // nominal PWM mode with stall region
+  can_writeInt(uint16_t, &paramsRequestOutbox, 0, 20); // param addr
+  can_writeInt(uint8_t, &paramsRequestOutbox, 2, 1); // write
+  can_writeInt(uint16_t, &paramsRequestOutbox, 4, 0); // param value
+  can_addOutbox(0x0C1, 0.1f, &paramsRequestOutbox);
+
+//  inverter_writeParameter(147, 1000); // CAN bit rate
 
 
   // 246 = 6 = 6 kHz min PWM
@@ -75,6 +82,11 @@ void inverter_init() {
 }
 
 static void inverter_getStatus(InverterStatus *status) {
+
+  if(extraInbox.isRecent) {
+    volatile float x = can_readFloat(int16_t, &extraInbox, 0, 0.1f);
+    x++;
+  }
 
   if (inverterTempInbox.isRecent) {
     auto temp = can_readFloat(int16_t, &inverterTempInbox, 0, 0.1f) +
@@ -219,7 +231,7 @@ void inverter_updateParameterCommand(float deltaTime) {
 void inverter_periodic(InverterStatus *status, VcuOutput* vcuCoreOutput, float deltaTime) {
   inverter_getStatus(status);
   inverter_updateTorqueCommand(vcuCoreOutput->inverterTorqueRequest, 0, vcuCoreOutput->enableInverter);
-  inverter_updateParameterCommand(deltaTime);
+//  inverter_updateParameterCommand(deltaTime);
 //  inverter_readParameter(250);
 //  println(status->newData);
 }
