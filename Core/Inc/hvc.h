@@ -30,13 +30,7 @@ typedef struct HvcStatus {
     bool imd;
     bool ams;
 
-    enum ContactorStatus {
-        UNKNOWN = 0,
-        FULLY_OPEN = 1,
-        PRECHARGE = 2,
-        FULLY_CLOSED = 3,
-        DISCHARGE = 4,
-    } contactorStatus;
+    uint8_t contactorStatus;
 
     // TODO cell voltages and temps
     float cellVoltages[4*VOLTS_MAILBOXES_NUM] = {0};

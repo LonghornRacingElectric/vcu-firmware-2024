@@ -209,7 +209,7 @@ static void cellular_sendStartTime(GpsData *gpsData) {
   time = time + date + "." + std::to_string(data);
   std::string command = "AT+UMQTTC=2,0,0,\"/config/car\",\"" + time + "\"\r";
 //  cellular_sendNonBlocking(command);
-  cellular_sendNonBlocking(command);
+  cellular_send(&command);
   cellular_systemState = STATE_OK;
   handshakeTimestamp = clock_getTime();
 }
@@ -217,7 +217,7 @@ static void cellular_sendStartTime(GpsData *gpsData) {
 
 static uint32_t cellular_calculateTimeDiff() {
   float timeSinceHandshake = clock_getTime() - handshakeTimestamp;
-  uint32_t timeSinceHandshakeMillis = static_cast<uint32_t>(timeSinceHandshake) * 1000;
+  uint32_t timeSinceHandshakeMillis = static_cast<uint32_t>(timeSinceHandshake * 1000.0f);
   return timeSinceHandshakeMillis;
 }
 
@@ -229,7 +229,7 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 
   std::string dataToEncode = "";
   // byte size of data
-  uint8_t arr[143];
+  uint8_t arr[200];
   uint8_t *ptr = arr;
 
   // For HF
@@ -457,12 +457,10 @@ static void cellular_sendTelemetryHigh(VcuOutput *vcuCoreOutput, HvcStatus *hvcS
 
 
   // now encoding data
-  char encoded[192];
-  cellular_Base64encode(encoded, arr, 143);
-  for (int i = 0; i < 192; i++) {
-    dataToEncode = dataToEncode + encoded[i];
-  }
-  std::string command = "AT+UMQTTC=2,0,0,\"/h\",\"" + dataToEncode + "\"\r";
+  char encoded[220];
+  cellular_Base64encode(encoded, arr, 164);
+  std::string encodedString = string(encoded);
+  std::string command = "AT+UMQTTC=2,0,0,\"/h\",\"" + encodedString + "\"\r";
   cellular_dataToSend.push(command);
 //  std::string response = "\r\r\n+UMQTTC: 2,1\r\r\n\r\nOK\r\n";\
 //  std::string actual;
@@ -769,12 +767,12 @@ static void cellular_registerTMobile() {
     }
   }
   if (cellular_systemState == STATE_BOOTING) {
-    volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
-    error++;
     dmaDisable = false;
     cellular_systemState = STATE_SEARCHING;
     std::string command = "AT+COPS=?\r";
     cellular_sendNonBlocking(command);
+    volatile uint32_t error = HAL_UARTEx_ReceiveToIdle_DMA(&huart7, (uint8_t *) cell_tempLine, MAX_CELL_LINE_SIZE);
+    error++;
   }
 
 }
@@ -1135,7 +1133,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
     FAULT_CLEAR(&faultVector, CELL_RESET_STATE);
     FAULT_SET(&faultVector, FAULT_VCU_CELL_CONNECTING);
     if (!dmaDisable) {
-      if (finished_tx) {
+      if (finished_tx && !vcuCoreOutput->prndlState) {
         HAL_Delay(20);
         HAL_UART_Abort(&huart7);
         HAL_Delay(20);
@@ -1185,7 +1183,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       FAULT_CLEAR(&faultVector, FAULT_VCU_CELL_NO_DMA_START);
       error++;
       dmaDisable = false;
-    } else if (finished_tx) {
+    } else if (finished_tx && !vcuCoreOutput->prndlState) {
       cellular_sendStartTime(gpsData);
     }
 
@@ -1194,7 +1192,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
     // generate high frequency message
     static float lastHFTime = clock_getTime();
     float nowHFTime = clock_getTime();
-    if (nowHFTime - lastHFTime > 0.05f) {
+    if (nowHFTime - lastHFTime > 0.2f) { // TODO 20+ Hz
       lastHFTime = nowHFTime;
       if (cellular_dataToSend.size() < 10) {
         FAULT_CLEAR(&faultVector, FAULT_VCU_CELL_QUEUE_FULL);
@@ -1214,10 +1212,10 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       lastLFTime = nowLFTime;
       if (cellular_dataToSend.size() < 10) {
         FAULT_CLEAR(&faultVector, FAULT_VCU_CELL_QUEUE_FULL);
-        cellular_sendTelemetryLow(vcuCoreOutput, hvcStatus,
-                                  pduStatus, inverterStatus,
-                                  analogVoltages, wheelMagnetValues,
-                                  imuData, gpsData);
+//        cellular_sendTelemetryLow(vcuCoreOutput, hvcStatus,
+//                                  pduStatus, inverterStatus,
+//                                  analogVoltages, wheelMagnetValues,
+//                                  imuData, gpsData);
       } else {
         FAULT_SET(&faultVector, FAULT_VCU_CELL_QUEUE_FULL);
       }
@@ -1246,7 +1244,7 @@ void cellular_periodic(VcuParameters *vcuCoreParameters,
       float nowTextTime = clock_getTime();
       if (nowTextTime - lastTextTime > 1.0f && finished_tx) {
         lastTextTime = nowTextTime;
-        // cellular_respondToTexts(); // This makes car slow for some reason
+//         cellular_respondToTexts();
       }
 
       // check for new parameters from Texas Tune

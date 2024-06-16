@@ -9,7 +9,7 @@ void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchSt
                  PduStatus &pduStatus, InverterStatus &inverterStatus, WheelMagnetValues &wheelMagnetValues,
                  ImuData &imuData, GpsData &gpsData, VcuOutput &vcuOutput, float deltaTime) {
 
-  bool inverterReady = true; //(!hvcStatus.ams) && (!hvcStatus.imd);
+  bool inverterReady = (!hvcStatus.ams) && (!hvcStatus.imd) && (hvcStatus.contactorStatus == 3);
 
   vcuInput = {
           analogVoltages.apps1,
@@ -19,6 +19,8 @@ void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchSt
           analogVoltages.bse2,
 
           analogVoltages.steer,
+
+          inverterStatus.rpm,
 
           wheelMagnetValues.fl,
           wheelMagnetValues.fr,
@@ -33,7 +35,8 @@ void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchSt
           inverterReady,
 
           hvcStatus.packVoltage,
-          hvcStatus.packCurrent,
+          inverterStatus.current,
+//          hvcStatus.packCurrent,
 
           pduStatus.lvVoltage,
           pduStatus.lvCurrent,

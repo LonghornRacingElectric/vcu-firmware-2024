@@ -18,7 +18,7 @@ void dash_periodic(PduStatus* pduStatus, HvcStatus* hvcStatus, InverterStatus* i
   dashOutbox1.data[0] = (int8_t) (vcuCoreOutput->dashSpeed);
 //  dashOutbox1.data[0] = (uint8_t) (vcuCoreOutput->telemetryApps * 99.0f);
 
-  dashOutbox1.data[1] = 0; // power (uint8, kW)
+  dashOutbox1.data[1] = (uint8_t) (inverterStatus->voltage * inverterStatus->current / 1000.0f);
   dashOutbox1.data[2] = (uint8_t) (vcuCoreOutput->telemetryApps * 100.0f);
   dashOutbox1.data[3] = (uint8_t) (vcuCoreOutput->telemetryBse * 100.0f);
   dashOutbox1.data[4] = (uint8_t) (vcuCoreOutput->hvBatterySoc * 100.0f);

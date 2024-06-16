@@ -106,22 +106,22 @@ void gps_init() {
     // Baud rate is hard-coded to 115200 bps
     // Note: we may have to connect an arduino to the GPS module to change the baud rate
     bool fault = false;
-    auto status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_BAUD_115200));
+    auto status = gps.send_command(PMTK_SET_BAUD_115200);
     if(status != HAL_OK) {
       fault = true;
     }
     //sends both GGA and RMC data
-    status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_OUTPUT_RMCGGA));
+    status = gps.send_command(PMTK_SET_NMEA_OUTPUT_RMCGGA);
     if(status != HAL_OK) {
       fault = true;
     }
     //sets the update rate to 1 Hz
-    status = static_cast<HAL_StatusTypeDef>(gps.send_command(PMTK_SET_NMEA_UPDATE_10HZ));
+    status = gps.send_command(PMTK_SET_NMEA_UPDATE_10HZ);
     if(status != HAL_OK) {
       fault = true;
     }
     //requests the antenna status
-    status = static_cast<HAL_StatusTypeDef>(gps.send_command(PGCMD_ANTENNA));
+    status = gps.send_command(PGCMD_ANTENNA);
     if(status != HAL_OK) {
       fault = true;
     }
