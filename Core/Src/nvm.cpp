@@ -197,8 +197,9 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
         // analog voltages data
             analogVoltages->apps1, analogVoltages->apps2, analogVoltages->bse1, analogVoltages->bse2,
             analogVoltages->steer, analogVoltages->sus1, analogVoltages->sus2,
-        // wheel magnet values data
-            wheelMagnetValues->fl, wheelMagnetValues->fr, wheelMagnetValues->bl, wheelMagnetValues->br,
+        // wheelspeeds
+            vcuCoreOutput->telemetryWheelSpeedFl, vcuCoreOutput->telemetryWheelSpeedFr,
+            vcuCoreOutput->telemetryWheelSpeedBl, vcuCoreOutput->telemetryWheelSpeedBr,
         // imu data
             imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z, imuData->accelHvc.x, imuData->accelHvc.y,
             imuData->accelHvc.z, imuData->accelPdu.x, imuData->accelPdu.y, imuData->accelPdu.z, imuData->accelFl.x,
