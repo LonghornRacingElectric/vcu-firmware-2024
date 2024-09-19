@@ -13,6 +13,8 @@ static FIL fsrc;
 static FIL fdst;
 static string telemfilename;
 
+extern bool didWrite;
+
 static bool telemetryBegan = false;
 
 static char charBuffer[4096];
@@ -218,8 +220,10 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
   }
 
   if(counter == FILE_SAVE_INTERVAL - 1) {
-    // close file to save
-    f_close(&telemfile);
+    // close file to save volatile int x
+    volatile int x= f_close(&telemfile);
+      didWrite = true;
+
   }
 
   counter = (counter + 1) % FILE_SAVE_INTERVAL;

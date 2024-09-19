@@ -4,7 +4,7 @@
 #include "VcuParameters.h"
 #include "cellular.h"
 
-#define FILE_SAVE_INTERVAL 150
+#define FILE_SAVE_INTERVAL 75
 
 /**
  * Load VCU parameters from a file on the SD card.

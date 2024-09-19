@@ -91,6 +91,8 @@ WheelMagnetValues wheelMagnetValues;
 ImuData imuData;
 GpsData gpsData;
 
+bool didWrite = false;
+
 /* USER CODE END 0 */
 
 /**
@@ -162,7 +164,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
-    led_rainbow(deltaTime);
+    if(didWrite) led_rainbow(deltaTime);
 
     adc_periodic(&analogVoltages);
     driveSwitch_periodic(&driveSwitchState);
