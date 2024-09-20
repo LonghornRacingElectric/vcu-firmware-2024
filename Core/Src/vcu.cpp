@@ -34,8 +34,9 @@ void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchSt
           hvcStatus.stateOfCharge,
           inverterReady,
 
-          hvcStatus.packVoltage,
+          inverterStatus.voltage,
           inverterStatus.current,
+          // hvcStatus.packVoltage,
 //          hvcStatus.packCurrent,
 
           pduStatus.lvVoltage,

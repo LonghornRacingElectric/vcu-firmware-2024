@@ -15,8 +15,8 @@ void dash_init() {
 void dash_periodic(PduStatus* pduStatus, HvcStatus* hvcStatus, InverterStatus* inverterStatus, GpsData* gpsData,
                    VcuOutput* vcuCoreOutput) {
   dashOutbox1.dlc = 8;
-  dashOutbox1.data[0] = (int8_t) (vcuCoreOutput->dashSpeed);
-//  dashOutbox1.data[0] = (uint8_t) (vcuCoreOutput->telemetryApps * 99.0f);
+  dashOutbox1.data[0] = (int8_t) (gpsData->speed * 1.15078f);
+  // dashOutbox1.data[0] = (int8_t) (vcuCoreOutput->dashSpeed);
 
   dashOutbox1.data[1] = (uint8_t) (inverterStatus->voltage * inverterStatus->current / 1000.0f);
   dashOutbox1.data[2] = (uint8_t) (vcuCoreOutput->telemetryApps * 100.0f);
