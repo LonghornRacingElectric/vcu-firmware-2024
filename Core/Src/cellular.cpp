@@ -5,7 +5,7 @@
 #include "usb.h"
 #include "secrets.h"
 
-#define TEXTS_ONLY
+// #define TEXTS_ONLY
 
 
 volatile int x = 0;

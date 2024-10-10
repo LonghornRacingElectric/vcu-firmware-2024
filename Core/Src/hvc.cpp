@@ -12,6 +12,7 @@ static CanInbox coolingInbox;
 static CanInbox ccsInbox;
 static CanOutbox coolingOutbox;
 static CanOutbox hvcParamsOutbox;
+static CanOutbox allowBalanceOutbox;
 
 float CELL_OVER_VOLTAGE = 4.0f;
 float CELL_UNDER_VOLTAGE = 2.7f;
@@ -28,6 +29,7 @@ void hvc_init() {
   can_addInbox(HVC_VCU_CONTACTOR_STATUS, &contactorStatusInbox, HVC_TIMEOUT_FAST);
 
   can_addOutbox(VCU_HVC_COOLING, 0.1f, &coolingOutbox);
+  can_addOutbox(VCU_HVC_ALLOW_BALANCE, 0.1f, &allowBalanceOutbox);
 
   can_addOutbox(VCU_HVC_PARAMS, 1.0f, &hvcParamsOutbox);
   hvcParamsOutbox.dlc = 8;
@@ -83,6 +85,8 @@ float hvc_findRange(float min, float max) {
 void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
   // Atm there is no separation between normal segment and unique segment, both will be a value between 0 and 1
   hvc_updateCooling(vcuOutput->batteryFansOutput, vcuOutput->batteryFansOutput);
+  allowBalanceOutbox.dlc = 1;
+  allowBalanceOutbox.data[0] = !vcuOutput->prndlState; // only allow balancing in park
 
   if (amsImdInbox.isRecent) {
     amsImdInbox.isRecent = false;
