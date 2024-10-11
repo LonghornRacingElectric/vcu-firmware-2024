@@ -38,9 +38,9 @@ float findMean(const float* newData, size_t numData) {
 }
 
 float findMin(const float* newData, size_t numData) {
-    float newMin = 0;
+    float newMin = 999;
     for(int i = 0; i < numData; i++) {
-        if(newData[i] == 0) continue;
+        if(newData[i] < 0.1f) continue;
         if(newData[i] < newMin) newMin = newData[i];
     }
     return newMin;
@@ -135,8 +135,8 @@ static void nvm_beginTelemetry() {
   // create headers for data
   f_printf(
           &telemfile,
-          "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-          "Time", "Inverter Enabled", "Inverter Torque Request", "OCV Estimate", "Power Limit", "Power Limit Feedback P", "Power Limit Feedback I", "Power Limit Feedback Torque", "PRNDL State", "Ready To Drive Buzzer", "Brake Light", "Enable Drag Reduction", "Pump Output", "Radiator Output", "Battery Fans Output", "Vehicle Displacement X", "Vehicle Displacement Y", "Vehicle Displacement Z", "Vehicle Velocity X", "Vehicle Velocity Y", "Vehicle Velocity Z", "Vehicle Acceleration X", "Vehicle Acceleration Y", "Vehicle Acceleration Z", "HV Battery", "LV Battery", "Dash Speed", "APPS Telemetry", "BSE Telemetry", "Steering Wheel Telemetry", "APPS Fault", "BSE Fault", "STOMPP Fault", "Steering Fault","Voltage", "Current", "State of Charge", "Pack Voltage Mean", "Pack Voltage Minimum", "Pack Voltage Maximum", "Pack Voltage Range", "Pack Temp Mean", "Pack Temp Minimum", "Pack Temp Maximum", "Pack Temp Range", "IMD", "AMS", "Contactor Status", "Cell Voltage Mean", "Cell Voltage Max", "Cell Voltage Min", "Cell Temps Mean", "Cell Temps Max", "Cell Temps Min", "Volumetric Flow Rate", "Water Temp Inverter", "Water Temp Motor", "Water Temp Radiator", "Radiator Fan RPM Percentage", "LV Voltage", "LV State of Charge", "LV Current", "Voltage Input into DC", "Current Input into DC", "RPM", "Inverter Temp", "Motor Temp", "Motor Angle", "Resolver Angle", "Phase A Current", "Phase B Current", "Phase C Current", "BC Voltage", "AB Voltage", "Output Voltage", "Inverter Frequency", "Actual Torque", "Torque Command", "Fault Vector", "State Vector","APPS 1 Voltage", "APPS 2 Voltage", "BSE 1 Voltage", "BSE 2 Voltage", "Steer Voltage", "Suspension 1 Voltage", "Suspension 2 Voltage", "Front Left Wheel Speed", "Front Right Wheel Speed", "Back Left Wheel Speed", "Back Right Wheel Speed","VCU Acceleration X", "VCU Acceleration Y", "VCU Acceleration Z", "HVC Acceleration X", "HVC Acceleration Y", "HVC Acceleration Z", "PDU Acceleration X", "PDU Acceleration Y", "PDU Acceleration Z", "Front Left Acceleration X", "Front Left Acceleration Y", "Front Left Acceleration Z", "Front Right Acceleration X", "Front Right Acceleration Y", "Front Right Acceleration Z", "Back Left Acceleration X", "Back Left Acceleration Y", "Back Left Acceleration Z", "Back Right Acceleration X", "Back Right Acceleration Y", "Back Right Acceleration Z", "VCU Gyro X", "VCU Gyro Y", "VCU Gyro Z", "HVC Gyro X", "HVC Gyro Y", "HVC Gyro Z", "PDU Gyro X", "PDU Gyro Y", "PDU Gyro Z","Latitude", "Longitude", "Speed", "Heading", "Hour", "Minute", "Seconds", "Year", "Month", "Day", "Milliseconds"
+          "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+          "Time", "Segment 1 Max", "Segment 1 Min", "Segment 1 Mean", "Segment 2 Max", "Segment 2 Min", "Segment 2 Mean", "Segment 3 Max", "Segment 3 Min", "Segment 3 Mean", "Segment 4 Max", "Segment 4 Min", "Segment 4 Mean", "Segment Unique Max", "Segment Unique Min", "Segment Unique Mean", "Inverter Enabled", "Inverter Torque Request", "OCV Estimate", "Power Limit", "Power Limit Feedback P", "Power Limit Feedback I", "Power Limit Feedback Torque", "PRNDL State", "Ready To Drive Buzzer", "Brake Light", "Enable Drag Reduction", "Pump Output", "Radiator Output", "Battery Fans Output", "Vehicle Displacement X", "Vehicle Displacement Y", "Vehicle Displacement Z", "Vehicle Velocity X", "Vehicle Velocity Y", "Vehicle Velocity Z", "Vehicle Acceleration X", "Vehicle Acceleration Y", "Vehicle Acceleration Z", "HV Battery", "LV Battery", "Dash Speed", "APPS Telemetry", "BSE Telemetry", "Steering Wheel Telemetry", "APPS Fault", "BSE Fault", "STOMPP Fault", "Steering Fault","Voltage", "Current", "State of Charge", "Pack Voltage Mean", "Pack Voltage Minimum", "Pack Voltage Maximum", "Pack Voltage Range", "Pack Temp Mean", "Pack Temp Minimum", "Pack Temp Maximum", "Pack Temp Range", "IMD", "AMS", "Contactor Status", "Cell Voltage Mean", "Cell Voltage Max", "Cell Voltage Min", "Cell Temps Mean", "Cell Temps Max", "Cell Temps Min", "Volumetric Flow Rate", "Water Temp Inverter", "Water Temp Motor", "Water Temp Radiator", "Radiator Fan RPM Percentage", "LV Voltage", "LV State of Charge", "LV Current", "Voltage Input into DC", "Current Input into DC", "RPM", "Inverter Temp", "Motor Temp", "Motor Angle", "Resolver Angle", "Phase A Current", "Phase B Current", "Phase C Current", "BC Voltage", "AB Voltage", "Output Voltage", "Inverter Frequency", "Actual Torque", "Torque Command", "Fault Vector", "State Vector","APPS 1 Voltage", "APPS 2 Voltage", "BSE 1 Voltage", "BSE 2 Voltage", "Steer Voltage", "Suspension 1 Voltage", "Suspension 2 Voltage", "Front Left Wheel Speed", "Front Right Wheel Speed", "Back Left Wheel Speed", "Back Right Wheel Speed","VCU Acceleration X", "VCU Acceleration Y", "VCU Acceleration Z", "HVC Acceleration X", "HVC Acceleration Y", "HVC Acceleration Z", "PDU Acceleration X", "PDU Acceleration Y", "PDU Acceleration Z", "Front Left Acceleration X", "Front Left Acceleration Y", "Front Left Acceleration Z", "Front Right Acceleration X", "Front Right Acceleration Y", "Front Right Acceleration Z", "Back Left Acceleration X", "Back Left Acceleration Y", "Back Left Acceleration Z", "Back Right Acceleration X", "Back Right Acceleration Y", "Back Right Acceleration Z", "VCU Gyro X", "VCU Gyro Y", "VCU Gyro Z", "HVC Gyro X", "HVC Gyro Y", "HVC Gyro Z", "PDU Gyro X", "PDU Gyro Y", "PDU Gyro Z","Latitude", "Longitude", "Speed", "Heading", "Hour", "Minute", "Seconds", "Year", "Month", "Day", "Milliseconds"
           );
 
   // close file to save
@@ -163,9 +163,20 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
   if(counter % 2 == 0) {
     sprintf(charBuffer,
         // time format
-            "%4f,%d,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%4f,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%u,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10llu,%10llu,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10hhu,%10hhu,%10hu,%10hhu,%10hhu,%10hu,%10hu\n",
+            "%4f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%d,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%4f,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%u,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10llu,%10llu,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10hhu,%10hhu,%10hu,%10hhu,%10hhu,%10hu,%10hu\n",
         // time data
-            clock_getTime(),
+        clock_getTime(),
+        //segment 1 temps
+        findMax(hvcStatus->cellTemps, 10), findMin(hvcStatus->cellTemps, 10),findMean(hvcStatus->cellTemps, 10),
+        //segment 2 temps
+        findMax(hvcStatus->cellTemps+10, 10), findMin(hvcStatus->cellTemps+10, 10),findMean(hvcStatus->cellTemps+10, 10),
+        //segment 3 temps
+        findMax(hvcStatus->cellTemps+20, 10), findMin(hvcStatus->cellTemps+20, 10),findMean(hvcStatus->cellTemps+20, 10),
+        //segment 4 temps
+        findMax(hvcStatus->cellTemps+30, 10), findMin(hvcStatus->cellTemps+30, 10),findMean(hvcStatus->cellTemps+30, 10),
+        //segment unique temps
+        findMax(hvcStatus->cellTemps+40, 10), findMin(hvcStatus->cellTemps+40, 10),findMean(hvcStatus->cellTemps+40, 10),
+
         // vcu output data
             (int) vcuCoreOutput->enableInverter, vcuCoreOutput->inverterTorqueRequest,
             vcuCoreOutput->telemetryOcvEstimate, vcuCoreOutput->telemetryPowerLimit,
@@ -185,10 +196,11 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
             hvcStatus->packVoltage, hvcStatus->packCurrent, hvcStatus->stateOfCharge, hvcStatus->packVoltageMean,
             hvcStatus->packVoltageMin, hvcStatus->packVoltageMax, hvcStatus->packVoltageRange, hvcStatus->packTempMean,
             hvcStatus->packTempMin, hvcStatus->packTempMax, hvcStatus->packTempRange, (int) hvcStatus->imd,
-            (int) hvcStatus->ams, hvcStatus->contactorStatus, findMean(hvcStatus->cellVoltages, 4*TEMPS_MAILBOXES_NUM),
-            findMax(hvcStatus->cellVoltages, 4*TEMPS_MAILBOXES_NUM), findMin(hvcStatus->cellVoltages, 4*TEMPS_MAILBOXES_NUM),
-            findMean(hvcStatus->cellTemps, 4*TEMPS_MAILBOXES_NUM), findMax(hvcStatus->cellTemps, 4*TEMPS_MAILBOXES_NUM),
-            findMin(hvcStatus->cellTemps, 4*TEMPS_MAILBOXES_NUM),//(hvcStatus->cellVoltages), hvcStatus->cellTemps,
+            (int) hvcStatus->ams, hvcStatus->contactorStatus, findMean(hvcStatus->cellVoltages, 140),
+            findMax(hvcStatus->cellVoltages, 140), findMin(hvcStatus->cellVoltages, 140),
+            findMean(hvcStatus->cellTemps, 50), findMax(hvcStatus->cellTemps, 50),
+            findMin(hvcStatus->cellTemps, 50),//(hvcStatus->cellVoltages), hvcStatus->cellTemps,
+
         // pdu status data
             pduStatus->volumetricFlowRate, pduStatus->waterTempInverter, pduStatus->waterTempMotor,
             pduStatus->waterTempRadiator, pduStatus->radiatorFanRpm, pduStatus->lvVoltage, pduStatus->lvSoC,

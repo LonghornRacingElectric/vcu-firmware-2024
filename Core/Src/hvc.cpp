@@ -171,6 +171,7 @@ void hvc_periodic(HvcStatus *status, VcuOutput *vcuOutput) {
       FAULT_CLEAR(&faultVector, FAULT_VCU_HVC_TELEM);
     }
   }
+//  for(int )
 
 
 }
