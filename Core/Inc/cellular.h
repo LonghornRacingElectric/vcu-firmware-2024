@@ -16,7 +16,8 @@
 
 
 extern UART_HandleTypeDef huart7;
-
+extern uint8_t cellular_systemState;
+extern std::string cellular_debugMessage;
 
 // strings
 static std::string CELL_OK = "\r\nOK\r\n";

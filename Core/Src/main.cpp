@@ -152,7 +152,7 @@ int main(void)
   allImus_init(&hspi2);
   gps_init();
   indicators_init();
-  cellular_init();
+  // cellular_init();
   nvm_init(&vcuCoreParameters);
 
   /* USER CODE END 2 */
@@ -183,19 +183,19 @@ int main(void)
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
-    // println(vcuCoreOutput.telemetryPowerLimitFeedbackTorque);
-
     inverter_periodic(&inverterStatus, &vcuCoreOutput, deltaTime);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
     dash_periodic(&pduStatus, &hvcStatus, &inverterStatus, &gpsData, &vcuCoreOutput);
     can_periodic(deltaTime);
 
+    println(cellular_debugMessage);
+
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
                  &wheelMagnetValues, &imuData, &gpsData);
-    cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
-                      &pduStatus, &inverterStatus, &analogVoltages,
-                      &wheelMagnetValues, &imuData, &gpsData);
+    // cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
+    //                   &pduStatus, &inverterStatus, &analogVoltages,
+    //                   &wheelMagnetValues, &imuData, &gpsData);
   }
   /* USER CODE END 3 */
 }
