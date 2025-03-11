@@ -60,7 +60,7 @@ float hvc_updateMean(const float* newData, size_t numData) {
 }
 
 float hvc_findMin(const float* newData, size_t numData) {
-  float newMin = 0;
+  float newMin = 999;
   for(int i = 0; i < numData; i++) {
     if(newData[i] == 0) continue;
     if(newData[i] < newMin) newMin = newData[i];
