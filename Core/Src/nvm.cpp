@@ -180,7 +180,7 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
         // vcu output data
             (int) vcuCoreOutput->enableInverter, vcuCoreOutput->inverterTorqueRequest,
             vcuCoreOutput->telemetryOcvEstimate, vcuCoreOutput->telemetryPowerLimit,
-            vcuCoreOutput->telemetryPowerLimitFeedbackP, vcuCoreOutput->telemetryPowerLimitFeedbackI,
+            vcuCoreOutput->telemetryPowerLimitFeedbackP, vcuCoreOutput->telemetryPowerLimitFeedbackI, vcuCoreOutput->telemetryPowerLimitFeedbackD,
             vcuCoreOutput->telemetryPowerLimitFeedbackTorque,
             (int) vcuCoreOutput->prndlState,
             (int) vcuCoreOutput->r2dBuzzer, vcuCoreOutput->brakeLight, (int) vcuCoreOutput->enableDragReduction,
