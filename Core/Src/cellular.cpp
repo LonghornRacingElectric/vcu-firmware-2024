@@ -3,7 +3,7 @@
 #include <queue>
 #include "faults.h"
 #include "usb.h"
-#include "secrets.h"
+// #include "secrets.h"
 
 //#define TEXTS_ONLY
 
@@ -621,9 +621,9 @@ static void cellular_mqttInit() {
 //    return;
 //  }
 
-  command = std::string("AT+UMQTT=2,\"") + AWS_SERVER + std::string("\",1883\r");
-  response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
-  error = cellular_send(&command);
+  // command = std::string("AT+UMQTT=2,\"") + AWS_SERVER + std::string("\",1883\r");
+  // response = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
+  // error = cellular_send(&command);
   if (error != 0) {
     return;
   }
@@ -739,7 +739,7 @@ static void cellular_nonBlockingMQTTINIT(int commandSet) {
     expectedGlobalMQTTResponse = "\r\r\n+UMQTT: 1,1\r\r\n\r\nOK\r\n";
     cellular_sendNonBlocking(command);
   } else if (commandSet == 2) {
-    command = std::string("AT+UMQTT=2,\"") + AWS_SERVER + std::string("\",1883\r");
+    // command = std::string("AT+UMQTT=2,\"") + AWS_SERVER + std::string("\",1883\r");
     expectedGlobalMQTTResponse = "\r\r\n+UMQTT: 2,1\r\r\n\r\nOK\r\n";
     cellular_sendNonBlocking(command);
   } else if (commandSet == 3) {
