@@ -47,6 +47,7 @@
 #include "nvm.h"
 #include "vcu.h"
 #include "usb.h"
+#include "bevo.h"
 
 /* USER CODE END Includes */
 
@@ -173,6 +174,7 @@ int main(void)
     wheelspeeds_periodic(&wheelMagnetValues);
     allImus_periodic(&imuData);
     gps_periodic(&gpsData);
+    bevo_send(&gpsData);
 
     // TODO why is front right not working??
     wheelMagnetValues.fr = wheelMagnetValues.fl;
