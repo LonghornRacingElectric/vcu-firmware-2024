@@ -155,6 +155,7 @@ int main(void)
   indicators_init();
   // cellular_init();
   nvm_init(&vcuCoreParameters);
+  bevo_init(); //
 
   /* USER CODE END 2 */
 
