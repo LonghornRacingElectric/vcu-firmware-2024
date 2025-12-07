@@ -30,6 +30,18 @@ void bevo_init()
     can_addOutbox(GPS_DAY, GPS_PERIOD, &dayOutbox);
     can_addOutbox(GPS_MILLIS, GPS_PERIOD, &millisOutbox);
 
+    //Fix: Set DLC for all outboxes (2 bytes for int16_t)
+    latitudeOutbox.dlc = 2;
+    longitudeOutbox.dlc = 2;
+    speedOutbox.dlc = 2;
+    headingOutbox.dlc = 2;
+    hourOutbox.dlc = 2;
+    minuteOutbox.dlc = 2;
+    secondsOutbox.dlc = 2;
+    yearOutbox.dlc = 2;
+    monthOutbox.dlc = 2;
+    dayOutbox.dlc = 2;
+    millisOutbox.dlc = 2;
 }
 void bevo_send(GpsData *gpsData)
 {
