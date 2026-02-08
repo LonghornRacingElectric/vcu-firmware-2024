@@ -12,25 +12,26 @@ void bevo_init()
 
     gpsFrame1Outbox.dlc = 8;
     gpsFrame2Outbox.dlc = 8;
-    gpsFrame3Outbox.dlc = 6;
+    gpsFrame3Outbox.dlc = 8;
 }
 
 void bevo_send(GpsData *g)
 {
-    // Frame 1: lat, long, speed, heading
-    can_writeFloat(int16_t, &gpsFrame1Outbox, 0, g->latitude,  0.001f);
-    can_writeFloat(int16_t, &gpsFrame1Outbox, 2, g->longitude, 0.001f);
-    can_writeFloat(int16_t, &gpsFrame1Outbox, 4, g->speed,     0.001f);
-    can_writeFloat(int16_t, &gpsFrame1Outbox, 6, g->heading,   0.001f);
+    // Frame 1: latitude, longitude
+    can_writeFloat(int32_t, &gpsFrame1Outbox, 0, g->latitude,  1e-7f);
+    can_writeFloat(int32_t, &gpsFrame1Outbox, 4, g->longitude, 1e-7f);
 
-    // Frame 2: hour, minute, seconds, year
-    can_writeFloat(int16_t, &gpsFrame2Outbox, 0, g->hour,    1.0f);
-    can_writeFloat(int16_t, &gpsFrame2Outbox, 2, g->minute,  1.0f);
-    can_writeFloat(int16_t, &gpsFrame2Outbox, 4, g->seconds, 1.0f);
-    can_writeFloat(int16_t, &gpsFrame2Outbox, 6, g->year,    1.0f);
+    // Frame 2: speed, heading, hour, minute
+    can_writeFloat(int32_t, &gpsFrame2Outbox, 0, g->speed,   0.001f); // m/s → mm/s
+    can_writeFloat(int16_t, &gpsFrame2Outbox, 4, g->heading, 0.01f);  // deg → 0.01 deg
 
-    // Frame 3: month, day, millis
-    can_writeFloat(int16_t, &gpsFrame3Outbox, 0, g->month,  1.0f);
-    can_writeFloat(int16_t, &gpsFrame3Outbox, 2, g->day,    1.0f);
+    gpsFrame2Outbox.data[6] = (uint8_t)g->hour;
+    gpsFrame2Outbox.data[7] = (uint8_t)g->minute;
+
+    // Frame 3: date + millis
+    can_writeFloat(int16_t, &gpsFrame3Outbox, 0, g->year,   1.0f);
+    gpsFrame3Outbox.data[2] = (uint8_t)g->month;
+    gpsFrame3Outbox.data[3] = (uint8_t)g->day;
     can_writeFloat(int16_t, &gpsFrame3Outbox, 4, g->millis, 1.0f);
 }
+
