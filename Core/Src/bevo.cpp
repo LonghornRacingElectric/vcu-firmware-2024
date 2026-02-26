@@ -1,60 +1,37 @@
-//
-// Created by alice on 11/9/2025.
-//
-
 #include "bevo.h"
 
-static CanOutbox latitudeOutbox;
-static CanOutbox longitudeOutbox;
-static CanOutbox speedOutbox;
-static CanOutbox headingOutbox;
-static CanOutbox hourOutbox;
-static CanOutbox minuteOutbox;
-static CanOutbox secondsOutbox;
-static CanOutbox yearOutbox;
-static CanOutbox monthOutbox;
-static CanOutbox dayOutbox;
-static CanOutbox millisOutbox;
+static CanOutbox gpsFrame1Outbox;
+static CanOutbox gpsFrame2Outbox;
+static CanOutbox gpsFrame3Outbox;
 
 void bevo_init()
 {
-    can_addOutbox(GPS_LATITUDE, GPS_PERIOD, &latitudeOutbox);
-    can_addOutbox(GPS_LONGITUDE, GPS_PERIOD, &longitudeOutbox);
-    can_addOutbox(GPS_SPEED, GPS_PERIOD, &speedOutbox);
-    can_addOutbox(GPS_HEADING, GPS_PERIOD, &headingOutbox);
-    can_addOutbox(GPS_HOUR, GPS_PERIOD, &hourOutbox);
-    can_addOutbox(GPS_MINUTE, GPS_PERIOD, &minuteOutbox);
-    can_addOutbox(GPS_SECONDS, GPS_PERIOD, &secondsOutbox);
-    can_addOutbox(GPS_YEAR, GPS_PERIOD, &yearOutbox);
-    can_addOutbox(GPS_MONTH, GPS_PERIOD, &monthOutbox);
-    can_addOutbox(GPS_DAY, GPS_PERIOD, &dayOutbox);
-    can_addOutbox(GPS_MILLIS, GPS_PERIOD, &millisOutbox);
+    can_addOutbox(GPS_FRAME_1, GPS_PERIOD, &gpsFrame1Outbox);
+    can_addOutbox(GPS_FRAME_2, GPS_PERIOD, &gpsFrame2Outbox);
+    can_addOutbox(GPS_FRAME_3, GPS_PERIOD, &gpsFrame3Outbox);
 
-    //Fix: Set DLC for all outboxes (2 bytes for int16_t)
-    latitudeOutbox.dlc = 2;
-    longitudeOutbox.dlc = 2;
-    speedOutbox.dlc = 2;
-    headingOutbox.dlc = 2;
-    hourOutbox.dlc = 2;
-    minuteOutbox.dlc = 2;
-    secondsOutbox.dlc = 2;
-    yearOutbox.dlc = 2;
-    monthOutbox.dlc = 2;
-    dayOutbox.dlc = 2;
-    millisOutbox.dlc = 2;
+    gpsFrame1Outbox.dlc = 8;
+    gpsFrame2Outbox.dlc = 8;
+    gpsFrame3Outbox.dlc = 8;
 }
-void bevo_send(GpsData *gpsData)
+
+void bevo_send(GpsData *g)
 {
-    can_writeFloat(int16_t, &latitudeOutbox, 0, gpsData->latitude, 0.001f);
-    can_writeFloat(int16_t, &longitudeOutbox, 0, gpsData->longitude, 0.001f);
-    can_writeFloat(int16_t, &speedOutbox, 0, gpsData->speed, 0.001f);
-    can_writeFloat(int16_t, &headingOutbox, 0, gpsData->heading, 0.001f);
-    can_writeFloat(int16_t, &hourOutbox, 0, gpsData->hour, 1.0f);
-    can_writeFloat(int16_t, &minuteOutbox, 0, gpsData->minute, 1.0f);
-    can_writeFloat(int16_t, &secondsOutbox, 0, gpsData->seconds, 1.0f);
-    can_writeFloat(int16_t, &yearOutbox, 0, gpsData->year, 1.0f);
-    can_writeFloat(int16_t, &monthOutbox, 0, gpsData->month, 1.0f);
-    can_writeFloat(int16_t, &dayOutbox, 0, gpsData->day, 1.0f);
-    can_writeFloat(int16_t, &millisOutbox, 0, gpsData->millis, 1.0f);
+    // Frame 1: latitude, longitude
+    can_writeFloat(int32_t, &gpsFrame1Outbox, 0, g->latitude,  1e-7f);
+    can_writeFloat(int32_t, &gpsFrame1Outbox, 4, g->longitude, 1e-7f);
 
+    // Frame 2: speed, heading, hour, minute
+    can_writeFloat(int32_t, &gpsFrame2Outbox, 0, g->speed,   0.001f); // m/s → mm/s
+    can_writeFloat(int16_t, &gpsFrame2Outbox, 4, g->heading, 0.01f);  // deg → 0.01 deg
+
+    gpsFrame2Outbox.data[6] = (uint8_t)g->hour;
+    gpsFrame2Outbox.data[7] = (uint8_t)g->minute;
+
+    // Frame 3: date + millis
+    can_writeFloat(int16_t, &gpsFrame3Outbox, 0, g->year,   1.0f);
+    gpsFrame3Outbox.data[2] = (uint8_t)g->month;
+    gpsFrame3Outbox.data[3] = (uint8_t)g->day;
+    can_writeFloat(int16_t, &gpsFrame3Outbox, 4, g->millis, 1.0f);
 }
+
