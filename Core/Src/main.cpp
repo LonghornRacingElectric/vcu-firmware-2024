@@ -182,16 +182,19 @@ int main(void)
 
     // println(analogVoltages.apps1);
     // println(analogVoltages.apps2);
+    // println(vcuCoreOutput.telemetryApps1);
+    // println(vcuCoreOutput.telemetryApps2);
 
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
+
 
     inverter_periodic(&inverterStatus, &vcuCoreOutput, deltaTime);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
     dash_periodic(&pduStatus, &hvcStatus, &inverterStatus, &gpsData, &vcuCoreOutput);
     can_periodic(deltaTime);
 
-    println(cellular_debugMessage);
+    // println(cellular_debugMessage);
 
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
