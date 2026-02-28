@@ -185,6 +185,25 @@ int main(void)
     // println(vcuCoreOutput.telemetryApps1);
     // println(vcuCoreOutput.telemetryApps2);
 
+    // BSE live debug
+    static float bsePrintTimer = 0.0f;
+    bsePrintTimer += deltaTime;
+
+    if (bsePrintTimer >= 0.10f) { // 0.10s = 10 Hz
+      bsePrintTimer = 0.0f;
+
+      std::string s =
+        "BSE1(V)=" + std::to_string(analogVoltages.bse1) +
+        "  BSE2(V)=" + std::to_string(analogVoltages.bse2) +
+        "  ratio=" + std::to_string(
+          (analogVoltages.bse1 + analogVoltages.bse2 > 0.001f)
+            ? (analogVoltages.bse1 / (analogVoltages.bse1 + analogVoltages.bse2))
+            : 0.0f
+        );
+
+      println(s);
+    }
+
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
