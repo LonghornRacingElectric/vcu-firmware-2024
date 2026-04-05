@@ -126,3 +126,5 @@ fabric.properties
 .idea/*
 Debug/
 *.DS_Store
+
+build
