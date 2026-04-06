@@ -5,6 +5,7 @@
 #include "faults.h"
 #include <sstream>
 #include <cstring>
+#include <cstdio>
 
 static FIL telemfile;
 static FATFS fs;
@@ -13,11 +14,21 @@ static FIL fsrc;
 static FIL fdst;
 static string telemfilename;
 
-extern bool didWrite;
-
 static bool telemetryBegan = false;
+static bool telemetryFileOpen = false;
+static NvmTelemetryStatus telemetryStatus = NVM_TELEMETRY_WAITING_FOR_GPS;
 
 static char charBuffer[4096];
+
+static void nvm_failTelemetry(uint32_t fault) {
+  telemetryBegan = false;
+  telemetryStatus = NVM_TELEMETRY_FAILED;
+  if (telemetryFileOpen) {
+    f_close(&telemfile);
+    telemetryFileOpen = false;
+  }
+  FAULT_SET(&faultVector, fault);
+}
 
 float findMean(const float* newData, size_t numData) {
     float sum = 0;
@@ -118,7 +129,7 @@ static void nvm_saveParameters(VcuParameters *vcuParameters) {
 
 }
 
-static void nvm_beginTelemetry() {
+static bool nvm_beginTelemetry() {
   // create new csv file and leave open to write telemetry
   res = f_open(
       &telemfile,
@@ -127,21 +138,25 @@ static void nvm_beginTelemetry() {
   );
 
   if (res) {
-    FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_CREATE);
-    f_close(&telemfile);
-    return;
+    return false;
   }
 
   // create headers for data
-  f_printf(
+  if (f_printf(
           &telemfile,
           "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
           "Time", "Segment 1 Max", "Segment 1 Min", "Segment 1 Mean", "Segment 2 Max", "Segment 2 Min", "Segment 2 Mean", "Segment 3 Max", "Segment 3 Min", "Segment 3 Mean", "Segment 4 Max", "Segment 4 Min", "Segment 4 Mean", "Segment Unique Max", "Segment Unique Min", "Segment Unique Mean", "Inverter Enabled", "Inverter Torque Request", "OCV Estimate", "Power Limit", "Power Limit Feedback P", "Power Limit Feedback I", "Power Limit Feedback D", "Power Limit Feedback Torque", "PRNDL State", "Ready To Drive Buzzer", "Brake Light", "Enable Drag Reduction", "Pump Output", "Radiator Output", "Battery Fans Output", "Vehicle Displacement X", "Vehicle Displacement Y", "Vehicle Displacement Z", "Vehicle Velocity X", "Vehicle Velocity Y", "Vehicle Velocity Z", "Vehicle Acceleration X", "Vehicle Acceleration Y", "Vehicle Acceleration Z", "HV Battery", "LV Battery", "Dash Speed", "APPS Telemetry", "BSE Telemetry", "Steering Wheel Telemetry", "APPS Fault", "BSE Fault", "STOMPP Fault", "Steering Fault","Voltage", "Current", "State of Charge", "Pack Voltage Mean", "Pack Voltage Minimum", "Pack Voltage Maximum", "Pack Voltage Range", "Pack Temp Mean", "Pack Temp Minimum", "Pack Temp Maximum", "Pack Temp Range", "IMD", "AMS", "Contactor Status", "Cell Voltage Mean", "Cell Voltage Max", "Cell Voltage Min", "Cell Temps Mean", "Cell Temps Max", "Cell Temps Min", "Volumetric Flow Rate", "Water Temp Inverter", "Water Temp Motor", "Water Temp Radiator", "Radiator Fan RPM Percentage", "LV Voltage", "LV State of Charge", "LV Current", "Voltage Input into DC", "Current Input into DC", "RPM", "Inverter Temp", "Motor Temp", "Motor Angle", "Resolver Angle", "Phase A Current", "Phase B Current", "Phase C Current", "BC Voltage", "AB Voltage", "Output Voltage", "Inverter Frequency", "Actual Torque", "Torque Command", "Fault Vector", "State Vector","APPS 1 Voltage", "APPS 2 Voltage", "BSE 1 Voltage", "BSE 2 Voltage", "Steer Voltage", "Suspension 1 Voltage", "Suspension 2 Voltage", "Front Left Wheel Speed", "Front Right Wheel Speed", "Back Left Wheel Speed", "Back Right Wheel Speed","VCU Acceleration X", "VCU Acceleration Y", "VCU Acceleration Z", "HVC Acceleration X", "HVC Acceleration Y", "HVC Acceleration Z", "PDU Acceleration X", "PDU Acceleration Y", "PDU Acceleration Z", "Front Left Acceleration X", "Front Left Acceleration Y", "Front Left Acceleration Z", "Front Right Acceleration X", "Front Right Acceleration Y", "Front Right Acceleration Z", "Back Left Acceleration X", "Back Left Acceleration Y", "Back Left Acceleration Z", "Back Right Acceleration X", "Back Right Acceleration Y", "Back Right Acceleration Z", "VCU Gyro X", "VCU Gyro Y", "VCU Gyro Z", "HVC Gyro X", "HVC Gyro Y", "HVC Gyro Z", "PDU Gyro X", "PDU Gyro Y", "PDU Gyro Z","Latitude", "Longitude", "Speed", "Heading", "Hour", "Minute", "Seconds", "Year", "Month", "Day", "Milliseconds"
-          );
+          ) < 0) {
+    f_close(&telemfile);
+    return false;
+  }
 
   // close file to save
-  f_close(&telemfile);
+  if (f_close(&telemfile) != FR_OK) {
+    return false;
+  }
 
+  return true;
 }
 
 static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, PduStatus *pduStatus, InverterStatus *inverterStatus, AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues, ImuData *imuData, GpsData *gpsData) {
@@ -155,8 +170,10 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
         FA_OPEN_EXISTING | FA_WRITE | FA_OPEN_APPEND
     );
     if (res) {
-      FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_WRITE);
+      nvm_failTelemetry(FAULT_VCU_NVM_NO_WRITE);
+      return;
     }
+    telemetryFileOpen = true;
   }
 
   // write row of data into file
@@ -232,14 +249,18 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
   }
 
   if(counter % 2 == 1) {
-    f_printf(&telemfile, charBuffer);
+    if (f_printf(&telemfile, charBuffer) < 0) {
+      nvm_failTelemetry(FAULT_VCU_NVM_NO_WRITE);
+      return;
+    }
   }
 
   if(counter == FILE_SAVE_INTERVAL - 1) {
-    // close file to save volatile int x
-    volatile int x= f_close(&telemfile);
-      didWrite = true;
-
+    if (f_close(&telemfile) != FR_OK) {
+      nvm_failTelemetry(FAULT_VCU_NVM_NO_WRITE);
+      return;
+    }
+    telemetryFileOpen = false;
   }
 
   counter = (counter + 1) % FILE_SAVE_INTERVAL;
@@ -249,7 +270,8 @@ void nvm_init(VcuParameters *vcuParameters) {
   //mount default drive
   res = f_mount(&fs, "", 0);
   if(res) {
-    FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_MOUNT);
+    nvm_failTelemetry(FAULT_VCU_NVM_NO_MOUNT);
+    return;
   }
 
   // load vcu parameters
@@ -260,6 +282,11 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
                   HvcStatus *hvcStatus, PduStatus *pduStatus, InverterStatus *inverterStatus,
                   AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues,
                   ImuData *imuData, GpsData *gpsData) {
+  (void)vcuParameters;
+
+  if (telemetryStatus == NVM_TELEMETRY_FAILED) {
+  return;
+  }
 
   // save vcu parameters once a second
 //  static float time = 0;
@@ -278,8 +305,15 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
     );
     telemfilename = std::string(time);
 
-    nvm_beginTelemetry();
-    telemetryBegan = true;
+    if (nvm_beginTelemetry()) {
+      telemetryBegan = true;
+      telemetryStatus = NVM_TELEMETRY_LOGGING;
+      FAULT_CLEAR(&faultVector, FAULT_VCU_NVM_NO_CREATE);
+      FAULT_CLEAR(&faultVector, FAULT_VCU_NVM_NO_WRITE);
+    } else {
+      nvm_failTelemetry(FAULT_VCU_NVM_NO_CREATE);
+      return;
+    }
   }
 
   // call write telemetry to write rows
@@ -287,5 +321,8 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
     nvm_writeTelemetry(vcuCoreOutput, hvcStatus, pduStatus, inverterStatus, analogVoltages, wheelMagnetValues, imuData,
                        gpsData);
   }
+}
 
+NvmTelemetryStatus nvm_getTelemetryStatus(void) {
+  return telemetryStatus;
 }

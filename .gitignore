@@ -128,3 +128,5 @@ Debug/
 *.DS_Store
 
 build
+
+build-debug-clean

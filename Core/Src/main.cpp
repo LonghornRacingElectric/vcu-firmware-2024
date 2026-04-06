@@ -92,7 +92,30 @@ WheelMagnetValues wheelMagnetValues;
 ImuData imuData;
 GpsData gpsData;
 
-bool didWrite = false;
+static void updateTelemetryLed() {
+  bool blinkOn = ((HAL_GetTick() / 300U) % 2U) == 0U;
+
+  switch (nvm_getTelemetryStatus()) {
+    case NVM_TELEMETRY_LOGGING:
+      led_set(0.0f, 1.0f, 0.0f);
+      break;
+    case NVM_TELEMETRY_FAILED:
+      if (blinkOn) {
+        led_set(1.0f, 0.0f, 0.0f);
+      } else {
+        led_off();
+      }
+      break;
+    case NVM_TELEMETRY_WAITING_FOR_GPS:
+    default:
+      if (blinkOn) {
+        led_set(1.0f, 1.0f, 0.0f);
+      } else {
+        led_off();
+      }
+      break;
+  }
+}
 
 /* USER CODE END 0 */
 
@@ -166,8 +189,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
-    if(didWrite) led_rainbow(deltaTime);
-
     adc_periodic(&analogVoltages);
     driveSwitch_periodic(&driveSwitchState);
     hvc_periodic(&hvcStatus, &vcuCoreOutput);
@@ -188,7 +209,6 @@ int main(void)
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
-
     inverter_periodic(&inverterStatus, &vcuCoreOutput, deltaTime);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
     dash_periodic(&pduStatus, &hvcStatus, &inverterStatus, &gpsData, &vcuCoreOutput);
@@ -199,6 +219,7 @@ int main(void)
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
                  &wheelMagnetValues, &imuData, &gpsData);
+    updateTelemetryLed();
     // cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
     //                   &pduStatus, &inverterStatus, &analogVoltages,
     //                   &wheelMagnetValues, &imuData, &gpsData);

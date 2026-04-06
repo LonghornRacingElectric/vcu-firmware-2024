@@ -22,6 +22,7 @@
 #include "stm32h7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "led.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,6 +52,17 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static void fatal_led_blink(float r, float g, float b, uint32_t onDelay, uint32_t offDelay)
+{
+  __disable_irq();
+  while (1)
+  {
+    led_set(r, g, b);
+    for (volatile uint32_t i = 0; i < onDelay; i++) { }
+    led_off();
+    for (volatile uint32_t i = 0; i < offDelay; i++) { }
+  }
+}
 
 /* USER CODE END 0 */
 
@@ -80,9 +92,7 @@ void NMI_Handler(void)
 
   /* USER CODE END NonMaskableInt_IRQn 0 */
   /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
-  while (1)
-  {
-  }
+  fatal_led_blink(1.0f, 1.0f, 0.0f, 800000, 200000);
   /* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
@@ -94,11 +104,7 @@ void HardFault_Handler(void)
   /* USER CODE BEGIN HardFault_IRQn 0 */
 
   /* USER CODE END HardFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-    /* USER CODE END W1_HardFault_IRQn 0 */
-  }
+  fatal_led_blink(1.0f, 0.0f, 1.0f, 200000, 200000);
 }
 
 /**
@@ -109,11 +115,7 @@ void MemManage_Handler(void)
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
 
   /* USER CODE END MemoryManagement_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
-    /* USER CODE END W1_MemoryManagement_IRQn 0 */
-  }
+  fatal_led_blink(0.0f, 1.0f, 1.0f, 400000, 200000);
 }
 
 /**
@@ -124,11 +126,7 @@ void BusFault_Handler(void)
   /* USER CODE BEGIN BusFault_IRQn 0 */
 
   /* USER CODE END BusFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
-    /* USER CODE END W1_BusFault_IRQn 0 */
-  }
+  fatal_led_blink(0.0f, 0.0f, 1.0f, 700000, 700000);
 }
 
 /**
@@ -139,11 +137,7 @@ void UsageFault_Handler(void)
   /* USER CODE BEGIN UsageFault_IRQn 0 */
 
   /* USER CODE END UsageFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-    /* USER CODE END W1_UsageFault_IRQn 0 */
-  }
+  fatal_led_blink(1.0f, 1.0f, 1.0f, 120000, 120000);
 }
 
 /**
