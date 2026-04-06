@@ -198,9 +198,6 @@ int main(void)
     gps_periodic(&gpsData);
     bevo_send(&gpsData);
 
-    // TODO why is front right not working??
-    wheelMagnetValues.fr = wheelMagnetValues.fl;
-
     // println(analogVoltages.apps1);
     // println(analogVoltages.apps2);
     // println(vcuCoreOutput.telemetryApps1);
@@ -226,7 +223,7 @@ int main(void)
   }
   /* USER CODE END 3 */
 }
-
+//I think you are such a cutie patootie
 /**
   * @brief System Clock Configuration
   * @retval None
