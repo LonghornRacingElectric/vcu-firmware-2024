@@ -11,6 +11,8 @@ typedef struct InverterStatus {
   float current; //input current into DC side
   float rpm;
   float inverterTemp;
+  float inverterCoolantTemp;
+  float inverterHotSpotTemp;
   float motorTemp;
 
   float motorAngle;

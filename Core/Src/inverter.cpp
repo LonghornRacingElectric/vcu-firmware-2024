@@ -106,6 +106,8 @@ static void inverter_getStatus(InverterStatus *status) {
   }
 
   if (motorTempInbox.isRecent) {
+    status->inverterCoolantTemp = can_readFloat(int16_t, &motorTempInbox, 0, 0.1f);
+    status->inverterHotSpotTemp = can_readFloat(int16_t, &motorTempInbox, 2, 0.1f);
     status->motorTemp = can_readFloat(int16_t, &motorTempInbox, 4, 0.1f);
     motorTempInbox.isRecent = false;
     status->isRecent = true;
