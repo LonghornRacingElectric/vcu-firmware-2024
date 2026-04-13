@@ -163,6 +163,7 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
+  serialControlInit();
   led_init();
   clock_init();
   can_init(&hfdcan2);
@@ -210,12 +211,14 @@ int main(void)
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
     dash_periodic(&pduStatus, &hvcStatus, &inverterStatus, &gpsData, &vcuCoreOutput);
     can_periodic(deltaTime);
+    serialControlPeriodic();
 
     // println(cellular_debugMessage);
 
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
                  &wheelMagnetValues, &imuData, &gpsData);
+    printLiveControls(analogVoltages, vcuCoreOutput);
     updateTelemetryLed();
     // cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
     //                   &pduStatus, &inverterStatus, &analogVoltages,
@@ -316,7 +319,7 @@ void PeriphCommonClock_Config(void)
   PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
   PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL3;
   PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_PLL2;
-  PeriphClkInitStruct.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PLL2;
+  PeriphClkInitStruct.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PLL3;
   PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL3;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
