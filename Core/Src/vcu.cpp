@@ -30,6 +30,10 @@ void vcu_execute(AnalogVoltages &analogVoltages, DriveSwitchState &driveSwitchSt
     wheelMagnetValues.fr,
     wheelMagnetValues.bl,
     wheelMagnetValues.br,
+    wheelMagnetValues.flOk,
+    wheelMagnetValues.frOk,
+    wheelMagnetValues.blOk,
+    wheelMagnetValues.brOk,
 
     inverterStatus.motorTemp,
     inverterStatus.inverterTemp,

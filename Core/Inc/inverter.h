@@ -11,14 +11,20 @@ typedef struct InverterStatus {
   float current; //input current into DC side
   float rpm;
   float inverterTemp;
+  float inverterCoolantTemp;
+  float inverterHotSpotTemp;
   float motorTemp;
 
   float motorAngle;
-  float resolverAngle;
+  float deltaResolverFiltered;
 
   float phaseACurrent;
   float phaseBCurrent;
   float phaseCCurrent;
+  float idFeedback;
+  float iqFeedback;
+  float idCommand;
+  float iqCommand;
 
   float BCVoltage;
   float ABVoltage;
@@ -31,6 +37,16 @@ typedef struct InverterStatus {
 
   uint64_t faultVector;
   uint64_t stateVector;
+  bool bmsLimitingRegenTorque;
+  bool limitMotorTempDerate;
+  bool limitHotSpotMotor;
+  bool bmsActive;
+  bool bmsLimitingMotorTorque;
+  bool limitMaxSpeed;
+  bool limitHotSpotInverter;
+  bool lowSpeedLimiting;
+  bool limitCoolantDerating;
+  bool limitStallBurstModel;
 
   uint32_t newData; // Comes from params in inverter.
 } InverterStatus;

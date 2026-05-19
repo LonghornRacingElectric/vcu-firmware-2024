@@ -1,10 +1,13 @@
 #include "gps.h"
+#include "gps_time.h"
 #include "faults.h"
 #include "clock.h"
 
 
 Adafruit_GPS gps(huart1);
 GpsData referenceGPSData;
+GpsData latestGPSData;
+volatile GpsFatTimestamp gpsFatTimestamp = {};
 
 Adafruit_GPS::Adafruit_GPS(UART_HandleTypeDef &hlpuart) : uart_handler(hlpuart) {
     this->uart_handler = hlpuart;
@@ -161,6 +164,13 @@ void gps_periodic(GpsData* gpsData) {
             gpsData->month = gps.month;
             gpsData->day = gps.day;
             gpsData->millis = gps.milliseconds;
+            latestGPSData = *gpsData;
+            gpsFatTimestamp.hour = gpsData->hour;
+            gpsFatTimestamp.minute = gpsData->minute;
+            gpsFatTimestamp.seconds = gpsData->seconds;
+            gpsFatTimestamp.year = gpsData->year;
+            gpsFatTimestamp.month = gpsData->month;
+            gpsFatTimestamp.day = gpsData->day;
 
             /* Set the reference GPS data if it has not been set yet */
             if(referenceGPSData.year == 0 && referenceGPSData.month == 0 && referenceGPSData.day == 0){

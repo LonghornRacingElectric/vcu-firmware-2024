@@ -24,6 +24,8 @@
 #include <string.h>
 #include "faults.h"
 
+extern void serialControlHandleUartError(UART_HandleTypeDef *huart);
+
 /* USER CODE END 0 */
 
 UART_HandleTypeDef hlpuart1;
@@ -48,7 +50,7 @@ void MX_LPUART1_UART_Init(void)
 
   /* USER CODE END LPUART1_Init 1 */
   hlpuart1.Instance = LPUART1;
-  hlpuart1.Init.BaudRate = 115200;
+  hlpuart1.Init.BaudRate = 12000000;
   hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
   hlpuart1.Init.StopBits = UART_STOPBITS_1;
   hlpuart1.Init.Parity = UART_PARITY_NONE;
@@ -235,9 +237,13 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     GPIO_InitStruct.Pin = EDGE_UART_TX_Pin|EDGE_UART_RX_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF3_LPUART;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /* LPUART1 interrupt Init */
+    HAL_NVIC_SetPriority(LPUART1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(LPUART1_IRQn);
 
   /* USER CODE BEGIN LPUART1_MspInit 1 */
 
@@ -604,6 +610,8 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
     HAL_UART_Receive_DMA(&huart1, (uint8_t *) gps_currLine, MAX_GPS_LINE_SIZE); // Resets index to 0 so that buffer doesn't overflow
   } else if (huart->Instance == UART7) {
     HAL_UART_Receive_DMA(&huart7, (uint8_t *) cell_currLine, MAX_CELL_LINE_SIZE); // Resets index to 0 so that buffer doesn't overflow
+  } else if (huart->Instance == LPUART1) {
+    serialControlHandleUartError(huart);
   }
 }
 

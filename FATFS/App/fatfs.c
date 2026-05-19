@@ -17,6 +17,7 @@
   */
 /* USER CODE END Header */
 #include "fatfs.h"
+#include "gps_time.h"
 
 uint8_t retSD;    /* Return value for SD */
 char SDPath[4];   /* SD logical drive path */
@@ -45,7 +46,26 @@ void MX_FATFS_Init(void)
 DWORD get_fattime(void)
 {
   /* USER CODE BEGIN get_fattime */
-  return 0;
+  if (gpsFatTimestamp.year == 0 || gpsFatTimestamp.month == 0 || gpsFatTimestamp.day == 0) {
+    return ((DWORD)(_NORTC_YEAR - 1980U) << 25)
+        | ((DWORD)_NORTC_MON << 21)
+        | ((DWORD)_NORTC_MDAY << 16);
+  }
+
+  const DWORD fullYear = 2000U + (DWORD) gpsFatTimestamp.year;
+  const DWORD clampedMonth = (gpsFatTimestamp.month >= 1U && gpsFatTimestamp.month <= 12U) ? gpsFatTimestamp.month : 1U;
+  const DWORD clampedDay = (gpsFatTimestamp.day >= 1U && gpsFatTimestamp.day <= 31U) ? gpsFatTimestamp.day : 1U;
+  const DWORD clampedHour = (gpsFatTimestamp.hour <= 23U) ? gpsFatTimestamp.hour : 0U;
+  const DWORD clampedMinute = (gpsFatTimestamp.minute <= 59U) ? gpsFatTimestamp.minute : 0U;
+  const DWORD clampedSecond = (gpsFatTimestamp.seconds <= 59U) ? gpsFatTimestamp.seconds : 0U;
+  const DWORD fatYear = (fullYear >= 1980U) ? (fullYear - 1980U) : 0U;
+
+  return (fatYear << 25)
+      | (clampedMonth << 21)
+      | (clampedDay << 16)
+      | (clampedHour << 11)
+      | (clampedMinute << 5)
+      | (clampedSecond / 2U);
   /* USER CODE END get_fattime */
 }
 

@@ -22,9 +22,12 @@ void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues) {
         whs_fr_inbox.isRecent = false;
     }
     if(whs_fr_inbox.isTimeout) {
+      wheelMagnetValues->fr = 0.0f;
+      wheelMagnetValues->frOk = false;
       FAULT_SET(&faultVector, FAULT_VCU_UNS_FR);
     }
     else {
+      wheelMagnetValues->frOk = true;
       FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_FR);
     }
 
@@ -33,9 +36,12 @@ void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues) {
         whs_fl_inbox.isRecent = false;
     }
     if(whs_fl_inbox.isTimeout) {
+      wheelMagnetValues->fl = 0.0f;
+      wheelMagnetValues->flOk = false;
       FAULT_SET(&faultVector, FAULT_VCU_UNS_FL);
     }
     else {
+      wheelMagnetValues->flOk = true;
       FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_FL);
     }
 
@@ -44,9 +50,12 @@ void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues) {
         whs_br_inbox.isRecent = false;
     }
     if(whs_br_inbox.isTimeout) {
+      wheelMagnetValues->br = 0.0f;
+      wheelMagnetValues->brOk = false;
       FAULT_SET(&faultVector, FAULT_VCU_UNS_BR);
     }
     else {
+      wheelMagnetValues->brOk = true;
       FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_BR);
     }
 
@@ -55,9 +64,12 @@ void wheelspeeds_periodic(WheelMagnetValues* wheelMagnetValues) {
         whs_bl_inbox.isRecent = false;
     }
     if(whs_bl_inbox.isTimeout) {
+      wheelMagnetValues->bl = 0.0f;
+      wheelMagnetValues->blOk = false;
       FAULT_SET(&faultVector, FAULT_VCU_UNS_BL);
     }
     else {
+      wheelMagnetValues->blOk = true;
       FAULT_CLEAR(&faultVector, FAULT_VCU_UNS_BL);
     }
 }

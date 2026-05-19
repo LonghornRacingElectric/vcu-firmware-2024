@@ -92,7 +92,30 @@ WheelMagnetValues wheelMagnetValues;
 ImuData imuData;
 GpsData gpsData;
 
-bool didWrite = false;
+static void updateTelemetryLed() {
+  bool blinkOn = ((HAL_GetTick() / 300U) % 2U) == 0U;
+
+  switch (nvm_getTelemetryStatus()) {
+    case NVM_TELEMETRY_LOGGING:
+      led_set(0.0f, 1.0f, 0.0f);
+      break;
+    case NVM_TELEMETRY_FAILED:
+      if (blinkOn) {
+        led_set(1.0f, 0.0f, 0.0f);
+      } else {
+        led_off();
+      }
+      break;
+    case NVM_TELEMETRY_WAITING_FOR_GPS:
+    default:
+      if (blinkOn) {
+        led_set(1.0f, 1.0f, 0.0f);
+      } else {
+        led_off();
+      }
+      break;
+  }
+}
 
 /* USER CODE END 0 */
 
@@ -140,6 +163,7 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
+  serialControlInit();
   led_init();
   clock_init();
   can_init(&hfdcan2);
@@ -166,8 +190,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     float deltaTime = clock_getDeltaTime();
-    if(didWrite) led_rainbow(deltaTime);
-
     adc_periodic(&analogVoltages);
     driveSwitch_periodic(&driveSwitchState);
     hvc_periodic(&hvcStatus, &vcuCoreOutput);
@@ -177,9 +199,6 @@ int main(void)
     gps_periodic(&gpsData);
     bevo_send(&gpsData);
 
-    // TODO why is front right not working??
-    wheelMagnetValues.fr = wheelMagnetValues.fl;
-
     // println(analogVoltages.apps1);
     // println(analogVoltages.apps2);
     // println(vcuCoreOutput.telemetryApps1);
@@ -188,24 +207,26 @@ int main(void)
     vcu_execute(analogVoltages, driveSwitchState, hvcStatus, pduStatus, inverterStatus,
                 wheelMagnetValues, imuData, gpsData, vcuCoreOutput, deltaTime);
 
-
     inverter_periodic(&inverterStatus, &vcuCoreOutput, deltaTime);
     indicators_periodic(&hvcStatus, &vcuCoreOutput);
     dash_periodic(&pduStatus, &hvcStatus, &inverterStatus, &gpsData, &vcuCoreOutput);
     can_periodic(deltaTime);
+    serialControlPeriodic();
 
     // println(cellular_debugMessage);
 
     nvm_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
                  &pduStatus, &inverterStatus, &analogVoltages,
                  &wheelMagnetValues, &imuData, &gpsData);
+    printLiveControls(analogVoltages, vcuCoreOutput);
+    updateTelemetryLed();
     // cellular_periodic(&vcuCoreParameters, &vcuCoreOutput, &hvcStatus,
     //                   &pduStatus, &inverterStatus, &analogVoltages,
     //                   &wheelMagnetValues, &imuData, &gpsData);
   }
   /* USER CODE END 3 */
 }
-
+//I think you are such a cutie patootie
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -298,7 +319,7 @@ void PeriphCommonClock_Config(void)
   PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
   PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL3;
   PeriphClkInitStruct.Usart234578ClockSelection = RCC_USART234578CLKSOURCE_PLL2;
-  PeriphClkInitStruct.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PLL2;
+  PeriphClkInitStruct.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PLL3;
   PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL3;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {

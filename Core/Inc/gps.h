@@ -42,6 +42,7 @@ typedef struct GpsData {
     uint16_t millis;
 } GpsData;
 extern GpsData referenceGPSData;
+extern GpsData latestGPSData;
 
 class Adafruit_GPS {
 private:

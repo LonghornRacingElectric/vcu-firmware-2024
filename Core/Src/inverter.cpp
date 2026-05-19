@@ -8,15 +8,44 @@
 
 using namespace std;
 
+namespace {
+constexpr uint64_t kStateBmsLimitingRegenTorque = 1ULL << 50;
+constexpr uint64_t kStateLimitMotorTempDerate = 1ULL << 52;
+constexpr uint64_t kStateLimitHotSpotMotor = 1ULL << 53;
+constexpr uint64_t kStateBmsActive = 1ULL << 57;
+constexpr uint64_t kStateBmsLimitingMotorTorque = 1ULL << 58;
+constexpr uint64_t kStateLimitMaxSpeed = 1ULL << 59;
+constexpr uint64_t kStateLimitHotSpotInverter = 1ULL << 60;
+constexpr uint64_t kStateLowSpeedLimiting = 1ULL << 61;
+constexpr uint64_t kStateLimitCoolantDerating = 1ULL << 62;
+constexpr uint64_t kStateLimitStallBurstModel = 1ULL << 63;
+
+void updateStateFlags(InverterStatus *status) {
+  uint64_t stateVector = status->stateVector;
+  status->bmsLimitingRegenTorque = (stateVector & kStateBmsLimitingRegenTorque) != 0U;
+  status->limitMotorTempDerate = (stateVector & kStateLimitMotorTempDerate) != 0U;
+  status->limitHotSpotMotor = (stateVector & kStateLimitHotSpotMotor) != 0U;
+  status->bmsActive = (stateVector & kStateBmsActive) != 0U;
+  status->bmsLimitingMotorTorque = (stateVector & kStateBmsLimitingMotorTorque) != 0U;
+  status->limitMaxSpeed = (stateVector & kStateLimitMaxSpeed) != 0U;
+  status->limitHotSpotInverter = (stateVector & kStateLimitHotSpotInverter) != 0U;
+  status->lowSpeedLimiting = (stateVector & kStateLowSpeedLimiting) != 0U;
+  status->limitCoolantDerating = (stateVector & kStateLimitCoolantDerating) != 0U;
+  status->limitStallBurstModel = (stateVector & kStateLimitStallBurstModel) != 0U;
+}
+}
+
 
 static CanInbox voltageInbox;
 static CanInbox currentInbox;
+static CanInbox fluxInfoInbox;
 static CanInbox motorTempInbox;
 static CanInbox inverterTempInbox;
 static CanInbox motorPosInbox;
 static CanInbox inverterStateInbox;
 static CanInbox inverterFaultInbox;
 static CanInbox torqueInfoInbox;
+static CanInbox modulationInfoInbox;
 static CanInbox highSpeedInbox;
 
 static CanOutbox torqueCommandOutbox;
@@ -24,12 +53,14 @@ static CanOutbox torqueCommandOutbox;
 void inverter_init() {
   can_addInbox(INV_VOLTAGE, &voltageInbox, INV_TIMEOUT_FAST);
   can_addInbox(INV_CURRENT, &currentInbox, INV_TIMEOUT_FAST);
+  can_addInbox(INV_FLUX_INFO, &fluxInfoInbox, INV_TIMEOUT_FAST);
   can_addInbox(INV_TEMP3_DATA, &motorTempInbox, INV_TIMEOUT_SLOW);
   can_addInbox(INV_TEMP1_DATA, &inverterTempInbox, INV_TIMEOUT_SLOW);
   can_addInbox(INV_MOTOR_POSITIONS, &motorPosInbox, INV_TIMEOUT_FAST);
   can_addInbox(INV_STATE_CODES, &inverterStateInbox, INV_TIMEOUT_FAST);
   can_addInbox(INV_FAULT_CODES, &inverterFaultInbox, INV_TIMEOUT_FAST);
   can_addInbox(INV_TORQUE_TIMER, &torqueInfoInbox, INV_TIMEOUT_FAST);
+  can_addInbox(INV_MODULATION_INFO, &modulationInfoInbox, INV_TIMEOUT_FAST);
   //can_addInbox(INV_HIGH_SPEED_MSG, &highSpeedInbox, INV_TIMEOUT_VERYFAST);
 
   can_addOutbox(VCU_INV_COMMAND, 0.003f, &torqueCommandOutbox);
@@ -75,6 +106,8 @@ static void inverter_getStatus(InverterStatus *status) {
   }
 
   if (motorTempInbox.isRecent) {
+    status->inverterCoolantTemp = can_readFloat(int16_t, &motorTempInbox, 0, 0.1f);
+    status->inverterHotSpotTemp = can_readFloat(int16_t, &motorTempInbox, 2, 0.1f);
     status->motorTemp = can_readFloat(int16_t, &motorTempInbox, 4, 0.1f);
     motorTempInbox.isRecent = false;
     status->isRecent = true;
@@ -84,7 +117,7 @@ static void inverter_getStatus(InverterStatus *status) {
     status->motorAngle = can_readFloat(int16_t, &motorPosInbox, 0, 0.1f);
     status->rpm = can_readInt(int16_t, &motorPosInbox, 2); //Out of all of these, idk why this isnt shifted
     status->inverterFrequency = can_readFloat(int16_t, &motorPosInbox, 4, 0.1f);
-    status->resolverAngle = can_readFloat(int16_t, &motorPosInbox, 6, 0.1f);
+    status->deltaResolverFiltered = can_readFloat(int16_t, &motorPosInbox, 6, 0.1f);
     motorPosInbox.isRecent = false;
     status->isRecent = true;
   }
@@ -107,8 +140,16 @@ static void inverter_getStatus(InverterStatus *status) {
     status->isRecent = true;
   }
 
+  if (fluxInfoInbox.isRecent) {
+    status->idFeedback = can_readFloat(int16_t, &fluxInfoInbox, 4, 0.1f);
+    status->iqFeedback = can_readFloat(int16_t, &fluxInfoInbox, 6, 0.1f);
+    fluxInfoInbox.isRecent = false;
+    status->isRecent = true;
+  }
+
   if (inverterStateInbox.isRecent) {
     status->stateVector = can_readInt(uint64_t, &inverterStateInbox, 0);
+    updateStateFlags(status);
     inverterStateInbox.isRecent = false;
     status->isRecent = true;
   }
@@ -128,6 +169,15 @@ static void inverter_getStatus(InverterStatus *status) {
     status->torqueCommand = can_readFloat(int16_t, &torqueInfoInbox, 0, 0.1f);
     status->torqueActual = can_readFloat(int16_t, &torqueInfoInbox, 2, 0.1f);
     torqueInfoInbox.isRecent = false;
+    status->isRecent = true;
+  }
+
+  if (modulationInfoInbox.isRecent) {
+    status->idCommand = can_readFloat(int16_t, &modulationInfoInbox, 4, 0.1f);
+    // The CM manual appears to have a typo in the 0x0AD table and repeats "Id Command"
+    // for bytes 6-7. This field is treated as Iq command to match the broadcast layout.
+    status->iqCommand = can_readFloat(int16_t, &modulationInfoInbox, 6, 0.1f);
+    modulationInfoInbox.isRecent = false;
     status->isRecent = true;
   }
 

@@ -126,3 +126,9 @@ fabric.properties
 .idea/*
 Debug/
 *.DS_Store
+
+build
+
+build-debug-clean
+angelique145.txt
+build-vcu-core-tests

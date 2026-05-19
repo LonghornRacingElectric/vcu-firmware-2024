@@ -6,6 +6,11 @@ typedef struct WheelMagnetValues { // Unit is milliTeslas
     float fr;
     float bl;
     float br;
+
+    bool flOk;
+    bool frOk;
+    bool blOk;
+    bool brOk;
 } WheelMagnetValues;
 
 /**

@@ -5,6 +5,7 @@
 #include "faults.h"
 #include <sstream>
 #include <cstring>
+#include <cstdio>
 
 static FIL telemfile;
 static FATFS fs;
@@ -12,12 +13,68 @@ static FRESULT res;
 static FIL fsrc;
 static FIL fdst;
 static string telemfilename;
-
-extern bool didWrite;
+static const char telemetryCsvHeader[] =
+    "Time,Segment 1 Max,Segment 1 Min,Segment 1 Mean,Segment 2 Max,Segment 2 Min,Segment 2 Mean,"
+    "Segment 3 Max,Segment 3 Min,Segment 3 Mean,Segment 4 Max,Segment 4 Min,Segment 4 Mean,"
+    "Segment Unique Max,Segment Unique Min,Segment Unique Mean,Inverter Enabled,"
+    "Inverter Torque Request,OCV Estimate,Power Limit,Power Limit Feedback P,Power Limit Feedback I,"
+    "Power Limit Feedback D,Power Limit Feedback Torque,PRNDL State,Ready To Drive Buzzer,"
+    "Brake Light,Enable Drag Reduction,Pump Output,Radiator Output,Battery Fans Output,"
+    "Vehicle Displacement X,Vehicle Displacement Y,Vehicle Displacement Z,Vehicle Velocity X,"
+    "Vehicle Velocity Y,Vehicle Velocity Z,Vehicle Acceleration X,Vehicle Acceleration Y,"
+    "Vehicle Acceleration Z,HV Battery,LV Battery,Dash Speed,APPS Telemetry,BSE Telemetry,"
+    "Steering Wheel Telemetry,APPS Fault,BSE Fault,STOMPP Fault,Steering Fault,Voltage,Current,"
+    "State of Charge,Pack Voltage Mean,Pack Voltage Minimum,Pack Voltage Maximum,Pack Voltage Range,"
+    "Pack Temp Mean,Pack Temp Minimum,Pack Temp Maximum,Pack Temp Range,IMD,AMS,Contactor Status,"
+    "Cell Voltage Mean,Cell Voltage Max,Cell Voltage Min,Cell Temps Mean,Cell Temps Max,"
+    "Cell Temps Min,Volumetric Flow Rate,Water Temp Inverter,Water Temp Motor,Water Temp Radiator,"
+    "Radiator Fan RPM Percentage,LV Voltage,LV State of Charge,LV Current,Voltage Input into DC,"
+    "Current Input into DC,RPM,Feedback Speed,Average Module Temp,Inverter Coolant Temp,"
+    "Inverter Hot Spot Temp,Motor Temp,Motor Angle,Delta Resolver,Phase A Current,Phase B Current,"
+    "Phase C Current,ID Feedback,IQ Feedback,BC Voltage,AB Voltage,Output Voltage,ID Command,"
+    "IQ Command,Inverter Frequency,Actual Torque,Torque Command,Fault Vector,State Vector,"
+    "BMS Limiting Regen Torque,Motor Temp Derate Limiting,Motor Hot Spot Limiting,BMS Active,"
+    "BMS Limiting Motor Torque,Max Speed Limiting,Inverter Hot Spot Limiting,Low Speed Limiting,"
+    "Coolant Derating Limiting,Stall Burst Limiting,APPS 1 Voltage,APPS 2 Voltage,BSE 1 Voltage,"
+    "BSE 2 Voltage,Steer Voltage,Suspension 1 Voltage,Suspension 2 Voltage,Front Left Wheel Speed,"
+    "Front Right Wheel Speed,Back Left Wheel Speed,Back Right Wheel Speed,"
+    "Front Left Wheel Magnetic Field,VCU Acceleration X,VCU Acceleration Y,VCU Acceleration Z,"
+    "HVC Acceleration X,HVC Acceleration Y,HVC Acceleration Z,PDU Acceleration X,"
+    "PDU Acceleration Y,PDU Acceleration Z,Front Left Acceleration X,Front Left Acceleration Y,"
+    "Front Left Acceleration Z,Front Right Acceleration X,Front Right Acceleration Y,"
+    "Front Right Acceleration Z,Back Left Acceleration X,Back Left Acceleration Y,"
+    "Back Left Acceleration Z,Back Right Acceleration X,Back Right Acceleration Y,"
+    "Back Right Acceleration Z,VCU Gyro X,VCU Gyro Y,VCU Gyro Z,HVC Gyro X,HVC Gyro Y,HVC Gyro Z,"
+    "PDU Gyro X,PDU Gyro Y,PDU Gyro Z,GPS Latitude,GPS Longitude,GPS Speed,GPS Heading,GPS Hour,"
+    "GPS Minute,GPS Seconds,GPS Year,GPS Month,GPS Day,GPS Milliseconds\r\n";
 
 static bool telemetryBegan = false;
+static bool telemetryFileOpen = false;
+static NvmTelemetryStatus telemetryStatus = NVM_TELEMETRY_WAITING_FOR_GPS;
 
 static char charBuffer[4096];
+
+static unsigned int nvm_getAppsFault(const VcuOutput *vcuCoreOutput) {
+  return vcuCoreOutput->flags & 0x7U;
+}
+
+static unsigned int nvm_getBseFault(const VcuOutput *vcuCoreOutput) {
+  return (vcuCoreOutput->flags >> 3) & 0x7U;
+}
+
+static unsigned int nvm_getStomppFault(const VcuOutput *vcuCoreOutput) {
+  return (vcuCoreOutput->flags >> 6) & 0x1U;
+}
+
+static void nvm_failTelemetry(uint32_t fault) {
+  telemetryBegan = false;
+  telemetryStatus = NVM_TELEMETRY_FAILED;
+  if (telemetryFileOpen) {
+    f_close(&telemfile);
+    telemetryFileOpen = false;
+  }
+  FAULT_SET(&faultVector, fault);
+}
 
 float findMean(const float* newData, size_t numData) {
     float sum = 0;
@@ -29,19 +86,28 @@ float findMean(const float* newData, size_t numData) {
         }
         sum += newData[i];
     }
-    if (sum / (float) (numData - removed) == 0) {
+    const size_t validCount = numData - removed;
+    if (validCount == 0) {
+        return 0;
+    }
+    if (sum / (float) validCount == 0) {
         return 0;
     } else {
-        return sum / (float) (numData - removed);
+        return sum / (float) validCount;
     }
 
 }
 
 float findMin(const float* newData, size_t numData) {
     float newMin = 999;
+    bool foundValidValue = false;
     for(int i = 0; i < numData; i++) {
         if(newData[i] < 0.1f) continue;
+        foundValidValue = true;
         if(newData[i] < newMin) newMin = newData[i];
+    }
+    if (!foundValidValue) {
+        return 0;
     }
     return newMin;
 }
@@ -118,7 +184,7 @@ static void nvm_saveParameters(VcuParameters *vcuParameters) {
 
 }
 
-static void nvm_beginTelemetry() {
+static bool nvm_beginTelemetry() {
   // create new csv file and leave open to write telemetry
   res = f_open(
       &telemfile,
@@ -127,25 +193,32 @@ static void nvm_beginTelemetry() {
   );
 
   if (res) {
-    FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_CREATE);
-    f_close(&telemfile);
-    return;
+    return false;
   }
 
-  // create headers for data
-  f_printf(
-          &telemfile,
-          "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-          "Time", "Segment 1 Max", "Segment 1 Min", "Segment 1 Mean", "Segment 2 Max", "Segment 2 Min", "Segment 2 Mean", "Segment 3 Max", "Segment 3 Min", "Segment 3 Mean", "Segment 4 Max", "Segment 4 Min", "Segment 4 Mean", "Segment Unique Max", "Segment Unique Min", "Segment Unique Mean", "Inverter Enabled", "Inverter Torque Request", "OCV Estimate", "Power Limit", "Power Limit Feedback P", "Power Limit Feedback I", "Power Limit Feedback D", "Power Limit Feedback Torque", "PRNDL State", "Ready To Drive Buzzer", "Brake Light", "Enable Drag Reduction", "Pump Output", "Radiator Output", "Battery Fans Output", "Vehicle Displacement X", "Vehicle Displacement Y", "Vehicle Displacement Z", "Vehicle Velocity X", "Vehicle Velocity Y", "Vehicle Velocity Z", "Vehicle Acceleration X", "Vehicle Acceleration Y", "Vehicle Acceleration Z", "HV Battery", "LV Battery", "Dash Speed", "APPS Telemetry", "BSE Telemetry", "Steering Wheel Telemetry", "APPS Fault", "BSE Fault", "STOMPP Fault", "Steering Fault","Voltage", "Current", "State of Charge", "Pack Voltage Mean", "Pack Voltage Minimum", "Pack Voltage Maximum", "Pack Voltage Range", "Pack Temp Mean", "Pack Temp Minimum", "Pack Temp Maximum", "Pack Temp Range", "IMD", "AMS", "Contactor Status", "Cell Voltage Mean", "Cell Voltage Max", "Cell Voltage Min", "Cell Temps Mean", "Cell Temps Max", "Cell Temps Min", "Volumetric Flow Rate", "Water Temp Inverter", "Water Temp Motor", "Water Temp Radiator", "Radiator Fan RPM Percentage", "LV Voltage", "LV State of Charge", "LV Current", "Voltage Input into DC", "Current Input into DC", "RPM", "Inverter Temp", "Motor Temp", "Motor Angle", "Resolver Angle", "Phase A Current", "Phase B Current", "Phase C Current", "BC Voltage", "AB Voltage", "Output Voltage", "Inverter Frequency", "Actual Torque", "Torque Command", "Fault Vector", "State Vector","APPS 1 Voltage", "APPS 2 Voltage", "BSE 1 Voltage", "BSE 2 Voltage", "Steer Voltage", "Suspension 1 Voltage", "Suspension 2 Voltage", "Front Left Wheel Speed", "Front Right Wheel Speed", "Back Left Wheel Speed", "Back Right Wheel Speed","VCU Acceleration X", "VCU Acceleration Y", "VCU Acceleration Z", "HVC Acceleration X", "HVC Acceleration Y", "HVC Acceleration Z", "PDU Acceleration X", "PDU Acceleration Y", "PDU Acceleration Z", "Front Left Acceleration X", "Front Left Acceleration Y", "Front Left Acceleration Z", "Front Right Acceleration X", "Front Right Acceleration Y", "Front Right Acceleration Z", "Back Left Acceleration X", "Back Left Acceleration Y", "Back Left Acceleration Z", "Back Right Acceleration X", "Back Right Acceleration Y", "Back Right Acceleration Z", "VCU Gyro X", "VCU Gyro Y", "VCU Gyro Z", "HVC Gyro X", "HVC Gyro Y", "HVC Gyro Z", "PDU Gyro X", "PDU Gyro Y", "PDU Gyro Z","Latitude", "Longitude", "Speed", "Heading", "Hour", "Minute", "Seconds", "Year", "Month", "Day", "Milliseconds"
-          );
+  // Write the full header as raw bytes instead of a giant varargs format call.
+  UINT bytesWritten = 0;
+  res = f_write(&telemfile, telemetryCsvHeader, strlen(telemetryCsvHeader), &bytesWritten);
+  if (res != FR_OK || bytesWritten != strlen(telemetryCsvHeader)) {
+    f_close(&telemfile);
+    return false;
+  }
 
   // close file to save
-  f_close(&telemfile);
+  if (f_close(&telemfile) != FR_OK) {
+    return false;
+  }
 
+  return true;
 }
 
 static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, PduStatus *pduStatus, InverterStatus *inverterStatus, AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues, ImuData *imuData, GpsData *gpsData) {
   static uint32_t counter = 0;
+  static int pendingRowLength = 0;
+  const unsigned int appsFault = nvm_getAppsFault(vcuCoreOutput);
+  const unsigned int bseFault = nvm_getBseFault(vcuCoreOutput);
+  const unsigned int stomppFault = nvm_getStomppFault(vcuCoreOutput);
+  const unsigned int steeringFault = 0U;
 
   // open telemfile
   if(counter == 0) {
@@ -155,15 +228,17 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
         FA_OPEN_EXISTING | FA_WRITE | FA_OPEN_APPEND
     );
     if (res) {
-      FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_WRITE);
+      nvm_failTelemetry(FAULT_VCU_NVM_NO_WRITE);
+      return;
     }
+    telemetryFileOpen = true;
   }
 
   // write row of data into file
   if(counter % 2 == 0) {
-    sprintf(charBuffer,
+    pendingRowLength = snprintf(charBuffer, sizeof(charBuffer),
         // time format
-            "%4f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%d,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%4f,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%u,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10llu,%10llu,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10hhu,%10hhu,%10hu,%10hhu,%10hhu,%10hu,%10hu\n",
+            "%4f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%2f,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%4f,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%d,%d,%u,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10llu,%10llu,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%4f,%10hhu,%10hhu,%10hu,%10hhu,%10hhu,%10hu,%10hu\n",
         // time data
         clock_getTime(),
         //segment 1 temps
@@ -190,13 +265,14 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
             vcuCoreOutput->vehicleVelocity.z, vcuCoreOutput->vehicleAcceleration.x,
             vcuCoreOutput->vehicleAcceleration.y, vcuCoreOutput->vehicleAcceleration.z, vcuCoreOutput->hvBatterySoc,
             vcuCoreOutput->lvBatterySoc, vcuCoreOutput->dashSpeed, vcuCoreOutput->telemetryApps,
-            vcuCoreOutput->telemetryBse, vcuCoreOutput->telemetrySteeringWheel, 0, 0, 0,
-            0,//(int)vcuCoreOutput->faultApps, (int)vcuCoreOutput->faultBse, (int)vcuCoreOutput->faultStompp, (int)vcuCoreOutput->faultSteering,
+            vcuCoreOutput->telemetryBse, vcuCoreOutput->telemetrySteeringWheel,
+            appsFault, bseFault, stomppFault, steeringFault,
+
         // hvc status data
             hvcStatus->packVoltage, hvcStatus->packCurrent, hvcStatus->stateOfCharge, hvcStatus->packVoltageMean,
             hvcStatus->packVoltageMin, hvcStatus->packVoltageMax, hvcStatus->packVoltageRange, hvcStatus->packTempMean,
             hvcStatus->packTempMin, hvcStatus->packTempMax, hvcStatus->packTempRange, (int) hvcStatus->imd,
-            (int) hvcStatus->ams, hvcStatus->contactorStatus, findMean(hvcStatus->cellVoltages, 140),
+            (int) hvcStatus->ams, (unsigned int) hvcStatus->contactorStatus, findMean(hvcStatus->cellVoltages, 140),
             findMax(hvcStatus->cellVoltages, 140), findMin(hvcStatus->cellVoltages, 140),
             findMean(hvcStatus->cellTemps, 50), findMax(hvcStatus->cellTemps, 50),
             findMin(hvcStatus->cellTemps, 50),//(hvcStatus->cellVoltages), hvcStatus->cellTemps,
@@ -206,18 +282,25 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
             pduStatus->waterTempRadiator, pduStatus->radiatorFanRpm, pduStatus->lvVoltage, pduStatus->lvSoC,
             pduStatus->lvCurrent,
         // inverter status data
-            inverterStatus->voltage, inverterStatus->current, inverterStatus->rpm, inverterStatus->inverterTemp,
-            inverterStatus->motorTemp, inverterStatus->motorAngle, inverterStatus->resolverAngle,
+            inverterStatus->voltage, inverterStatus->current, inverterStatus->rpm, inverterStatus->rpm, inverterStatus->inverterTemp,
+            inverterStatus->inverterCoolantTemp, inverterStatus->inverterHotSpotTemp, inverterStatus->motorTemp,
+            inverterStatus->motorAngle, inverterStatus->deltaResolverFiltered,
             inverterStatus->phaseACurrent, inverterStatus->phaseBCurrent, inverterStatus->phaseCCurrent,
-            inverterStatus->BCVoltage, inverterStatus->ABVoltage, inverterStatus->outputVoltage,
-            inverterStatus->inverterFrequency, inverterStatus->torqueActual, inverterStatus->torqueCommand,
-            inverterStatus->faultVector, inverterStatus->stateVector,
+            inverterStatus->idFeedback, inverterStatus->iqFeedback, inverterStatus->BCVoltage, inverterStatus->ABVoltage, inverterStatus->outputVoltage,
+            inverterStatus->idCommand, inverterStatus->iqCommand, inverterStatus->inverterFrequency, inverterStatus->torqueActual, inverterStatus->torqueCommand,
+            (unsigned long long) inverterStatus->faultVector, (unsigned long long) inverterStatus->stateVector,
+            (int) inverterStatus->bmsLimitingRegenTorque, (int) inverterStatus->limitMotorTempDerate,
+            (int) inverterStatus->limitHotSpotMotor, (int) inverterStatus->bmsActive,
+            (int) inverterStatus->bmsLimitingMotorTorque, (int) inverterStatus->limitMaxSpeed,
+            (int) inverterStatus->limitHotSpotInverter, (int) inverterStatus->lowSpeedLimiting,
+            (int) inverterStatus->limitCoolantDerating, (int) inverterStatus->limitStallBurstModel,
         // analog voltages data
             analogVoltages->apps1, analogVoltages->apps2, analogVoltages->bse1, analogVoltages->bse2,
             analogVoltages->steer, analogVoltages->sus1, analogVoltages->sus2,
         // wheelspeeds
             vcuCoreOutput->telemetryWheelSpeedFl, vcuCoreOutput->telemetryWheelSpeedFr,
             vcuCoreOutput->telemetryWheelSpeedBl, vcuCoreOutput->telemetryWheelSpeedBr,
+            wheelMagnetValues->fl,
         // imu data
             imuData->accelVcu.x, imuData->accelVcu.y, imuData->accelVcu.z, imuData->accelHvc.x, imuData->accelHvc.y,
             imuData->accelHvc.z, imuData->accelPdu.x, imuData->accelPdu.y, imuData->accelPdu.z, imuData->accelFl.x,
@@ -226,20 +309,34 @@ static void nvm_writeTelemetry(VcuOutput *vcuCoreOutput, HvcStatus *hvcStatus, P
             imuData->accelBr.z, imuData->gyroVcu.x, imuData->gyroVcu.y, imuData->gyroVcu.z, imuData->gyroHvc.x,
             imuData->gyroHvc.y, imuData->gyroHvc.z, imuData->gyroPdu.x, imuData->gyroPdu.y, imuData->gyroPdu.z,
         // gps data
-            gpsData->latitude, gpsData->longitude, gpsData->speed, gpsData->heading, gpsData->hour, gpsData->minute,
-            gpsData->seconds, gpsData->year, gpsData->month, gpsData->day, gpsData->millis
+            gpsData->latitude, gpsData->longitude, gpsData->speed, gpsData->heading,
+            (unsigned int) gpsData->hour, (unsigned int) gpsData->minute,
+            (unsigned int) gpsData->seconds, (unsigned int) gpsData->year,
+            (unsigned int) gpsData->month, (unsigned int) gpsData->day,
+            (unsigned int) gpsData->millis
     );
+
+    if (pendingRowLength < 0 || pendingRowLength >= (int) sizeof(charBuffer)) {
+      nvm_failTelemetry(FAULT_VCU_NVM_NO_WRITE);
+      return;
+    }
   }
 
-  if(counter % 2 == 1) {
-    f_printf(&telemfile, charBuffer);
+  if(counter % 2 == 1 || counter == FILE_SAVE_INTERVAL - 1) {
+    UINT bytesWritten = 0;
+    res = f_write(&telemfile, charBuffer, pendingRowLength, &bytesWritten);
+    if (res != FR_OK || bytesWritten != (UINT) pendingRowLength) {
+      nvm_failTelemetry(FAULT_VCU_NVM_NO_WRITE);
+      return;
+    }
   }
 
   if(counter == FILE_SAVE_INTERVAL - 1) {
-    // close file to save volatile int x
-    volatile int x= f_close(&telemfile);
-      didWrite = true;
-
+    if (f_close(&telemfile) != FR_OK) {
+      nvm_failTelemetry(FAULT_VCU_NVM_NO_WRITE);
+      return;
+    }
+    telemetryFileOpen = false;
   }
 
   counter = (counter + 1) % FILE_SAVE_INTERVAL;
@@ -249,7 +346,8 @@ void nvm_init(VcuParameters *vcuParameters) {
   //mount default drive
   res = f_mount(&fs, "", 0);
   if(res) {
-    FAULT_SET(&faultVector, FAULT_VCU_NVM_NO_MOUNT);
+    nvm_failTelemetry(FAULT_VCU_NVM_NO_MOUNT);
+    return;
   }
 
   // load vcu parameters
@@ -260,6 +358,11 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
                   HvcStatus *hvcStatus, PduStatus *pduStatus, InverterStatus *inverterStatus,
                   AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues,
                   ImuData *imuData, GpsData *gpsData) {
+  (void)vcuParameters;
+
+  if (telemetryStatus == NVM_TELEMETRY_FAILED) {
+  return;
+  }
 
   // save vcu parameters once a second
 //  static float time = 0;
@@ -278,8 +381,15 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
     );
     telemfilename = std::string(time);
 
-    nvm_beginTelemetry();
-    telemetryBegan = true;
+    if (nvm_beginTelemetry()) {
+      telemetryBegan = true;
+      telemetryStatus = NVM_TELEMETRY_LOGGING;
+      FAULT_CLEAR(&faultVector, FAULT_VCU_NVM_NO_CREATE);
+      FAULT_CLEAR(&faultVector, FAULT_VCU_NVM_NO_WRITE);
+    } else {
+      nvm_failTelemetry(FAULT_VCU_NVM_NO_CREATE);
+      return;
+    }
   }
 
   // call write telemetry to write rows
@@ -287,5 +397,8 @@ void nvm_periodic(VcuParameters *vcuParameters, VcuOutput *vcuCoreOutput,
     nvm_writeTelemetry(vcuCoreOutput, hvcStatus, pduStatus, inverterStatus, analogVoltages, wheelMagnetValues, imuData,
                        gpsData);
   }
+}
 
+NvmTelemetryStatus nvm_getTelemetryStatus(void) {
+  return telemetryStatus;
 }

@@ -6,6 +6,12 @@
 
 #define FILE_SAVE_INTERVAL 75
 
+typedef enum {
+  NVM_TELEMETRY_WAITING_FOR_GPS = 0,
+  NVM_TELEMETRY_LOGGING = 1,
+  NVM_TELEMETRY_FAILED = 2,
+} NvmTelemetryStatus;
+
 /**
  * Load VCU parameters from a file on the SD card.
  * @param vcuParameters Pointer to VCU parameters.
@@ -21,7 +27,7 @@ static void nvm_saveParameters(VcuParameters* vcuParameters);
 /**
  * Create a new CSV file on the SD card with a unique name based on the time.
  */
-static void nvm_beginTelemetry();
+static bool nvm_beginTelemetry();
 
 /**
  * Write a row of data to the telemetry CSV file.
@@ -42,5 +48,7 @@ void nvm_periodic(VcuParameters* vcuParameters, VcuOutput *vcuCoreOutput,
                   HvcStatus *hvcStatus, PduStatus *pduStatus, InverterStatus *inverterStatus,
                   AnalogVoltages *analogVoltages, WheelMagnetValues *wheelMagnetValues,
                   ImuData *imuData, GpsData *gpsData);
+
+NvmTelemetryStatus nvm_getTelemetryStatus(void);
 
 #endif //VCU_FIRMWARE_2024_NVM_H
